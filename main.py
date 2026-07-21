@@ -339,6 +339,16 @@ def check_recurring_reminders_job():
     except Exception as e:
         logger.error(f"❌ Recurring reminders error: {e}")
 
+
+def backup_job():
+    """💾 Backup يومي لكل Firestore collections — الساعة 2:00 صباحاً"""
+    try:
+        from services.backup_service import run_backup
+        chat_id = get_chat_id()
+        run_backup(bot=bot, chat_id=chat_id)
+    except Exception as e:
+        logger.error(f"❌ Backup error: {e}")
+
 # ============================================================
 # Main
 # ============================================================
@@ -365,6 +375,8 @@ if __name__ == "__main__":
                          id='morning', timezone='Africa/Cairo', misfire_grace_time=60)
         scheduler.add_job(weekly_report_job, 'cron', day_of_week='fri', hour=13, minute=0,
                          id='weekly_report', timezone='Africa/Cairo', misfire_grace_time=300)
+        scheduler.add_job(backup_job, 'cron', hour=2, minute=0,
+                         id='daily_backup', timezone='Africa/Cairo', misfire_grace_time=300)
 
         scheduler_service.set_scheduler(scheduler)
         scheduler.start()
