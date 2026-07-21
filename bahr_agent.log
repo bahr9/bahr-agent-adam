@@ -1,0 +1,1140 @@
+2026-07-21 07:12:53 - INFO - ==================================================
+2026-07-21 07:12:53 - INFO - 🚀 ADAM v1 — Starting...
+2026-07-21 07:12:53 - INFO - ==================================================
+2026-07-21 07:12:54 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-21 07:12:54 - INFO - ✅ Firebase
+2026-07-21 07:12:56 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 07:12:56 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 07:12:56 - INFO - ❌ OpenAI
+2026-07-21 07:12:56 - INFO - ✅ تم تهيئة البوت
+2026-07-21 07:12:56 - INFO - ✅ Telegram Bot
+2026-07-21 07:12:56 - INFO - ✅ Human Model
+2026-07-21 07:12:56 - INFO - ✅ ADAM Mind
+2026-07-21 07:12:56 - INFO - ✅ ADAM Runtime
+2026-07-21 07:12:57 - INFO - ✅ Capabilities registered
+2026-07-21 07:12:57 - INFO - ==================================================
+2026-07-21 07:12:57 - INFO - 🤖 ADAM v1
+2026-07-21 07:12:57 - INFO - 📅 2026-07-21 07:12:57
+2026-07-21 07:12:57 - INFO - ✅ Firebase: OK
+2026-07-21 07:12:57 - INFO - ✅ Human: بحورة
+2026-07-21 07:12:57 - INFO - ==================================================
+2026-07-21 07:12:57 - INFO - ✅ تم ربط APScheduler في scheduler_service
+2026-07-21 07:12:57 - INFO - ✅ Scheduler started
+2026-07-21 07:12:57 - INFO - 🚀 ADAM v1 — Waiting for Ahmed...
+2026-07-21 07:12:57 - INFO - ==================================================
+2026-07-21 07:15:27 - INFO - 👋 ADAM stopped
+2026-07-21 07:16:20 - INFO - ==================================================
+2026-07-21 07:16:20 - INFO - 🚀 ADAM v1 — Starting...
+2026-07-21 07:16:20 - INFO - ==================================================
+2026-07-21 07:16:21 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-21 07:16:21 - INFO - ✅ Firebase
+2026-07-21 07:16:22 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 07:16:22 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 07:16:22 - INFO - ❌ OpenAI
+2026-07-21 07:16:22 - INFO - ✅ تم تهيئة البوت
+2026-07-21 07:16:22 - INFO - ✅ Telegram Bot
+2026-07-21 07:16:22 - INFO - ✅ Human Model
+2026-07-21 07:16:22 - INFO - ✅ ADAM Mind
+2026-07-21 07:16:22 - INFO - ✅ ADAM Runtime
+2026-07-21 07:16:23 - INFO - ✅ Capabilities registered
+2026-07-21 07:16:23 - INFO - ==================================================
+2026-07-21 07:16:23 - INFO - 🤖 ADAM v1
+2026-07-21 07:16:23 - INFO - 📅 2026-07-21 07:16:23
+2026-07-21 07:16:23 - INFO - ✅ Firebase: OK
+2026-07-21 07:16:23 - INFO - ✅ Human: بحورة
+2026-07-21 07:16:23 - INFO - ==================================================
+2026-07-21 07:16:23 - INFO - ✅ تم ربط APScheduler في scheduler_service
+2026-07-21 07:16:23 - INFO - ✅ Scheduler started
+2026-07-21 07:16:23 - INFO - 🚀 ADAM v1 — Waiting for Ahmed...
+2026-07-21 07:16:23 - INFO - ==================================================
+2026-07-21 07:17:46 - INFO - ✅ مستخدم جديد: Ahmed (ID: 1440672248)
+2026-07-21 07:18:13 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 07:18:23 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 07:18:23 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 07:19:01 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 07:19:09 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 07:19:10 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 07:23:06 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 07:23:06 - INFO - 🔧 الموديل طلب أداة: list_reminders | المدخلات: {}
+2026-07-21 07:23:06 - INFO - ✅ نتيجة الأداة list_reminders: التذكيرات:
+- جمّعنا مع بعض المشاكل والاقتراحات دي من كلامنا:
+
+المشاكل:
+1. فقدان السياق مع رسايل قصيرة/معزولة (زي "أوك"، "بالظبط") — بتتعامل معاها من غير خلفية حتى لو كانت جوه نفس المحادثة
+2. الاعتماد 
+2026-07-21 07:23:11 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 07:23:15 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 07:23:15 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 07:23:34 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 07:23:34 - INFO - 🔧 الموديل طلب أداة: list_reminders | المدخلات: {}
+2026-07-21 07:23:34 - INFO - ✅ نتيجة الأداة list_reminders: التذكيرات:
+- جمّعنا مع بعض المشاكل والاقتراحات دي من كلامنا:
+
+المشاكل:
+1. فقدان السياق مع رسايل قصيرة/معزولة (زي "أوك"، "بالظبط") — بتتعامل معاها من غير خلفية حتى لو كانت جوه نفس المحادثة
+2. الاعتماد 
+2026-07-21 07:23:36 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 07:23:36 - INFO - 🔧 الموديل طلب أداة: delete_reminder | المدخلات: {'reminder_id': 'جمّعنا مع بعض المشاكل والاقتراحات دي من كلامنا'}
+2026-07-21 07:23:36 - INFO - ✅ تم حذف التذكير: جمّعنا مع بعض المشاكل والاقتراحات دي من كلامنا
+2026-07-21 07:23:36 - INFO - ✅ نتيجة الأداة delete_reminder: ✅ تم حذف التذكير
+2026-07-21 07:23:44 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 07:23:45 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 07:23:47 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 07:23:50 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 07:23:50 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 07:24:36 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 07:24:46 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 07:25:59 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 07:26:08 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 07:27:42 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 07:27:51 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 07:27:51 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 07:30:16 - INFO - ==================================================
+2026-07-21 07:30:16 - INFO - 🚀 ADAM v1 — Starting...
+2026-07-21 07:30:16 - INFO - ==================================================
+2026-07-21 07:30:16 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-21 07:30:16 - INFO - ✅ Firebase
+2026-07-21 07:30:17 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 07:30:17 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 07:30:17 - INFO - ❌ OpenAI
+2026-07-21 07:30:17 - INFO - ✅ تم تهيئة البوت
+2026-07-21 07:30:17 - INFO - ✅ Telegram Bot
+2026-07-21 07:30:17 - INFO - ✅ Human Model
+2026-07-21 07:30:17 - INFO - ✅ ADAM Mind
+2026-07-21 07:30:17 - INFO - ✅ ADAM Runtime
+2026-07-21 07:30:19 - INFO - ✅ Capabilities registered
+2026-07-21 07:30:19 - INFO - ==================================================
+2026-07-21 07:30:19 - INFO - 🤖 ADAM v1
+2026-07-21 07:30:19 - INFO - 📅 2026-07-21 07:30:19
+2026-07-21 07:30:19 - INFO - ✅ Firebase: OK
+2026-07-21 07:30:19 - INFO - ✅ Human: بحورة
+2026-07-21 07:30:19 - INFO - ==================================================
+2026-07-21 07:30:19 - INFO - ✅ تم ربط APScheduler في scheduler_service
+2026-07-21 07:30:19 - INFO - ✅ Scheduler started
+2026-07-21 07:30:19 - INFO - 🚀 ADAM v1 — Waiting for Ahmed...
+2026-07-21 07:30:19 - INFO - ==================================================
+2026-07-21 07:31:24 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 07:31:33 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 07:31:33 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 07:32:34 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 07:32:34 - INFO - 🔧 الموديل طلب أداة: get_bahr_projects | المدخلات: {}
+2026-07-21 07:32:34 - INFO - ✅ نتيجة الأداة get_bahr_projects: مشاريع Bahr OS:
+- PRJ-MRE9OHLK | عميل: Essam farag | مساحة: 130 | مشرفين: bahrdesign9@gmail.com, khaled1@bahr.com
+2026-07-21 07:32:38 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 07:32:43 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 07:32:43 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 07:36:18 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 07:36:32 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 07:36:32 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 07:40:49 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 07:40:59 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 07:40:59 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 07:44:11 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 07:44:18 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 07:44:18 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 07:45:21 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 07:45:27 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 07:45:27 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 07:48:06 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 07:48:11 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 07:48:12 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 07:50:32 - INFO - ✅ ADAM responded | goal: request_clarification
+2026-07-21 07:51:00 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 07:51:03 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 07:51:04 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 07:52:48 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 07:52:48 - INFO - 🔧 الموديل طلب أداة: get_bahr_projects | المدخلات: {}
+2026-07-21 07:52:49 - INFO - ✅ نتيجة الأداة get_bahr_projects: مشاريع Bahr OS:
+- PRJ-MRE9OHLK | عميل: Essam farag | مساحة: 130 | مشرفين: bahrdesign9@gmail.com, khaled1@bahr.com
+2026-07-21 07:52:51 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 07:52:54 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 07:52:54 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 07:53:17 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 07:53:17 - INFO - 🔧 الموديل طلب أداة: get_project_details | المدخلات: {'project_id': 'PRJ-MRE9OHLK'}
+2026-07-21 07:53:17 - INFO - ✅ نتيجة الأداة get_project_details: تفاصيل PRJ-MRE9OHLK:
+عميل: Essam farag
+مساحة: 130
+مشرفين: bahrdesign9@gmail.com, khaled1@bahr.com
+بنود: 0 بند
+2026-07-21 07:53:21 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 07:53:23 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 07:53:23 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 07:56:24 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 07:56:27 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 07:56:27 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 07:56:39 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 07:56:39 - INFO - 🔧 الموديل طلب أداة: add_graph_node | المدخلات: {'label': 'مشروع الذاكرة الدائمة - Memory Notes', 'category': 'project', 'fact': 'المبرمج وافق على 3 نقاط: save_memory_note (Firebase collection جديد)، search_memory_notes (keyword match بسيط)، تعديل System Prompt عشان ADAM يحفظ تلقائي. سؤاله: memory_notes هتبقى طبقة تالتة مستقلة عن user_memory (الملخص المتراكم) و human_model (بيانات أحمد الثابتة) و conversations (تاريخ المحادثات) - يعني episodic memory لأحداث ووقائع مع context.'}
+2026-07-21 07:56:39 - INFO - ✅ عقدة جديدة: مشروع الذاكرة الدائمة - Memory Notes
+2026-07-21 07:56:39 - INFO - ✅ نتيجة الأداة add_graph_node: تمت الإضافة بنجاح. id الجديد: bot-مشروع-الذاكرة-الدائمة-memory-notes-1784609799
+2026-07-21 07:56:46 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 07:56:54 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 07:56:54 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 07:59:47 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 07:59:56 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 07:59:56 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 08:00:00 - INFO - ✅ Morning Brief sent
+2026-07-21 08:02:08 - INFO - ==================================================
+2026-07-21 08:02:08 - INFO - 🚀 ADAM v1 — Starting...
+2026-07-21 08:02:08 - INFO - ==================================================
+2026-07-21 08:02:08 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-21 08:02:08 - INFO - ✅ Firebase
+2026-07-21 08:02:09 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 08:02:09 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 08:02:10 - INFO - ❌ OpenAI
+2026-07-21 08:02:10 - INFO - ✅ تم تهيئة البوت
+2026-07-21 08:02:10 - INFO - ✅ Telegram Bot
+2026-07-21 08:02:10 - INFO - ✅ Human Model
+2026-07-21 08:02:10 - INFO - ✅ ADAM Mind
+2026-07-21 08:02:10 - INFO - ✅ ADAM Runtime
+2026-07-21 08:02:11 - INFO - ✅ Capabilities registered
+2026-07-21 08:02:11 - INFO - ==================================================
+2026-07-21 08:02:11 - INFO - 🤖 ADAM v1
+2026-07-21 08:02:11 - INFO - 📅 2026-07-21 08:02:11
+2026-07-21 08:02:11 - INFO - ✅ Firebase: OK
+2026-07-21 08:02:11 - INFO - ✅ Human: بحورة
+2026-07-21 08:02:11 - INFO - ==================================================
+2026-07-21 08:02:11 - INFO - ✅ تم ربط APScheduler في scheduler_service
+2026-07-21 08:02:11 - INFO - ✅ Scheduler started
+2026-07-21 08:02:11 - INFO - 🚀 ADAM v1 — Waiting for Ahmed...
+2026-07-21 08:02:11 - INFO - ==================================================
+2026-07-21 08:03:44 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 08:03:44 - INFO - 🔧 الموديل طلب أداة: edit_graph_node | المدخلات: {'label': 'عصام فرج', 'fact': 'اتفق أحمد مع عصام فرج إن تسليم المشروع (PRJ-MRE9OHLK) هيكون يوم 10 أغسطس'}
+2026-07-21 08:03:45 - INFO - ✅ نتيجة الأداة edit_graph_node: مش لاقي عنصر اسمه 'عصام فرج' في خريطة بحر.
+2026-07-21 08:03:47 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 08:03:51 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 08:03:51 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 08:04:53 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 08:05:02 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 08:05:02 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 08:07:55 - INFO - ==================================================
+2026-07-21 08:07:55 - INFO - 🚀 ADAM v1 — Starting...
+2026-07-21 08:07:55 - INFO - ==================================================
+2026-07-21 08:07:55 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-21 08:07:55 - INFO - ✅ Firebase
+2026-07-21 08:07:57 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 08:07:57 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 08:07:57 - INFO - ❌ OpenAI
+2026-07-21 08:07:57 - INFO - ✅ تم تهيئة البوت
+2026-07-21 08:07:57 - INFO - ✅ Telegram Bot
+2026-07-21 08:07:57 - INFO - ✅ Human Model
+2026-07-21 08:07:57 - INFO - ✅ ADAM Mind
+2026-07-21 08:07:57 - INFO - ✅ ADAM Runtime
+2026-07-21 08:07:58 - INFO - ✅ Capabilities registered
+2026-07-21 08:07:58 - INFO - ==================================================
+2026-07-21 08:07:58 - INFO - 🤖 ADAM v1
+2026-07-21 08:07:58 - INFO - 📅 2026-07-21 08:07:58
+2026-07-21 08:07:58 - INFO - ✅ Firebase: OK
+2026-07-21 08:07:58 - INFO - ✅ Human: بحورة
+2026-07-21 08:07:58 - INFO - ==================================================
+2026-07-21 08:07:58 - INFO - ✅ تم ربط APScheduler في scheduler_service
+2026-07-21 08:07:58 - INFO - ✅ Scheduler started
+2026-07-21 08:07:58 - INFO - 🚀 ADAM v1 — Waiting for Ahmed...
+2026-07-21 08:07:58 - INFO - ==================================================
+2026-07-21 08:08:25 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 08:08:25 - INFO - 🔧 الموديل طلب أداة: save_memory_note | المدخلات: {'text': 'اتفق أحمد مع عصام فرج إن تسليم المشروع هيكون يوم 10 أغسطس', 'category': 'مشروع', 'related_to': 'عصام فرج - PRJ-MRE9OHLK'}
+2026-07-21 08:08:25 - ERROR - ❌ خطأ في تنفيذ الأداة save_memory_note: cannot import name 'save_memory_note' from 'services.firebase_service' (C:\Users\gowaida\Desktop\adam-v1\services\firebase_service.py)
+2026-07-21 08:08:34 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 08:08:34 - INFO - 🔧 الموديل طلب أداة: list_graph_nodes | المدخلات: {}
+2026-07-21 08:08:34 - INFO - ✅ نتيجة الأداة list_graph_nodes: id: ahmed | label: Ahmed Gowaida | category: hub
+id: ain-al-khabeer | label: عين الخبير | category: project
+id: bahr-agent | label: Bahr Agent | category: project
+id: bahr-os | label: BAHR OS | catego
+2026-07-21 08:08:41 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 08:08:45 - INFO - 🔧 الموديل طلب أداة: add_graph_node | المدخلات: {'label': 'مشروع عصام فرج', 'category': 'project', 'fact': 'مشروع PRJ-MRE9OHLK، العميل Essam Farag، 130 م²، المشرفين bahrdesign9@gmail.com و khaled1@bahr.com. اتفق أحمد مع عصام فرج إن التسليم هيكون يوم 10 أغسطس.'}
+2026-07-21 08:08:45 - INFO - ✅ عقدة جديدة: مشروع عصام فرج
+2026-07-21 08:08:45 - INFO - ✅ نتيجة الأداة add_graph_node: تمت الإضافة بنجاح. id الجديد: bot-مشروع-عصام-فرج-1784610525
+2026-07-21 08:08:53 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 08:09:01 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 08:09:01 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 08:10:46 - INFO - ==================================================
+2026-07-21 08:10:46 - INFO - 🚀 ADAM v1 — Starting...
+2026-07-21 08:10:46 - INFO - ==================================================
+2026-07-21 08:10:47 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-21 08:10:47 - INFO - ✅ Firebase
+2026-07-21 08:10:48 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 08:10:48 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 08:10:48 - INFO - ❌ OpenAI
+2026-07-21 08:10:48 - INFO - ✅ تم تهيئة البوت
+2026-07-21 08:10:48 - INFO - ✅ Telegram Bot
+2026-07-21 08:10:48 - INFO - ✅ Human Model
+2026-07-21 08:10:48 - INFO - ✅ ADAM Mind
+2026-07-21 08:10:48 - INFO - ✅ ADAM Runtime
+2026-07-21 08:10:49 - INFO - ✅ Capabilities registered
+2026-07-21 08:10:49 - INFO - ==================================================
+2026-07-21 08:10:49 - INFO - 🤖 ADAM v1
+2026-07-21 08:10:49 - INFO - 📅 2026-07-21 08:10:49
+2026-07-21 08:10:49 - INFO - ✅ Firebase: OK
+2026-07-21 08:10:49 - INFO - ✅ Human: بحورة
+2026-07-21 08:10:49 - INFO - ==================================================
+2026-07-21 08:10:49 - INFO - ✅ تم ربط APScheduler في scheduler_service
+2026-07-21 08:10:49 - INFO - ✅ Scheduler started
+2026-07-21 08:10:49 - INFO - 🚀 ADAM v1 — Waiting for Ahmed...
+2026-07-21 08:10:49 - INFO - ==================================================
+2026-07-21 08:11:57 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 08:11:57 - INFO - 🔧 الموديل طلب أداة: save_memory_note | المدخلات: {'text': 'اتفقت مع عصام فرج إن تسليم مشروعه (PRJ-MRE9OHLK) هيكون يوم 10 أغسطس', 'category': 'مشروع', 'related_to': 'عصام فرج'}
+2026-07-21 08:11:57 - ERROR - ❌ خطأ في حفظ الملاحظة: name 'datetime' is not defined
+2026-07-21 08:11:57 - INFO - ✅ نتيجة الأداة save_memory_note: ❌ فشل الحفظ
+2026-07-21 08:12:02 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 08:12:11 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 08:12:11 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 08:12:36 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 08:12:36 - INFO - 🔧 الموديل طلب أداة: search_memory_notes | المدخلات: {'keyword': 'عصام'}
+2026-07-21 08:12:36 - ERROR - ❌ خطأ في البحث: 400 The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/bahr-designs-office/firestore/indexes?create_composite=Clhwcm9qZWN0cy9iYWhyLWRlc2lnbnMtb2ZmaWNlL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9tZW1vcnlfbm90ZXMvaW5kZXhlcy9fEAEaCwoHdXNlcl9pZBABGg4KCmNyZWF0ZWRfYXQQAhoMCghfX25hbWVfXxAC
+2026-07-21 08:12:36 - INFO - ✅ نتيجة الأداة search_memory_notes: مفيش ملاحظات عن: عصام
+2026-07-21 08:12:36 - INFO - 🔧 الموديل طلب أداة: list_memory_notes | المدخلات: {}
+2026-07-21 08:12:36 - ERROR - ❌ خطأ في جلب الملاحظات: 400 The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/bahr-designs-office/firestore/indexes?create_composite=Clhwcm9qZWN0cy9iYWhyLWRlc2lnbnMtb2ZmaWNlL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9tZW1vcnlfbm90ZXMvaW5kZXhlcy9fEAEaCwoHdXNlcl9pZBABGg4KCmNyZWF0ZWRfYXQQAhoMCghfX25hbWVfXxAC
+2026-07-21 08:12:36 - INFO - ✅ نتيجة الأداة list_memory_notes: مفيش ملاحظات محفوظة بعد
+2026-07-21 08:12:44 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 08:12:51 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 08:12:51 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 08:14:51 - INFO - ==================================================
+2026-07-21 08:14:51 - INFO - 🚀 ADAM v1 — Starting...
+2026-07-21 08:14:51 - INFO - ==================================================
+2026-07-21 08:14:52 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-21 08:14:52 - INFO - ✅ Firebase
+2026-07-21 08:14:53 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 08:14:53 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 08:14:53 - INFO - ❌ OpenAI
+2026-07-21 08:14:53 - INFO - ✅ تم تهيئة البوت
+2026-07-21 08:14:53 - INFO - ✅ Telegram Bot
+2026-07-21 08:14:53 - INFO - ✅ Human Model
+2026-07-21 08:14:53 - INFO - ✅ ADAM Mind
+2026-07-21 08:14:53 - INFO - ✅ ADAM Runtime
+2026-07-21 08:14:54 - INFO - ✅ Capabilities registered
+2026-07-21 08:14:55 - INFO - ==================================================
+2026-07-21 08:14:55 - INFO - 🤖 ADAM v1
+2026-07-21 08:14:55 - INFO - 📅 2026-07-21 08:14:55
+2026-07-21 08:14:55 - INFO - ✅ Firebase: OK
+2026-07-21 08:14:55 - INFO - ✅ Human: بحورة
+2026-07-21 08:14:55 - INFO - ==================================================
+2026-07-21 08:14:55 - INFO - ✅ تم ربط APScheduler في scheduler_service
+2026-07-21 08:14:55 - INFO - ✅ Scheduler started
+2026-07-21 08:14:55 - INFO - 🚀 ADAM v1 — Waiting for Ahmed...
+2026-07-21 08:14:55 - INFO - ==================================================
+2026-07-21 08:15:11 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 08:15:11 - INFO - 🔧 الموديل طلب أداة: search_memory_notes | المدخلات: {'keyword': 'عصام فرج'}
+2026-07-21 08:15:11 - ERROR - ❌ خطأ في البحث: 400 The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/bahr-designs-office/firestore/indexes?create_composite=Clhwcm9qZWN0cy9iYWhyLWRlc2lnbnMtb2ZmaWNlL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9tZW1vcnlfbm90ZXMvaW5kZXhlcy9fEAEaCwoHdXNlcl9pZBABGg4KCmNyZWF0ZWRfYXQQAhoMCghfX25hbWVfXxAC
+2026-07-21 08:15:11 - INFO - ✅ نتيجة الأداة search_memory_notes: مفيش ملاحظات عن: عصام فرج
+2026-07-21 08:15:11 - INFO - 🔧 الموديل طلب أداة: list_memory_notes | المدخلات: {}
+2026-07-21 08:15:11 - ERROR - ❌ خطأ في جلب الملاحظات: 400 The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/bahr-designs-office/firestore/indexes?create_composite=Clhwcm9qZWN0cy9iYWhyLWRlc2lnbnMtb2ZmaWNlL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9tZW1vcnlfbm90ZXMvaW5kZXhlcy9fEAEaCwoHdXNlcl9pZBABGg4KCmNyZWF0ZWRfYXQQAhoMCghfX25hbWVfXxAC
+2026-07-21 08:15:11 - INFO - ✅ نتيجة الأداة list_memory_notes: مفيش ملاحظات محفوظة بعد
+2026-07-21 08:15:16 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 08:15:21 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 08:15:22 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 08:23:27 - INFO - ==================================================
+2026-07-21 08:23:27 - INFO - 🚀 ADAM v1 — Starting...
+2026-07-21 08:23:27 - INFO - ==================================================
+2026-07-21 08:23:29 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-21 08:23:29 - INFO - ✅ Firebase
+2026-07-21 08:23:32 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 08:23:32 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 08:23:32 - INFO - ❌ OpenAI
+2026-07-21 08:23:32 - INFO - ✅ تم تهيئة البوت
+2026-07-21 08:23:32 - ERROR - ❌ خطأ في تحميل الإعدادات: Expecting value: line 1 column 1 (char 0)
+2026-07-21 08:23:32 - INFO - ✅ Telegram Bot
+2026-07-21 08:23:32 - INFO - ✅ Human Model
+2026-07-21 08:23:32 - INFO - ✅ ADAM Mind
+2026-07-21 08:23:32 - INFO - ✅ ADAM Runtime
+2026-07-21 08:23:35 - INFO - ✅ Capabilities registered
+2026-07-21 08:23:35 - INFO - ==================================================
+2026-07-21 08:23:35 - INFO - 🤖 ADAM v1
+2026-07-21 08:23:35 - INFO - 📅 2026-07-21 08:23:35
+2026-07-21 08:23:35 - INFO - ✅ Firebase: OK
+2026-07-21 08:23:35 - INFO - ✅ Human: بحورة
+2026-07-21 08:23:35 - INFO - ==================================================
+2026-07-21 08:23:35 - ERROR - ❌ خطأ في تحميل الإعدادات: Expecting value: line 1 column 1 (char 0)
+2026-07-21 08:23:35 - INFO - ✅ تم ربط APScheduler في scheduler_service
+2026-07-21 08:23:35 - INFO - ✅ Scheduler started
+2026-07-21 08:23:35 - INFO - 🚀 ADAM v1 — Waiting for Ahmed...
+2026-07-21 08:23:35 - INFO - ==================================================
+2026-07-21 08:24:14 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 08:24:14 - INFO - 🔧 الموديل طلب أداة: search_memory_notes | المدخلات: {'keyword': 'عصام فرج'}
+2026-07-21 08:24:14 - ERROR - ❌ خطأ في البحث: 400 The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/bahr-designs-office/firestore/indexes?create_composite=Clhwcm9qZWN0cy9iYWhyLWRlc2lnbnMtb2ZmaWNlL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9tZW1vcnlfbm90ZXMvaW5kZXhlcy9fEAEaCwoHdXNlcl9pZBABGg4KCmNyZWF0ZWRfYXQQAhoMCghfX25hbWVfXxAC
+2026-07-21 08:24:14 - INFO - ✅ نتيجة الأداة search_memory_notes: مفيش ملاحظات عن: عصام فرج
+2026-07-21 08:24:14 - INFO - 🔧 الموديل طلب أداة: list_memory_notes | المدخلات: {}
+2026-07-21 08:24:14 - ERROR - ❌ خطأ في جلب الملاحظات: 400 The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/bahr-designs-office/firestore/indexes?create_composite=Clhwcm9qZWN0cy9iYWhyLWRlc2lnbnMtb2ZmaWNlL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9tZW1vcnlfbm90ZXMvaW5kZXhlcy9fEAEaCwoHdXNlcl9pZBABGg4KCmNyZWF0ZWRfYXQQAhoMCghfX25hbWVfXxAC
+2026-07-21 08:24:14 - INFO - ✅ نتيجة الأداة list_memory_notes: مفيش ملاحظات محفوظة بعد
+2026-07-21 08:24:19 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 08:24:24 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 08:24:24 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 08:26:17 - INFO - ==================================================
+2026-07-21 08:26:17 - INFO - 🚀 ADAM v1 — Starting...
+2026-07-21 08:26:17 - INFO - ==================================================
+2026-07-21 08:26:18 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-21 08:26:18 - INFO - ✅ Firebase
+2026-07-21 08:26:19 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 08:26:19 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 08:26:19 - INFO - ❌ OpenAI
+2026-07-21 08:26:19 - INFO - ✅ تم تهيئة البوت
+2026-07-21 08:26:19 - INFO - ✅ Telegram Bot
+2026-07-21 08:26:19 - INFO - ✅ Human Model
+2026-07-21 08:26:19 - INFO - ✅ ADAM Mind
+2026-07-21 08:26:19 - INFO - ✅ ADAM Runtime
+2026-07-21 08:26:20 - INFO - ✅ Capabilities registered
+2026-07-21 08:26:20 - INFO - ==================================================
+2026-07-21 08:26:20 - INFO - 🤖 ADAM v1
+2026-07-21 08:26:20 - INFO - 📅 2026-07-21 08:26:20
+2026-07-21 08:26:20 - INFO - ✅ Firebase: OK
+2026-07-21 08:26:20 - INFO - ✅ Human: بحورة
+2026-07-21 08:26:20 - INFO - ==================================================
+2026-07-21 08:26:20 - INFO - ✅ تم ربط APScheduler في scheduler_service
+2026-07-21 08:26:20 - INFO - ✅ Scheduler started
+2026-07-21 08:26:20 - INFO - 🚀 ADAM v1 — Waiting for Ahmed...
+2026-07-21 08:26:20 - INFO - ==================================================
+2026-07-21 08:29:11 - INFO - ==================================================
+2026-07-21 08:29:11 - INFO - 🚀 ADAM v1 — Starting...
+2026-07-21 08:29:11 - INFO - ==================================================
+2026-07-21 08:29:12 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-21 08:29:12 - INFO - ✅ Firebase
+2026-07-21 08:29:13 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 08:29:13 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 08:29:13 - INFO - ❌ OpenAI
+2026-07-21 08:29:13 - INFO - ✅ تم تهيئة البوت
+2026-07-21 08:29:13 - INFO - ✅ Telegram Bot
+2026-07-21 08:29:13 - INFO - ✅ Human Model
+2026-07-21 08:29:13 - INFO - ✅ ADAM Mind
+2026-07-21 08:29:13 - INFO - ✅ ADAM Runtime
+2026-07-21 08:29:14 - INFO - ✅ Capabilities registered
+2026-07-21 08:29:14 - INFO - ==================================================
+2026-07-21 08:29:14 - INFO - 🤖 ADAM v1
+2026-07-21 08:29:14 - INFO - 📅 2026-07-21 08:29:14
+2026-07-21 08:29:14 - INFO - ✅ Firebase: OK
+2026-07-21 08:29:14 - INFO - ✅ Human: بحورة
+2026-07-21 08:29:14 - INFO - ==================================================
+2026-07-21 08:29:14 - INFO - ✅ تم ربط APScheduler في scheduler_service
+2026-07-21 08:29:14 - INFO - ✅ Scheduler started
+2026-07-21 08:29:14 - INFO - 🚀 ADAM v1 — Waiting for Ahmed...
+2026-07-21 08:29:14 - INFO - ==================================================
+2026-07-21 08:29:44 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 08:29:53 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 08:29:53 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 08:30:12 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 08:30:17 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 08:30:17 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 08:32:53 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-21 08:32:53 - ERROR - ❌ خطأ في حفظ الملاحظة: name 'datetime' is not defined
+2026-07-21 08:34:00 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-21 08:34:00 - INFO - 🧠 Memory note saved: تجربة حفظ ملاحظة
+2026-07-21 08:34:50 - INFO - ==================================================
+2026-07-21 08:34:50 - INFO - 🚀 ADAM v1 — Starting...
+2026-07-21 08:34:50 - INFO - ==================================================
+2026-07-21 08:34:50 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-21 08:34:50 - INFO - ✅ Firebase
+2026-07-21 08:34:51 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 08:34:51 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 08:34:51 - INFO - ❌ OpenAI
+2026-07-21 08:34:52 - INFO - ✅ تم تهيئة البوت
+2026-07-21 08:34:52 - INFO - ✅ Telegram Bot
+2026-07-21 08:34:52 - INFO - ✅ Human Model
+2026-07-21 08:34:52 - INFO - ✅ ADAM Mind
+2026-07-21 08:34:52 - INFO - ✅ ADAM Runtime
+2026-07-21 08:34:53 - INFO - ✅ Capabilities registered
+2026-07-21 08:34:53 - INFO - ==================================================
+2026-07-21 08:34:53 - INFO - 🤖 ADAM v1
+2026-07-21 08:34:53 - INFO - 📅 2026-07-21 08:34:53
+2026-07-21 08:34:53 - INFO - ✅ Firebase: OK
+2026-07-21 08:34:53 - INFO - ✅ Human: بحورة
+2026-07-21 08:34:53 - INFO - ==================================================
+2026-07-21 08:34:53 - INFO - ✅ تم ربط APScheduler في scheduler_service
+2026-07-21 08:34:53 - INFO - ✅ Scheduler started
+2026-07-21 08:34:53 - INFO - 🚀 ADAM v1 — Waiting for Ahmed...
+2026-07-21 08:34:53 - INFO - ==================================================
+2026-07-21 08:35:43 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 08:35:54 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 08:35:54 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 08:36:29 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 08:36:33 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 08:38:02 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 08:38:02 - INFO - 🔧 الموديل طلب أداة: list_graph_nodes | المدخلات: {}
+2026-07-21 08:38:02 - INFO - ✅ نتيجة الأداة list_graph_nodes: id: ahmed | label: Ahmed Gowaida | category: hub
+id: ain-al-khabeer | label: عين الخبير | category: project
+id: bahr-agent | label: Bahr Agent | category: project
+id: bahr-os | label: BAHR OS | catego
+2026-07-21 08:38:05 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 08:38:05 - INFO - 🔧 الموديل طلب أداة: edit_graph_node | المدخلات: {'node_id': 'bot-مشروع-عصام-فرج-1784610525', 'fact': 'تحديث: اتفقت مع عصام فرج إن التسليم يبقى أول أغسطس (بدل 10 أغسطس)'}
+2026-07-21 08:38:06 - INFO - ✅ تعديل عقدة: bot-مشروع-عصام-فرج-1784610525
+2026-07-21 08:38:06 - INFO - ✅ نتيجة الأداة edit_graph_node: تم التعديل بنجاح.
+2026-07-21 08:38:10 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 08:38:15 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 08:38:15 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 08:40:06 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-21 08:40:07 - INFO - 🧠 Memory note saved: تجربة حفظ ملاحظة
+2026-07-21 08:40:28 - INFO - ==================================================
+2026-07-21 08:40:28 - INFO - 🚀 ADAM v1 — Starting...
+2026-07-21 08:40:28 - INFO - ==================================================
+2026-07-21 08:40:28 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-21 08:40:28 - INFO - ✅ Firebase
+2026-07-21 08:40:30 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 08:40:30 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 08:40:30 - INFO - ❌ OpenAI
+2026-07-21 08:40:30 - INFO - ✅ تم تهيئة البوت
+2026-07-21 08:40:30 - INFO - ✅ Telegram Bot
+2026-07-21 08:40:30 - INFO - ✅ Human Model
+2026-07-21 08:40:30 - INFO - ✅ ADAM Mind
+2026-07-21 08:40:30 - INFO - ✅ ADAM Runtime
+2026-07-21 08:40:31 - INFO - ✅ Capabilities registered
+2026-07-21 08:40:31 - INFO - ==================================================
+2026-07-21 08:40:31 - INFO - 🤖 ADAM v1
+2026-07-21 08:40:31 - INFO - 📅 2026-07-21 08:40:31
+2026-07-21 08:40:31 - INFO - ✅ Firebase: OK
+2026-07-21 08:40:31 - INFO - ✅ Human: بحورة
+2026-07-21 08:40:31 - INFO - ==================================================
+2026-07-21 08:40:31 - INFO - ✅ تم ربط APScheduler في scheduler_service
+2026-07-21 08:40:31 - INFO - ✅ Scheduler started
+2026-07-21 08:40:31 - INFO - 🚀 ADAM v1 — Waiting for Ahmed...
+2026-07-21 08:40:31 - INFO - ==================================================
+2026-07-21 08:41:03 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 08:41:41 - INFO - ✅ ADAM responded | goal: request_clarification
+2026-07-21 08:42:46 - INFO - 🔧 الموديل طلب أداة: search_memory_notes | المدخلات: {'keyword': 'عصام'}
+2026-07-21 08:42:46 - ERROR - ❌ خطأ في البحث: 400 The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/bahr-designs-office/firestore/indexes?create_composite=Clhwcm9qZWN0cy9iYWhyLWRlc2lnbnMtb2ZmaWNlL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9tZW1vcnlfbm90ZXMvaW5kZXhlcy9fEAEaCwoHdXNlcl9pZBABGg4KCmNyZWF0ZWRfYXQQAhoMCghfX25hbWVfXxAC
+2026-07-21 08:42:46 - INFO - ✅ نتيجة الأداة search_memory_notes: مفيش ملاحظات عن: عصام
+2026-07-21 08:42:48 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 08:42:50 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 08:42:51 - INFO - 🔧 الموديل طلب أداة: search_memory_notes | المدخلات: {'keyword': 'عصام'}
+2026-07-21 08:42:51 - ERROR - ❌ خطأ في البحث: 400 The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/bahr-designs-office/firestore/indexes?create_composite=Clhwcm9qZWN0cy9iYWhyLWRlc2lnbnMtb2ZmaWNlL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9tZW1vcnlfbm90ZXMvaW5kZXhlcy9fEAEaCwoHdXNlcl9pZBABGg4KCmNyZWF0ZWRfYXQQAhoMCghfX25hbWVfXxAC
+2026-07-21 08:42:51 - INFO - ✅ نتيجة الأداة search_memory_notes: مفيش ملاحظات عن: عصام
+2026-07-21 08:42:51 - INFO - 🔧 الموديل طلب أداة: list_memory_notes | المدخلات: {}
+2026-07-21 08:42:51 - ERROR - ❌ خطأ في جلب الملاحظات: 400 The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/bahr-designs-office/firestore/indexes?create_composite=Clhwcm9qZWN0cy9iYWhyLWRlc2lnbnMtb2ZmaWNlL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9tZW1vcnlfbm90ZXMvaW5kZXhlcy9fEAEaCwoHdXNlcl9pZBABGg4KCmNyZWF0ZWRfYXQQAhoMCghfX25hbWVfXxAC
+2026-07-21 08:42:51 - INFO - ✅ نتيجة الأداة list_memory_notes: مفيش ملاحظات محفوظة بعد
+2026-07-21 08:42:55 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 08:42:55 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 08:42:55 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 08:42:58 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 08:42:58 - INFO - 🔧 الموديل طلب أداة: list_graph_nodes | المدخلات: {}
+2026-07-21 08:42:58 - INFO - ✅ نتيجة الأداة list_graph_nodes: id: ahmed | label: Ahmed Gowaida | category: hub
+id: ain-al-khabeer | label: عين الخبير | category: project
+id: bahr-agent | label: Bahr Agent | category: project
+id: bahr-os | label: BAHR OS | catego
+2026-07-21 08:43:00 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 08:43:00 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 08:43:01 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 08:43:01 - INFO - 🔧 الموديل طلب أداة: edit_graph_node | المدخلات: {'node_id': 'bot-مشروع-عصام-فرج-1784610525', 'fact': 'تأكيد إضافي (21/7): الاتفاق مع عصام فرج إن التسليم أول أغسطس - ثابت'}
+2026-07-21 08:43:01 - INFO - ✅ تعديل عقدة: bot-مشروع-عصام-فرج-1784610525
+2026-07-21 08:43:01 - INFO - ✅ نتيجة الأداة edit_graph_node: تم التعديل بنجاح.
+2026-07-21 08:43:07 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 08:43:12 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 08:43:12 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 08:43:46 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 08:43:50 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 08:43:51 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 08:44:23 - INFO - ✅ ADAM responded | goal: request_clarification
+2026-07-21 08:44:31 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 08:44:31 - INFO - 🔧 الموديل طلب أداة: search_memory_notes | المدخلات: {'keyword': 'عصام'}
+2026-07-21 08:44:31 - ERROR - ❌ خطأ في البحث: 400 The query requires an index. You can create it here: https://console.firebase.google.com/v1/r/project/bahr-designs-office/firestore/indexes?create_composite=Clhwcm9qZWN0cy9iYWhyLWRlc2lnbnMtb2ZmaWNlL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9tZW1vcnlfbm90ZXMvaW5kZXhlcy9fEAEaCwoHdXNlcl9pZBABGg4KCmNyZWF0ZWRfYXQQAhoMCghfX25hbWVfXxAC
+2026-07-21 08:44:31 - INFO - ✅ نتيجة الأداة search_memory_notes: مفيش ملاحظات عن: عصام
+2026-07-21 08:44:36 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 08:44:42 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 08:44:42 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 08:54:56 - INFO - ==================================================
+2026-07-21 08:54:56 - INFO - 🚀 ADAM v1 — Starting...
+2026-07-21 08:54:56 - INFO - ==================================================
+2026-07-21 08:54:57 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-21 08:54:57 - INFO - ✅ Firebase
+2026-07-21 08:54:58 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 08:54:58 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 08:54:58 - INFO - ❌ OpenAI
+2026-07-21 08:54:58 - INFO - ✅ تم تهيئة البوت
+2026-07-21 08:54:58 - INFO - ✅ Telegram Bot
+2026-07-21 08:54:58 - INFO - ✅ Human Model
+2026-07-21 08:54:58 - INFO - ✅ ADAM Mind
+2026-07-21 08:54:58 - INFO - ✅ ADAM Runtime
+2026-07-21 08:55:00 - INFO - ✅ Capabilities registered
+2026-07-21 08:55:00 - INFO - ==================================================
+2026-07-21 08:55:00 - INFO - 🤖 ADAM v1
+2026-07-21 08:55:00 - INFO - 📅 2026-07-21 08:55:00
+2026-07-21 08:55:00 - INFO - ✅ Firebase: OK
+2026-07-21 08:55:00 - INFO - ✅ Human: بحورة
+2026-07-21 08:55:00 - INFO - ==================================================
+2026-07-21 08:55:00 - INFO - ✅ تم ربط APScheduler في scheduler_service
+2026-07-21 08:55:00 - INFO - ✅ Scheduler started
+2026-07-21 08:55:00 - INFO - 🚀 ADAM v1 — Waiting for Ahmed...
+2026-07-21 08:55:00 - INFO - ==================================================
+2026-07-21 08:55:45 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 08:55:45 - INFO - 🔧 الموديل طلب أداة: search_memory_notes | المدخلات: {'keyword': 'عصام'}
+2026-07-21 08:55:45 - INFO - ✅ نتيجة الأداة search_memory_notes: مفيش ملاحظات عن: عصام
+2026-07-21 08:55:50 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 08:55:55 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 08:55:55 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 08:56:31 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 08:56:31 - INFO - 🔧 الموديل طلب أداة: search_memory_notes | المدخلات: {'keyword': 'مشروع'}
+2026-07-21 08:56:31 - INFO - ✅ نتيجة الأداة search_memory_notes: مفيش ملاحظات عن: مشروع
+2026-07-21 08:56:31 - INFO - 🔧 الموديل طلب أداة: list_memory_notes | المدخلات: {}
+2026-07-21 08:56:31 - INFO - ✅ نتيجة الأداة list_memory_notes: مفيش ملاحظات محفوظة بعد
+2026-07-21 08:56:37 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 08:56:47 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 08:56:47 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 08:58:57 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 08:59:06 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 08:59:06 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 08:59:53 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 08:59:53 - INFO - 🔧 الموديل طلب أداة: save_memory_note | المدخلات: {'text': 'اتفقت مع عصام فرج إن التسليم أول أغسطس (مشروع PRJ-MRE9OHLK)', 'category': 'مشروع', 'related_to': 'عصام فرج'}
+2026-07-21 08:59:53 - INFO - 🧠 Memory note saved: اتفقت مع عصام فرج إن التسليم أول أغسطس (مشروع PRJ-
+2026-07-21 08:59:53 - INFO - ✅ نتيجة الأداة save_memory_note: ✅ تم حفظ الملاحظة
+2026-07-21 08:59:57 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 08:59:57 - INFO - 🔧 الموديل طلب أداة: list_memory_notes | المدخلات: {}
+2026-07-21 08:59:57 - INFO - ✅ نتيجة الأداة list_memory_notes: آخر الملاحظات:
+- [2026-07-21 08:59] اتفقت مع عصام فرج إن التسليم أول أغسطس (مشروع PRJ-MRE9OHLK)
+2026-07-21 09:00:00 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:00:04 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 09:00:04 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:00:34 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:00:37 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 09:00:37 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:01:08 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:01:15 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 09:01:15 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:02:15 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:02:23 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 09:02:23 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:03:58 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:04:05 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 09:04:06 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:06:06 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 09:06:06 - INFO - 🔧 الموديل طلب أداة: save_memory_note | المدخلات: {'text': 'قاعدة سلوك متفق عليها مع أحمد: أي ملاحظة تُحفظ فيها تاريخ تسليم أو deadline، لازم ADAM يعمل create_reminder تلقائي قبل الموعد بـ 3 أيام، بالإضافة لحفظ الملاحظة نفسها.', 'category': 'آخر'}
+2026-07-21 09:06:06 - INFO - 🧠 Memory note saved: قاعدة سلوك متفق عليها مع أحمد: أي ملاحظة تُحفظ فيه
+2026-07-21 09:06:06 - INFO - ✅ نتيجة الأداة save_memory_note: ✅ تم حفظ الملاحظة
+2026-07-21 09:06:11 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:06:17 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 09:06:17 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:07:11 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:07:20 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 09:07:20 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:11:53 - INFO - ==================================================
+2026-07-21 09:11:53 - INFO - 🚀 ADAM v1 — Starting...
+2026-07-21 09:11:53 - INFO - ==================================================
+2026-07-21 09:11:53 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-21 09:11:53 - INFO - ✅ Firebase
+2026-07-21 09:11:55 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 09:11:55 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 09:11:55 - INFO - ❌ OpenAI
+2026-07-21 09:11:55 - INFO - ✅ تم تهيئة البوت
+2026-07-21 09:11:55 - INFO - ✅ Telegram Bot
+2026-07-21 09:11:55 - INFO - ✅ Human Model
+2026-07-21 09:11:55 - INFO - ✅ ADAM Mind
+2026-07-21 09:11:55 - INFO - ✅ ADAM Runtime
+2026-07-21 09:11:56 - INFO - ✅ Capabilities registered
+2026-07-21 09:11:56 - INFO - ==================================================
+2026-07-21 09:11:56 - INFO - 🤖 ADAM v1
+2026-07-21 09:11:56 - INFO - 📅 2026-07-21 09:11:56
+2026-07-21 09:11:56 - INFO - ✅ Firebase: OK
+2026-07-21 09:11:56 - INFO - ✅ Human: بحورة
+2026-07-21 09:11:56 - INFO - ==================================================
+2026-07-21 09:11:56 - INFO - ✅ تم ربط APScheduler في scheduler_service
+2026-07-21 09:11:56 - INFO - ✅ Scheduler started
+2026-07-21 09:11:56 - INFO - 🚀 ADAM v1 — Waiting for Ahmed...
+2026-07-21 09:11:56 - INFO - ==================================================
+2026-07-21 09:12:38 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:12:47 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 09:12:47 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:13:52 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 09:13:52 - INFO - 🔧 الموديل طلب أداة: save_memory_note_with_deadline | المدخلات: {'text': 'بدأ الأعمال في مشروع Kemet يوم 21/7/2026، وتم الاتفاق على التسليم بعد شهر من بدء الأعمال', 'deadline_date': '2026-08-21', 'category': 'مشروع', 'related_to': 'Kemet'}
+2026-07-21 09:13:52 - INFO - 🧠 Memory note saved: بدأ الأعمال في مشروع Kemet يوم 21/7/2026، وتم الات
+2026-07-21 09:13:52 - INFO - ✅ Deadline reminder created: 2026-08-18
+2026-07-21 09:13:52 - INFO - ✅ نتيجة الأداة save_memory_note_with_deadline: ✅ تم حفظ الملاحظة + تذكير تلقائي يوم 2026-08-18 (قبل الـ deadline بـ 3 أيام)
+2026-07-21 09:13:56 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:14:00 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 09:14:00 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:14:38 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:14:48 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 09:14:48 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:16:25 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:16:35 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:20:46 - INFO - ==================================================
+2026-07-21 09:20:46 - INFO - 🚀 ADAM v1 — Starting...
+2026-07-21 09:20:46 - INFO - ==================================================
+2026-07-21 09:20:47 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-21 09:20:47 - INFO - ✅ Firebase
+2026-07-21 09:20:48 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 09:20:48 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 09:20:48 - INFO - ❌ OpenAI
+2026-07-21 09:20:48 - INFO - ✅ تم تهيئة البوت
+2026-07-21 09:20:48 - INFO - ✅ Telegram Bot
+2026-07-21 09:20:48 - INFO - ✅ Human Model
+2026-07-21 09:20:48 - INFO - ✅ ADAM Mind
+2026-07-21 09:20:48 - INFO - ✅ ADAM Runtime
+2026-07-21 09:20:49 - INFO - ✅ Capabilities registered
+2026-07-21 09:20:49 - INFO - ==================================================
+2026-07-21 09:20:49 - INFO - 🤖 ADAM v1
+2026-07-21 09:20:49 - INFO - 📅 2026-07-21 09:20:49
+2026-07-21 09:20:49 - INFO - ✅ Firebase: OK
+2026-07-21 09:20:49 - INFO - ✅ Human: بحورة
+2026-07-21 09:20:49 - INFO - ==================================================
+2026-07-21 09:20:49 - INFO - ✅ تم ربط APScheduler في scheduler_service
+2026-07-21 09:20:49 - INFO - ✅ Scheduler started
+2026-07-21 09:20:49 - INFO - 🚀 ADAM v1 — Waiting for Ahmed...
+2026-07-21 09:20:49 - INFO - ==================================================
+2026-07-21 09:21:40 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 09:21:40 - INFO - 🔧 الموديل طلب أداة: get_upcoming_deadlines | المدخلات: {'days_ahead': 60}
+2026-07-21 09:21:40 - INFO - ✅ نتيجة الأداة get_upcoming_deadlines: الـ Deadlines الجاية (1):
+🟡 2026-08-21 (30 يوم) — بدأ الأعمال في مشروع Kemet يوم 21/7/2026، وتم الاتفاق على التسليم بعد شهر من بدء الأعمال
+2026-07-21 09:21:46 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 09:21:46 - INFO - 🔧 الموديل طلب أداة: search_memory_notes | المدخلات: {'keyword': 'عصام'}
+2026-07-21 09:21:46 - INFO - ✅ نتيجة الأداة search_memory_notes: نتائج 'عصام':
+- [2026-07-21 08:59] اتفقت مع عصام فرج إن التسليم أول أغسطس (مشروع PRJ-MRE9OHLK)
+2026-07-21 09:21:46 - INFO - 🔧 الموديل طلب أداة: list_memory_notes | المدخلات: {}
+2026-07-21 09:21:46 - INFO - ✅ نتيجة الأداة list_memory_notes: آخر الملاحظات:
+- [2026-07-21 09:13] بدأ الأعمال في مشروع Kemet يوم 21/7/2026، وتم الاتفاق على التسليم بعد شهر من بدء الأعمال [Deadline: 2026-08-21]
+- [2026-07-21 09:06] قاعدة سلوك متفق عليها مع أحمد: 
+2026-07-21 09:21:51 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:21:59 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 09:21:59 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:22:27 - INFO - ✅ ADAM responded | goal: request_clarification
+2026-07-21 09:22:41 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 09:22:41 - INFO - 🔧 الموديل طلب أداة: save_memory_note_with_deadline | المدخلات: {'text': 'اتفقت مع عصام فرج إن التسليم أول أغسطس (مشروع PRJ-MRE9OHLK، 130 م²)', 'deadline_date': '2026-08-01', 'category': 'مشروع', 'related_to': 'عصام فرج'}
+2026-07-21 09:22:41 - INFO - 🧠 Memory note saved: اتفقت مع عصام فرج إن التسليم أول أغسطس (مشروع PRJ-
+2026-07-21 09:22:41 - INFO - ✅ Deadline reminder created: 2026-07-29
+2026-07-21 09:22:41 - INFO - ✅ نتيجة الأداة save_memory_note_with_deadline: ✅ تم حفظ الملاحظة + تذكير تلقائي يوم 2026-07-29 (قبل الـ deadline بـ 3 أيام)
+2026-07-21 09:22:41 - INFO - 🔧 الموديل طلب أداة: search_memory_notes | المدخلات: {'keyword': 'عصام'}
+2026-07-21 09:22:41 - INFO - ✅ نتيجة الأداة search_memory_notes: نتائج 'عصام':
+- [2026-07-21 09:22] اتفقت مع عصام فرج إن التسليم أول أغسطس (مشروع PRJ-MRE9OHLK، 130 م²) [Deadline: 2026-08-01]
+- [2026-07-21 08:59] اتفقت مع عصام فرج إن التسليم أول أغسطس (مشروع PRJ-MRE
+2026-07-21 09:22:45 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 09:22:45 - INFO - 🔧 الموديل طلب أداة: list_memory_notes | المدخلات: {}
+2026-07-21 09:22:45 - INFO - ✅ نتيجة الأداة list_memory_notes: آخر الملاحظات:
+- [2026-07-21 09:22] اتفقت مع عصام فرج إن التسليم أول أغسطس (مشروع PRJ-MRE9OHLK، 130 م²) [Deadline: 2026-08-01]
+- [2026-07-21 09:13] بدأ الأعمال في مشروع Kemet يوم 21/7/2026، وتم الاتفا
+2026-07-21 09:22:50 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:22:55 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 09:22:55 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:23:41 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 09:23:41 - INFO - 🔧 الموديل طلب أداة: get_upcoming_deadlines | المدخلات: {'days_ahead': 60}
+2026-07-21 09:23:41 - INFO - ✅ نتيجة الأداة get_upcoming_deadlines: الـ Deadlines الجاية (2):
+🟡 2026-08-01 (10 يوم) — اتفقت مع عصام فرج إن التسليم أول أغسطس (مشروع PRJ-MRE9OHLK، 130 م²)
+🟡 2026-08-21 (30 يوم) — بدأ الأعمال في مشروع Kemet يوم 21/7/2026، وتم الاتفاق على 
+2026-07-21 09:23:50 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:24:00 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 09:24:00 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:27:33 - INFO - ==================================================
+2026-07-21 09:27:33 - INFO - 🚀 ADAM v1 — Starting...
+2026-07-21 09:27:33 - INFO - ==================================================
+2026-07-21 09:27:34 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-21 09:27:34 - INFO - ✅ Firebase
+2026-07-21 09:27:35 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 09:27:35 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 09:27:35 - INFO - ❌ OpenAI
+2026-07-21 09:27:35 - INFO - ✅ تم تهيئة البوت
+2026-07-21 09:27:35 - INFO - ✅ Telegram Bot
+2026-07-21 09:27:35 - INFO - ✅ Human Model
+2026-07-21 09:27:35 - INFO - ✅ ADAM Mind
+2026-07-21 09:27:35 - INFO - ✅ ADAM Runtime
+2026-07-21 09:27:36 - INFO - ✅ Capabilities registered
+2026-07-21 09:27:36 - INFO - ==================================================
+2026-07-21 09:27:36 - INFO - 🤖 ADAM v1
+2026-07-21 09:27:36 - INFO - 📅 2026-07-21 09:27:36
+2026-07-21 09:27:36 - INFO - ✅ Firebase: OK
+2026-07-21 09:27:36 - INFO - ✅ Human: بحورة
+2026-07-21 09:27:36 - INFO - ==================================================
+2026-07-21 09:27:36 - INFO - ✅ تم ربط APScheduler في scheduler_service
+2026-07-21 09:27:36 - INFO - ✅ Scheduler started
+2026-07-21 09:27:36 - INFO - 🚀 ADAM v1 — Waiting for Ahmed...
+2026-07-21 09:27:36 - INFO - ==================================================
+2026-07-21 09:28:10 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 09:28:10 - INFO - 🔧 الموديل طلب أداة: list_memory_notes | المدخلات: {}
+2026-07-21 09:28:10 - INFO - ✅ نتيجة الأداة list_memory_notes: آخر الملاحظات (مع الـ ID للتعديل):
+- [ID: SEZ17h3iNRmowVW0ms2J] [2026-07-21 09:22] اتفقت مع عصام فرج إن التسليم أول أغسطس (مشروع PRJ-MRE9OHLK، 130 م²) [Deadline: 2026-08-01]
+- [ID: 53lU86xdzrDUGyZjz1D
+2026-07-21 09:28:14 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 09:28:14 - INFO - 🔧 الموديل طلب أداة: update_memory_note | المدخلات: {'note_id': 'cm8p36OiulwKnEhEPXgx', 'status': 'outdated'}
+2026-07-21 09:28:14 - INFO - ✅ Memory note updated: cm8p36OiulwKnEhEPXgx
+2026-07-21 09:28:14 - INFO - ✅ نتيجة الأداة update_memory_note: ✅ تم تعليم الملاحظة كـ قديمة
+2026-07-21 09:28:19 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:28:25 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 09:28:25 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:29:12 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:29:22 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 09:29:22 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:31:23 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:31:32 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 09:31:32 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:32:44 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:32:52 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 09:32:53 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:34:18 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:34:28 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 09:34:28 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:36:34 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:36:43 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 09:36:43 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:38:01 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 09:38:01 - INFO - 🔧 الموديل طلب أداة: save_memory_note | المدخلات: {'text': 'Daily Morning Brief - نسخة نهائية معتمدة (الساعة 8 صباحًا):\n\nالمبدأ الأساسي: مفيش قوالب ثابتة أو جمل جاهزة تتكرر. كل صباح ADAM يكتب المحتوى حر بالكامل بناءً على الموقف الفعلي وقتها، باستخدام الأدوات (get_upcoming_deadlines + loan_month_installments + list_expenses/expense_summary). مفيش نسخ ولصق أبداً.\n\nالبنية المرنة (مش نص جامد، مجرد اتجاه):\n1. ترحيب بسيط قصير\n2. لو فيه حاجة عاجلة اليوم/بكرة (deadline أو قسط) — تتحط الأول وبوضوح، مش مدفونة في القايمة\n3. أقرب حاجة أو اتنين جايين (مش كل حاجة، بس الأهم)\n4. سطر فلوس/قسط قريب لو موجود بس - يتجاهل تمامًا لو مفيش\n5. خاتمة حرة تتغير كل مرة حسب الموقف - تحفيزية لو فيه ضغط، مطمّنة لو الدنيا هادية\n\nقواعد صارمة:\n- من غير عناوين تقسيمية جامدة (زي "📌 المواعيد:")، كل معلومة تتكتب كجملة طبيعية\n- من غير أقسام فاضية ("مفيش أقساط" لا تتكتب أبداً لو مفيش داعي - تتجاهل تمامًا)\n- الرسالة كلها قصيرة: 5-6 أسطر بحد أقصى شاملة الترحيب والخاتمة\n- الخاتمة تتصاغ من ADAM وقتها، مش من قايمة جمل جاهزة\n\nتقني: الـ morning_brief scheduler موجود في الكود وشغال ومربوط، بينده على ADAM الساعة 8 الصبح يكتب البريف بالمواصفة دي ويبعته فعليًا.', 'category': 'مشروع', 'related_to': 'ADAM - Morning Brief'}
+2026-07-21 09:38:01 - INFO - 🧠 Memory note saved: Daily Morning Brief - نسخة نهائية معتمدة (الساعة 8
+2026-07-21 09:38:01 - INFO - ✅ نتيجة الأداة save_memory_note: ✅ تم حفظ الملاحظة
+2026-07-21 09:38:06 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:38:13 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 09:38:13 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:43:15 - INFO - ==================================================
+2026-07-21 09:43:15 - INFO - 🚀 ADAM v1 — Starting...
+2026-07-21 09:43:15 - INFO - ==================================================
+2026-07-21 09:43:16 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-21 09:43:16 - INFO - ✅ Firebase
+2026-07-21 09:43:17 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 09:43:17 - WARNING - ⚠️ OPENAI_API_KEY مش موجود
+2026-07-21 09:43:17 - INFO - ❌ OpenAI
+2026-07-21 09:43:17 - INFO - ✅ تم تهيئة البوت
+2026-07-21 09:43:17 - INFO - ✅ Telegram Bot
+2026-07-21 09:43:17 - INFO - ✅ Human Model
+2026-07-21 09:43:17 - INFO - ✅ ADAM Mind
+2026-07-21 09:43:17 - INFO - ✅ ADAM Runtime
+2026-07-21 09:43:18 - INFO - ✅ Capabilities registered
+2026-07-21 09:43:18 - INFO - ==================================================
+2026-07-21 09:43:18 - INFO - 🤖 ADAM v1
+2026-07-21 09:43:18 - INFO - 📅 2026-07-21 09:43:18
+2026-07-21 09:43:18 - INFO - ✅ Firebase: OK
+2026-07-21 09:43:18 - INFO - ✅ Human: بحورة
+2026-07-21 09:43:18 - INFO - ==================================================
+2026-07-21 09:43:18 - INFO - ✅ تم ربط APScheduler في scheduler_service
+2026-07-21 09:43:18 - INFO - ✅ Scheduler started
+2026-07-21 09:43:18 - INFO - 🚀 ADAM v1 — Waiting for Ahmed...
+2026-07-21 09:43:18 - INFO - ==================================================
+2026-07-21 09:44:12 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:44:16 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 09:44:16 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:44:48 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:44:57 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 09:44:57 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:46:06 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:46:10 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 09:46:11 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:46:32 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 09:46:32 - INFO - 🔧 الموديل طلب أداة: get_upcoming_deadlines | المدخلات: {}
+2026-07-21 09:46:32 - INFO - ✅ نتيجة الأداة get_upcoming_deadlines: الـ Deadlines الجاية (1):
+🟡 2026-08-01 (10 يوم) — اتفقت مع عصام فرج إن التسليم أول أغسطس (مشروع PRJ-MRE9OHLK، 130 م²)
+2026-07-21 09:46:32 - INFO - 🔧 الموديل طلب أداة: loan_month_installments | المدخلات: {'which_month': 'current'}
+2026-07-21 09:46:32 - INFO - ✅ نتيجة الأداة loan_month_installments: أقساط 01/07/2026 (الإجمالي: 82646 جنيه):
+- فاليو: 32149 جنيه ❌ لسه
+- سهولة: 7241 جنيه ❌ لسه
+- Credit Agricole: 13000 جنيه ❌ لسه
+- حالا: 10268 جنيه ❌ لسه
+- بريميم كارد: 10261 جنيه ❌ لسه
+- ماني فيلوز: 5
+2026-07-21 09:46:32 - INFO - 🔧 الموديل طلب أداة: loan_overview | المدخلات: {}
+2026-07-21 09:46:32 - INFO - ✅ نتيجة الأداة loan_overview: إجمالي المدفوع: 0 جنيه
+إجمالي المتبقي: 1250902 جنيه
+
+تفاصيل كل برنامج:
+- فاليو: 0/6 قسط مدفوع | مدفوع 0 جنيه | متبقي 113511 جنيه
+- سهولة: 0/6 قسط مدفوع | مدفوع 0 جنيه | متبقي 43446 جنيه
+- Credit Agric
+2026-07-21 09:46:39 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:46:48 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:47:35 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:47:45 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:48:50 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:48:54 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:49:58 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:50:09 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:51:27 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 09:51:27 - INFO - 🔧 الموديل طلب أداة: add_expense | المدخلات: {'amount': 1300, 'category': 'مكتب', 'description': 'اشتراك كلود'}
+2026-07-21 09:51:27 - INFO - 💰 مصروف جديد: 1300 جنيه — مكتب
+2026-07-21 09:51:27 - INFO - ✅ نتيجة الأداة add_expense: تم تسجيل المصروف: 1300 جنيه (مكتب).
+2026-07-21 09:51:27 - INFO - 🔧 الموديل طلب أداة: add_expense | المدخلات: {'amount': 1000, 'category': 'مكتب', 'description': 'اشتراك شات جي بي تي'}
+2026-07-21 09:51:27 - INFO - 💰 مصروف جديد: 1000 جنيه — مكتب
+2026-07-21 09:51:27 - INFO - ✅ نتيجة الأداة add_expense: تم تسجيل المصروف: 1000 جنيه (مكتب).
+2026-07-21 09:51:27 - INFO - 🔧 الموديل طلب أداة: add_expense | المدخلات: {'amount': 550, 'category': 'شخصي', 'description': 'سوبر ماركت'}
+2026-07-21 09:51:27 - INFO - 💰 مصروف جديد: 550 جنيه — شخصي
+2026-07-21 09:51:27 - INFO - ✅ نتيجة الأداة add_expense: تم تسجيل المصروف: 550 جنيه (شخصي).
+2026-07-21 09:51:27 - INFO - 🔧 الموديل طلب أداة: add_expense | المدخلات: {'amount': 300, 'category': 'شخصي', 'description': 'غداء'}
+2026-07-21 09:51:27 - INFO - 💰 مصروف جديد: 300 جنيه — شخصي
+2026-07-21 09:51:27 - INFO - ✅ نتيجة الأداة add_expense: تم تسجيل المصروف: 300 جنيه (شخصي).
+2026-07-21 09:51:30 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:51:34 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:51:43 - INFO - ✅ ADAM responded | goal: request_clarification
+2026-07-21 09:51:54 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 09:51:54 - INFO - 🔧 الموديل طلب أداة: expense_summary | المدخلات: {}
+2026-07-21 09:51:55 - INFO - ✅ نتيجة الأداة expense_summary: الإجمالي: 6470.0 جنيه (8 مصروف)
+
+حسب التصنيف:
+- شخصي: 4170.0 جنيه
+- مكتب: 2300.0 جنيه
+2026-07-21 09:51:57 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:52:01 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:52:27 - INFO - ✅ ADAM responded | goal: request_clarification
+2026-07-21 09:52:40 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 09:52:40 - INFO - 🔧 الموديل طلب أداة: list_expenses | المدخلات: {}
+2026-07-21 09:52:40 - INFO - ✅ نتيجة الأداة list_expenses: - 300.0 جنيه | شخصي | غداء | 2026-07-21 09:51
+- 550.0 جنيه | شخصي | سوبر ماركت | 2026-07-21 09:51
+- 1000.0 جنيه | مكتب | اشتراك شات جي بي تي | 2026-07-21 09:51
+- 1300.0 جنيه | مكتب | اشتراك كلود | 202
+2026-07-21 09:52:44 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:52:50 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:53:58 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:54:07 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:57:13 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:57:19 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 09:57:19 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 09:57:36 - INFO - ✅ ADAM responded | goal: request_clarification
+2026-07-21 09:57:59 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 09:58:04 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 09:58:04 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 10:03:18 - INFO - ==================================================
+2026-07-21 10:03:18 - INFO - 🚀 ADAM v1 — Starting...
+2026-07-21 10:03:18 - INFO - ==================================================
+2026-07-21 10:03:19 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-21 10:03:19 - INFO - ✅ Firebase
+2026-07-21 10:03:20 - INFO - ✅ اتصلت بـ OpenAI
+2026-07-21 10:03:20 - INFO - ✅ اتصلت بـ OpenAI
+2026-07-21 10:03:20 - INFO - ✅ OpenAI
+2026-07-21 10:03:20 - INFO - ✅ تم تهيئة البوت
+2026-07-21 10:03:20 - INFO - ✅ Telegram Bot
+2026-07-21 10:03:20 - INFO - ✅ Human Model
+2026-07-21 10:03:20 - INFO - ✅ ADAM Mind
+2026-07-21 10:03:20 - INFO - ✅ ADAM Runtime
+2026-07-21 10:03:21 - INFO - ✅ Capabilities registered
+2026-07-21 10:03:21 - INFO - ==================================================
+2026-07-21 10:03:21 - INFO - 🤖 ADAM v1
+2026-07-21 10:03:21 - INFO - 📅 2026-07-21 10:03:21
+2026-07-21 10:03:21 - INFO - ✅ Firebase: OK
+2026-07-21 10:03:21 - INFO - ✅ Human: بحورة
+2026-07-21 10:03:21 - INFO - ==================================================
+2026-07-21 10:03:21 - INFO - ✅ تم ربط APScheduler في scheduler_service
+2026-07-21 10:03:21 - INFO - ✅ Scheduler started
+2026-07-21 10:03:21 - INFO - 🚀 ADAM v1 — Waiting for Ahmed...
+2026-07-21 10:03:21 - INFO - ==================================================
+2026-07-21 10:04:11 - INFO - 🎤 رسالة صوتية من 1440672248
+2026-07-21 10:04:12 - ERROR - ❌ خطأ في معالجة الرسالة الصوتية: [Errno 2] No such file or directory: '/tmp/voice_168.ogg'
+2026-07-21 10:06:17 - INFO - ==================================================
+2026-07-21 10:06:17 - INFO - 🚀 ADAM v1 — Starting...
+2026-07-21 10:06:17 - INFO - ==================================================
+2026-07-21 10:06:17 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-21 10:06:17 - INFO - ✅ Firebase
+2026-07-21 10:06:18 - INFO - ✅ اتصلت بـ OpenAI
+2026-07-21 10:06:18 - INFO - ✅ اتصلت بـ OpenAI
+2026-07-21 10:06:18 - INFO - ✅ OpenAI
+2026-07-21 10:06:19 - INFO - ✅ تم تهيئة البوت
+2026-07-21 10:06:19 - INFO - ✅ Telegram Bot
+2026-07-21 10:06:19 - INFO - ✅ Human Model
+2026-07-21 10:06:19 - INFO - ✅ ADAM Mind
+2026-07-21 10:06:19 - INFO - ✅ ADAM Runtime
+2026-07-21 10:06:20 - INFO - ✅ Capabilities registered
+2026-07-21 10:06:20 - INFO - ==================================================
+2026-07-21 10:06:20 - INFO - 🤖 ADAM v1
+2026-07-21 10:06:20 - INFO - 📅 2026-07-21 10:06:20
+2026-07-21 10:06:20 - INFO - ✅ Firebase: OK
+2026-07-21 10:06:20 - INFO - ✅ Human: بحورة
+2026-07-21 10:06:20 - INFO - ==================================================
+2026-07-21 10:06:20 - INFO - ✅ تم ربط APScheduler في scheduler_service
+2026-07-21 10:06:20 - INFO - ✅ Scheduler started
+2026-07-21 10:06:20 - INFO - 🚀 ADAM v1 — Waiting for Ahmed...
+2026-07-21 10:06:20 - INFO - ==================================================
+2026-07-21 10:06:40 - INFO - 🎤 رسالة صوتية من 1440672248
+2026-07-21 10:06:44 - INFO - ✅ تحويل صوت: ممكن نخليه لتقرير الاسبوعي يوم الجمعة الساعة واحدة...
+2026-07-21 10:06:44 - INFO - 🎤 اتحوّلت الرسالة الصوتية لنص: ممكن نخليه لتقرير الاسبوعي يوم الجمعة الساعة واحدة...
+2026-07-21 10:06:49 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 10:06:49 - INFO - 🔧 الموديل طلب أداة: save_memory_note | المدخلات: {'text': 'التقرير الأسبوعي (Weekly Report): تقرر يتبعت كل يوم جمعة الساعة 1 الظهر. الصيغة حرة مش قالب ثابت (زي الـ Morning Brief). محتاج يتضاف للـ scheduler من المبرمج.', 'category': 'مشروع', 'related_to': 'ADAM - نظام الذاكرة'}
+2026-07-21 10:06:49 - INFO - 🧠 Memory note saved: التقرير الأسبوعي (Weekly Report): تقرر يتبعت كل يو
+2026-07-21 10:06:49 - INFO - ✅ نتيجة الأداة save_memory_note: ✅ تم حفظ الملاحظة
+2026-07-21 10:06:52 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 10:06:53 - INFO - ✅ تم الرد على الرسالة الصوتية لـ 1440672248
+2026-07-21 10:06:53 - ERROR - ❌ خطأ في تحويل النص لصوت: Speech.create() got an unexpected keyword argument 'language'
+2026-07-21 10:06:53 - WARNING - ⚠️ ما قدرتش تحول الرد لصوت، بس الرد النصي اتبعت
+2026-07-21 10:06:57 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 10:07:08 - INFO - ✅ ADAM responded | goal: request_clarification
+2026-07-21 10:09:26 - INFO - ==================================================
+2026-07-21 10:09:26 - INFO - 🚀 ADAM v1 — Starting...
+2026-07-21 10:09:26 - INFO - ==================================================
+2026-07-21 10:09:26 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-21 10:09:26 - INFO - ✅ Firebase
+2026-07-21 10:09:27 - INFO - ✅ اتصلت بـ OpenAI
+2026-07-21 10:09:27 - INFO - ✅ اتصلت بـ OpenAI
+2026-07-21 10:09:27 - INFO - ✅ OpenAI
+2026-07-21 10:09:27 - INFO - ✅ تم تهيئة البوت
+2026-07-21 10:09:27 - INFO - ✅ Telegram Bot
+2026-07-21 10:09:27 - INFO - ✅ Human Model
+2026-07-21 10:09:28 - INFO - ✅ ADAM Mind
+2026-07-21 10:09:28 - INFO - ✅ ADAM Runtime
+2026-07-21 10:09:29 - INFO - ✅ Capabilities registered
+2026-07-21 10:09:29 - INFO - ==================================================
+2026-07-21 10:09:29 - INFO - 🤖 ADAM v1
+2026-07-21 10:09:29 - INFO - 📅 2026-07-21 10:09:29
+2026-07-21 10:09:29 - INFO - ✅ Firebase: OK
+2026-07-21 10:09:29 - INFO - ✅ Human: بحورة
+2026-07-21 10:09:29 - INFO - ==================================================
+2026-07-21 10:09:29 - INFO - ✅ تم ربط APScheduler في scheduler_service
+2026-07-21 10:09:29 - INFO - ✅ Scheduler started
+2026-07-21 10:09:29 - INFO - 🚀 ADAM v1 — Waiting for Ahmed...
+2026-07-21 10:09:29 - INFO - ==================================================
+2026-07-21 10:10:16 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 10:10:21 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 10:10:21 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 10:20:04 - INFO - ==================================================
+2026-07-21 10:20:04 - INFO - 🚀 ADAM v1 — Starting...
+2026-07-21 10:20:04 - INFO - ==================================================
+2026-07-21 10:20:05 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-21 10:20:05 - INFO - ✅ Firebase
+2026-07-21 10:20:06 - INFO - ✅ اتصلت بـ OpenAI
+2026-07-21 10:20:06 - INFO - ✅ اتصلت بـ OpenAI
+2026-07-21 10:20:06 - INFO - ✅ OpenAI
+2026-07-21 10:20:06 - INFO - ✅ تم تهيئة البوت
+2026-07-21 10:20:06 - INFO - ✅ Telegram Bot
+2026-07-21 10:20:06 - INFO - ✅ Human Model
+2026-07-21 10:20:06 - INFO - ✅ ADAM Mind
+2026-07-21 10:20:06 - INFO - ✅ ADAM Runtime
+2026-07-21 10:20:07 - INFO - ✅ Capabilities registered
+2026-07-21 10:20:07 - INFO - ==================================================
+2026-07-21 10:20:07 - INFO - 🤖 ADAM v1
+2026-07-21 10:20:07 - INFO - 📅 2026-07-21 10:20:07
+2026-07-21 10:20:07 - INFO - ✅ Firebase: OK
+2026-07-21 10:20:07 - INFO - ✅ Human: بحورة
+2026-07-21 10:20:07 - INFO - ==================================================
+2026-07-21 10:20:07 - INFO - ✅ تم ربط APScheduler في scheduler_service
+2026-07-21 10:20:07 - INFO - ✅ Scheduler started
+2026-07-21 10:20:07 - INFO - 🚀 ADAM v1 — Waiting for Ahmed...
+2026-07-21 10:20:07 - INFO - ==================================================
+2026-07-21 10:20:41 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 10:20:41 - INFO - 🔧 الموديل طلب أداة: get_weather | المدخلات: {'location': 'الكل'}
+2026-07-21 10:20:41 - ERROR - ❌ خطأ في تنفيذ الأداة get_weather: No module named 'weather_service'
+2026-07-21 10:20:45 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 10:20:49 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 10:20:49 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 10:22:07 - INFO - ==================================================
+2026-07-21 10:22:07 - INFO - 🚀 ADAM v1 — Starting...
+2026-07-21 10:22:07 - INFO - ==================================================
+2026-07-21 10:22:08 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-21 10:22:08 - INFO - ✅ Firebase
+2026-07-21 10:22:09 - INFO - ✅ اتصلت بـ OpenAI
+2026-07-21 10:22:09 - INFO - ✅ اتصلت بـ OpenAI
+2026-07-21 10:22:09 - INFO - ✅ OpenAI
+2026-07-21 10:22:09 - INFO - ✅ تم تهيئة البوت
+2026-07-21 10:22:09 - INFO - ✅ Telegram Bot
+2026-07-21 10:22:09 - INFO - ✅ Human Model
+2026-07-21 10:22:09 - INFO - ✅ ADAM Mind
+2026-07-21 10:22:09 - INFO - ✅ ADAM Runtime
+2026-07-21 10:22:10 - INFO - ✅ Capabilities registered
+2026-07-21 10:22:10 - INFO - ==================================================
+2026-07-21 10:22:10 - INFO - 🤖 ADAM v1
+2026-07-21 10:22:10 - INFO - 📅 2026-07-21 10:22:10
+2026-07-21 10:22:10 - INFO - ✅ Firebase: OK
+2026-07-21 10:22:10 - INFO - ✅ Human: بحورة
+2026-07-21 10:22:10 - INFO - ==================================================
+2026-07-21 10:22:10 - INFO - ✅ تم ربط APScheduler في scheduler_service
+2026-07-21 10:22:10 - INFO - ✅ Scheduler started
+2026-07-21 10:22:10 - INFO - 🚀 ADAM v1 — Waiting for Ahmed...
+2026-07-21 10:22:10 - INFO - ==================================================
+2026-07-21 10:22:25 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 10:22:29 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 10:22:29 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 10:22:50 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 10:22:53 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 10:23:29 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 10:23:29 - INFO - 🔧 الموديل طلب أداة: get_weather | المدخلات: {'location': 'الكل'}
+2026-07-21 10:23:32 - INFO - ✅ نتيجة الأداة get_weather: 🏠 مدينة العبور: 29°C — Widespread Dust
+🏗️ 6 أكتوبر: 29°C — Widespread Dust
+🏗️ التجمع الخامس: 29°C — Widespread Dust
+2026-07-21 10:23:36 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 10:23:41 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 10:23:41 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 10:23:58 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 10:23:58 - INFO - 🔧 الموديل طلب أداة: get_weather | المدخلات: {'location': 'الكل'}
+2026-07-21 10:23:59 - INFO - ✅ نتيجة الأداة get_weather: 🏠 مدينة العبور: 29°C — Widespread Dust
+🏗️ 6 أكتوبر: 29°C — Widespread Dust
+🏗️ التجمع الخامس: 29°C — Widespread Dust
+2026-07-21 10:24:02 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 10:24:06 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 10:24:06 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 10:25:03 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 10:25:07 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 10:25:07 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 10:25:56 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 10:25:56 - INFO - 🔧 الموديل طلب أداة: save_memory_note | المدخلات: {'text': 'قاعدة مهمة من أحمد: قبل ما ADAM يقول إن أداة معينة معطلة أو مش شغالة، لازم يجربها فعليًا الأول بدل ما يفترض. الدقة والتأكد من الأداة الفعلية أهم من سرعة الرد.', 'category': 'شخصي'}
+2026-07-21 10:25:56 - INFO - 🧠 Memory note saved: قاعدة مهمة من أحمد: قبل ما ADAM يقول إن أداة معينة
+2026-07-21 10:25:56 - INFO - ✅ نتيجة الأداة save_memory_note: ✅ تم حفظ الملاحظة
+2026-07-21 10:25:58 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 10:26:07 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 10:26:07 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 10:27:55 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 10:27:59 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 10:28:00 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 10:28:23 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 10:28:24 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 10:29:44 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 10:29:53 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 10:31:11 - INFO - ==================================================
+2026-07-21 10:31:11 - INFO - 🚀 ADAM v1 — Starting...
+2026-07-21 10:31:11 - INFO - ==================================================
+2026-07-21 10:31:11 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-21 10:31:11 - INFO - ✅ Firebase
+2026-07-21 10:31:13 - INFO - ✅ اتصلت بـ OpenAI
+2026-07-21 10:31:13 - INFO - ✅ اتصلت بـ OpenAI
+2026-07-21 10:31:13 - INFO - ✅ OpenAI
+2026-07-21 10:31:13 - INFO - ✅ تم تهيئة البوت
+2026-07-21 10:31:13 - INFO - ✅ Telegram Bot
+2026-07-21 10:31:13 - INFO - ✅ Human Model
+2026-07-21 10:31:13 - INFO - ✅ ADAM Mind
+2026-07-21 10:31:13 - INFO - ✅ ADAM Runtime
+2026-07-21 10:31:14 - INFO - ✅ Capabilities registered
+2026-07-21 10:31:14 - INFO - ==================================================
+2026-07-21 10:31:14 - INFO - 🤖 ADAM v1
+2026-07-21 10:31:14 - INFO - 📅 2026-07-21 10:31:14
+2026-07-21 10:31:14 - INFO - ✅ Firebase: OK
+2026-07-21 10:31:14 - INFO - ✅ Human: بحورة
+2026-07-21 10:31:14 - INFO - ==================================================
+2026-07-21 10:31:14 - INFO - ✅ تم ربط APScheduler في scheduler_service
+2026-07-21 10:31:14 - INFO - ✅ Scheduler started
+2026-07-21 10:31:14 - INFO - 🚀 ADAM v1 — Waiting for Ahmed...
+2026-07-21 10:31:14 - INFO - ==================================================
+2026-07-21 10:31:54 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 10:31:54 - INFO - 🔧 الموديل طلب أداة: search_memory_notes | المدخلات: {'keyword': 'مزاج'}
+2026-07-21 10:31:54 - INFO - ✅ نتيجة الأداة search_memory_notes: مفيش ملاحظات عن: مزاج
+2026-07-21 10:32:00 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 10:32:08 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 10:32:08 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 10:32:34 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 10:32:34 - INFO - 🔧 الموديل طلب أداة: save_memory_note | المدخلات: {'text': 'أحمد قال إنه تعبان النهارده (21/7/2026)', 'category': 'مزاج'}
+2026-07-21 10:32:34 - INFO - 🧠 Memory note saved: أحمد قال إنه تعبان النهارده (21/7/2026)
+2026-07-21 10:32:34 - INFO - ✅ نتيجة الأداة save_memory_note: ✅ تم حفظ الملاحظة
+2026-07-21 10:32:38 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 10:32:52 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 10:32:52 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 10:35:41 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 10:35:48 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 10:35:48 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 10:36:27 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 10:36:33 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 10:36:34 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 10:37:24 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 10:37:24 - INFO - 🔧 الموديل طلب أداة: search_memory_notes | المدخلات: {'keyword': 'مزاج'}
+2026-07-21 10:37:24 - INFO - ✅ نتيجة الأداة search_memory_notes: نتائج 'مزاج':
+- [2026-07-21 10:32] أحمد قال إنه تعبان النهارده (21/7/2026)
+2026-07-21 10:37:29 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 10:37:29 - INFO - 🔧 الموديل طلب أداة: search_memory_notes | المدخلات: {'keyword': 'تعبان'}
+2026-07-21 10:37:29 - INFO - ✅ نتيجة الأداة search_memory_notes: نتائج 'تعبان':
+- [2026-07-21 10:32] أحمد قال إنه تعبان النهارده (21/7/2026)
+2026-07-21 10:37:29 - INFO - 🔧 الموديل طلب أداة: search_memory_notes | المدخلات: {'keyword': 'مرهق'}
+2026-07-21 10:37:29 - INFO - ✅ نتيجة الأداة search_memory_notes: مفيش ملاحظات عن: مرهق
+2026-07-21 10:37:29 - INFO - 🔧 الموديل طلب أداة: search_memory_notes | المدخلات: {'keyword': 'متضايق'}
+2026-07-21 10:37:29 - INFO - ✅ نتيجة الأداة search_memory_notes: مفيش ملاحظات عن: متضايق
+2026-07-21 10:37:42 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 10:37:59 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 10:37:59 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 10:42:12 - INFO - ==================================================
+2026-07-21 10:42:12 - INFO - 🚀 ADAM v1 — Starting...
+2026-07-21 10:42:12 - INFO - ==================================================
+2026-07-21 10:42:13 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-21 10:42:13 - INFO - ✅ Firebase
+2026-07-21 10:42:14 - INFO - ✅ اتصلت بـ OpenAI
+2026-07-21 10:42:14 - INFO - ✅ اتصلت بـ OpenAI
+2026-07-21 10:42:14 - INFO - ✅ OpenAI
+2026-07-21 10:42:14 - INFO - ✅ تم تهيئة البوت
+2026-07-21 10:42:14 - INFO - ✅ Telegram Bot
+2026-07-21 10:42:14 - INFO - ✅ Human Model
+2026-07-21 10:42:14 - INFO - ✅ ADAM Mind
+2026-07-21 10:42:14 - INFO - ✅ ADAM Runtime
+2026-07-21 10:42:15 - INFO - ✅ Capabilities registered
+2026-07-21 10:42:15 - INFO - ==================================================
+2026-07-21 10:42:15 - INFO - 🤖 ADAM v1
+2026-07-21 10:42:15 - INFO - 📅 2026-07-21 10:42:15
+2026-07-21 10:42:15 - INFO - ✅ Firebase: OK
+2026-07-21 10:42:15 - INFO - ✅ Human: بحورة
+2026-07-21 10:42:15 - INFO - ==================================================
+2026-07-21 10:42:15 - INFO - ✅ تم ربط APScheduler في scheduler_service
+2026-07-21 10:42:15 - INFO - ✅ Scheduler started
+2026-07-21 10:42:15 - INFO - 🚀 ADAM v1 — Waiting for Ahmed...
+2026-07-21 10:42:15 - INFO - ==================================================
+2026-07-21 10:42:48 - INFO - 🧭 stop_reason: tool_use
+2026-07-21 10:42:48 - INFO - 🔧 الموديل طلب أداة: save_memory_note | المدخلات: {'text': 'أحمد قال إنه تعبان (مرة تانية في نفس اليوم تقريبًا)', 'category': 'مزاج'}
+2026-07-21 10:42:48 - INFO - 🧠 Memory note saved: أحمد قال إنه تعبان (مرة تانية في نفس اليوم تقريبًا
+2026-07-21 10:42:48 - INFO - ✅ نتيجة الأداة save_memory_note: ✅ تم حفظ الملاحظة
+2026-07-21 10:42:53 - INFO - 🧭 stop_reason: end_turn
+2026-07-21 10:42:58 - INFO - 🧠 اتحدّثت الذاكرة الدائمة لـ 1440672248
+2026-07-21 10:42:58 - INFO - ✅ ADAM responded | goal: process_user_request
+2026-07-21 10:43:32 - INFO - ✅ ADAM responded | goal: request_clarification

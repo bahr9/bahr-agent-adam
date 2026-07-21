@@ -1,0 +1,28 @@
+# Telegram
+pyTelegramBotAPI==4.34.0
+
+# AI & LLM
+anthropic==0.116.0
+openai>=1.0.0
+
+# Firebase
+firebase-admin>=6.0.0
+
+# Scheduling
+apscheduler==3.10.4
+schedule==1.2.2
+
+# Files (PDF/Word reading + PDF generation)
+pypdf==5.1.0
+python-docx==1.1.2
+reportlab==4.2.5
+arabic-reshaper==3.0.0
+python-bidi==0.6.3
+
+# Utilities
+python-dotenv==1.2.2
+requests==2.34.2
+pytz==2024.1
+
+# System
+tzdata>=2024.1
