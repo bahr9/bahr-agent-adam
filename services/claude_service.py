@@ -273,6 +273,17 @@ TOOLS = [
         }
     },
     {
+        "name": "get_graph_node_details",
+        "description": "يجيب تفاصيل عقدة معينة من خريطة بحر بما فيها الـ facts المحفوظة. استخدمها بعد list_graph_nodes عشان تجيب المحتوى الكامل لأي عقدة.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "node_id": {"type": "string", "description": "الـ ID بتاع العقدة"}
+            },
+            "required": ["node_id"]
+        }
+    },
+    {
         "name": "get_weather",
         "description": "يجيب الطقس الحالي لمواقع أحمد. استخدمها لما يسأل عن الطقس أو لو محتاج يعرف حالة الجو في الموقع.",
         "input_schema": {
@@ -589,6 +600,21 @@ def _execute_tool(tool_name, tool_input, chat_id):
             related_to = tool_input.get("related_to", "")
             ok = save_memory_note(chat_id, text, category, related_to)
             result = "✅ تم حفظ الملاحظة" if ok else "❌ فشل الحفظ"
+
+        elif tool_name == "get_graph_node_details":
+            from services.firebase_service import graph_get_node
+            node_id = tool_input.get("node_id", "")
+            node = graph_get_node(node_id)
+            if not node:
+                result = f"مش لاقي عقدة بالـ ID: {node_id}"
+            else:
+                facts = node.get("facts", [])
+                facts_text = chr(10).join([f"  - {f}" for f in facts]) if facts else "  (مفيش facts)"
+                result = (
+                    f"العقدة: {node.get('label', '')}" + chr(10) +
+                    f"النوع: {node.get('category', '')}" + chr(10) +
+                    f"الـ Facts:" + chr(10) + facts_text
+                )
 
         elif tool_name == "get_weather":
             from weather_service import get_weather, get_all_weather
