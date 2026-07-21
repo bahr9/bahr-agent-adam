@@ -449,6 +449,11 @@ TOOLS = [
             },
             "required": ["reminder_id"]
         }
+    },
+    {
+        "name": "get_backup_status",
+        "description": "يجيب حالة آخر backup اتعمل لذاكرة ADAM — امتى كان، وهل نجح، وكام document اتحفظ. استخدمها لما أحمد يسأل عن الـ backup أو سلامة البيانات.",
+        "input_schema": {"type": "object", "properties": {}, "required": []}
     }
 ]
 
@@ -828,6 +833,40 @@ def _execute_tool(tool_name, tool_input, chat_id):
             reminder_id = tool_input.get("reminder_id", "")
             ok = delete_recurring_reminder_db(reminder_id)
             result = "✅ تم حذف التذكير المتكرر" if ok else "❌ مش لاقي التذكير"
+
+        elif tool_name == "get_backup_status":
+            import os, requests as _req
+            token = os.getenv("GITHUB_TOKEN")
+            repo  = os.getenv("GITHUB_REPO", "bahr9/adam-backups")
+            try:
+                headers = {
+                    "Authorization": f"token {token}",
+                    "Accept": "application/vnd.github.v3+json"
+                }
+                # آخر commit في الـ repo
+                r = _req.get(
+                    f"https://api.github.com/repos/{repo}/commits?per_page=1",
+                    headers=headers, timeout=10
+                )
+                if r.status_code == 200:
+                    commits = r.json()
+                    if commits:
+                        last = commits[0]
+                        msg     = last["commit"]["message"]
+                        date    = last["commit"]["committer"]["date"][:16].replace("T", " ")
+                        author  = last["commit"]["committer"]["name"]
+                        result = (
+                            f"💾 آخر Backup:\n"
+                            f"📅 {date} UTC\n"
+                            f"📝 {msg}\n"
+                            f"✅ github.com/{repo}"
+                        )
+                    else:
+                        result = "مفيش backups لحد دلوقتي"
+                else:
+                    result = f"❌ مش قادر أوصل للـ repo: {r.status_code}"
+            except Exception as ex:
+                result = f"❌ خطأ في جلب حالة الـ backup: {ex}"
 
         else:
             result = f"أداة غير معروفة: {tool_name}"
