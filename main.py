@@ -167,6 +167,19 @@ def handle_start(message):
     bot.reply_to(message, f"أهلاً يا {name}! أنا ADAM — دماغك التاني. 🧠")
 
 
+@bot.message_handler(commands=['backup'])
+def handle_backup(message):
+    """تشغيل الـ Backup يدوياً للاختبار"""
+    try:
+        set_chat_id(message.chat.id)
+        bot.reply_to(message, "💾 بدأت الـ Backup... استنى ثوانٍ.")
+        from services.backup_service import run_backup
+        run_backup(bot=bot, chat_id=message.chat.id)
+    except Exception as e:
+        logger.error(f"❌ Manual backup error: {e}")
+        bot.reply_to(message, f"❌ حصل خطأ: {e}")
+
+
 # ============================================================
 # Scheduler
 # ============================================================
