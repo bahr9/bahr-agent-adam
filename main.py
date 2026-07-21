@@ -362,6 +362,57 @@ def backup_job():
     except Exception as e:
         logger.error(f"❌ Backup error: {e}")
 
+
+# ============================================================
+# Flask — Eye Expert Logging Endpoint
+# ============================================================
+
+from flask import Flask, request, jsonify
+from threading import Thread
+
+flask_app = Flask(__name__)
+
+@flask_app.route("/log-eye-expert", methods=["POST"])
+def log_eye_expert():
+    """استقبال logs من Make.com وحفظها في Firestore"""
+    try:
+        data = request.get_json(force=True, silent=True) or {}
+
+        question   = data.get("question", "")
+        answer     = data.get("answer", "")
+        client     = data.get("client", "")
+        source     = data.get("source", "whatsapp")
+
+        if not question and not answer:
+            return jsonify({"status": "error", "message": "question و answer مطلوبين"}), 400
+
+        from services.firebase_service import save_ain_al_khabeer_log as save_eye_expert_log
+        ok = save_eye_expert_log({
+            "question": question,
+            "answer":   answer,
+            "client":   client,
+            "source":   source,
+        })
+
+        if ok:
+            logger.info(f"👁️ Eye Expert log saved | client: {client} | source: {source}")
+            return jsonify({"status": "ok"}), 200
+        else:
+            return jsonify({"status": "error", "message": "فشل الحفظ في Firestore"}), 500
+
+    except Exception as e:
+        logger.error(f"❌ Eye Expert log error: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+@flask_app.route("/health", methods=["GET"])
+def health():
+    """Health check"""
+    return jsonify({"status": "ok", "service": "ADAM"}), 200
+
+def run_flask():
+    """تشغيل Flask في thread منفصل"""
+    flask_app.run(host="0.0.0.0", port=8080, debug=False, use_reloader=False)
+
 # ============================================================
 # Main
 # ============================================================
@@ -394,6 +445,11 @@ if __name__ == "__main__":
         scheduler_service.set_scheduler(scheduler)
         scheduler.start()
         logger.info("✅ Scheduler started")
+
+        # Flask في thread منفصل
+        flask_thread = Thread(target=run_flask, daemon=True)
+        flask_thread.start()
+        logger.info("✅ Flask endpoint started on port 8080")
 
         logger.info("🚀 ADAM v1 — Waiting for Ahmed...")
         logger.info("=" * 50)

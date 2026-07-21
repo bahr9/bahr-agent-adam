@@ -454,6 +454,18 @@ TOOLS = [
         "name": "get_backup_status",
         "description": "يجيب حالة آخر backup اتعمل لذاكرة ADAM — امتى كان، وهل نجح، وكام document اتحفظ. استخدمها لما أحمد يسأل عن الـ backup أو سلامة البيانات.",
         "input_schema": {"type": "object", "properties": {}, "required": []}
+    },
+    {
+        "name": "get_eye_expert_logs",
+        "description": "يجيب آخر سجلات عين الخبير (أسئلة العملاء وردود النظام). استخدمها لما أحمد يسأل عن أسئلة العملاء أو يريد مراجعة أداء عين الخبير.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "limit": {"type": "integer", "description": "عدد السجلات المطلوبة (افتراضي: 10)"},
+                "keyword": {"type": "string", "description": "كلمة للبحث في الأسئلة والردود (اختياري)"}
+            },
+            "required": []
+        }
     }
 ]
 
@@ -867,6 +879,36 @@ def _execute_tool(tool_name, tool_input, chat_id):
                     result = f"❌ مش قادر أوصل للـ repo: {r.status_code}"
             except Exception as ex:
                 result = f"❌ خطأ في جلب حالة الـ backup: {ex}"
+
+        elif tool_name == "get_eye_expert_logs":
+            from services.firebase_service import get_ain_al_khabeer_logs
+            limit   = int(tool_input.get("limit", 10))
+            keyword = tool_input.get("keyword", "").strip().lower()
+            logs    = get_ain_al_khabeer_logs(limit=50)
+
+            if keyword:
+                logs = [l for l in logs if keyword in l.get("question","").lower() or keyword in l.get("answer","").lower()]
+
+            logs = logs[:limit]
+
+            if not logs:
+                result = "مفيش سجلات في عين الخبير لحد دلوقتي"
+            else:
+                from datetime import datetime, timezone, timedelta
+                lines = []
+                for l in logs:
+                    ts = l.get("timestamp", 0)
+                    try:
+                        cairo_tz = timezone(timedelta(hours=3))
+                        dt = datetime.fromtimestamp(ts/1000, tz=cairo_tz).strftime("%Y-%m-%d %H:%M")
+                    except:
+                        dt = "—"
+                    client = l.get("client", "—")
+                    source = l.get("source", "whatsapp")
+                    q = l.get("question", "")[:80]
+                    a = l.get("answer", "")[:80]
+                    lines.append(f"📅 {dt} | {source} | {client}\nسؤال: {q}\nرد: {a}\n")
+                result = f"آخر {len(logs)} سجل في عين الخبير:\n\n" + "\n".join(lines)
 
         else:
             result = f"أداة غير معروفة: {tool_name}"
