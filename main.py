@@ -124,6 +124,7 @@ MENU_TRIGGERS = {
 
 @bot.message_handler(func=lambda message: (
     message.text is not None and
+    len(message.text.strip().split()) <= 4 and
     any(t in message.text for t in MENU_TRIGGERS)
 ))
 def handle_menu(message):
