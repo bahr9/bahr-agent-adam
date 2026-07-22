@@ -540,6 +540,16 @@ def get_expenses(limit=100):
         logger.error(f"❌ خطأ في جلب المصاريف: {e}")
         return []
 
+def delete_expense(expense_id: str):
+    """حذف مصروف بالـ ID"""
+    if firestore_db is None:
+        return False, "Firestore مش متصل"
+    try:
+        firestore_db.collection(EXPENSES_COLLECTION).document(expense_id).delete()
+        return True, "تم الحذف"
+    except Exception as e:
+        return False, str(e)
+
 def get_expense_summary(category=None, project=None):
     """
     ملخص المصاريف: الإجمالي + التقسيم حسب التصنيف

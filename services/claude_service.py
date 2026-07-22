@@ -61,7 +61,8 @@ def build_system_prompt_parts(pending_tasks=None, memory_summary=None):
 - delete_graph_node: تمسح عنصر (محتاج الـ node_id)
 - create_reminder: تعمل تذكير لأحمد بعد مدة معينة
 - add_expense: تسجل مصروف جديد (مبلغ + تصنيف + وصف اختياري + مشروع اختياري)
-- list_expenses: تجيب آخر المصاريف المسجلة
+- list_expenses: تجيب آخر المصاريف المسجلة (فيها الـ ID لكل مصروف)
+- delete_expense: تحذف مصروف بالـ ID بتاعه (استخدم list_expenses الأول عشان تجيب الـ ID)
 - expense_summary: تجيب إجمالي المصاريف والتقسيم حسب التصنيف
 - loan_overview: ملخص شامل لكل الأقساط والقروض (مدفوع/متبقي لكل برنامج)
 - loan_month_installments: أقساط شهر معيّن (الحالي أو القادم) من كل البرامج
@@ -516,6 +517,17 @@ TOOLS = [
                 "days": {"type": "integer", "description": "عدد الأيام القادمة (افتراضي 3)"}
             },
             "required": []
+        }
+    },
+    {
+        "name": "delete_expense",
+        "description": "يحذف مصروف مسجل بالـ ID بتاعه. استخدم list_expenses الأول عشان تجيب الـ ID، وبعدين احذف.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "expense_id": {"type": "string", "description": "ID المصروف"}
+            },
+            "required": ["expense_id"]
         }
     },
     {
@@ -1116,6 +1128,15 @@ def _execute_tool(tool_name, tool_input, chat_id):
                     result = "متابعات خلال " + str(days) + " ايام:" + chr(10) + chr(10) + joined2
             except Exception as ex:
                 result = f"❌ خطأ: {ex}"
+
+        elif tool_name == "delete_expense":
+            from services.firebase_service import delete_expense
+            expense_id = tool_input.get("expense_id", "").strip()
+            if not expense_id:
+                result = "محتاج الـ ID — استخدم list_expenses الأول"
+            else:
+                ok, msg = delete_expense(expense_id)
+                result = "تم حذف المصروف" if ok else "فشل الحذف: " + msg
 
         elif tool_name == "update_project_status":
             from services.firebase_service import firestore_db
