@@ -656,12 +656,57 @@ def _execute_tool(tool_name, tool_input, chat_id):
             result = f"تم عمل التذكير بنجاح، هيتبعت الساعة {send_at.strftime('%H:%M')}."
         
         elif tool_name == "add_expense":
-            amount = tool_input.get("amount", 0)
-            category = tool_input.get("category", "أخرى")
+            amount      = float(tool_input.get("amount", 0))
+            category    = tool_input.get("category", "أخرى")
             description = tool_input.get("description", "")
-            project = tool_input.get("project")
-            ok, msg = add_expense(amount, category, description, project)
-            result = f"تم تسجيل المصروف: {amount} جنيه ({category})." if ok else f"فشل تسجيل المصروف: {msg}"
+            project     = tool_input.get("project")
+            ok, msg     = add_expense(amount, category, description, project)
+
+            if ok:
+                result = "تم تسجيل المصروف: " + str(amount) + " جنيه (" + category + ")."
+
+                # ============================================================
+                # Financial Alerts — البند 8
+                # ============================================================
+                try:
+                    from bot import bot, get_chat_id
+                    alert_chat_id = get_chat_id()
+
+                    if alert_chat_id:
+                        # تنبيه 1: مصروف فردي > 5000
+                        if amount > 5000:
+                            alert_msg = "تحذير: مصروف كبير " + str(amount) + " جنيه (" + category + ")"
+                            if description:
+                                alert_msg += " - " + description
+                            bot.send_message(alert_chat_id, alert_msg)
+
+                        # تنبيه 2: إجمالي الشهر > 40000
+                        from datetime import datetime
+                        from utils.time_utils import now_cairo
+                        current_month = now_cairo().strftime("%Y-%m")
+                        all_expenses  = get_expenses(limit=1000)
+                        monthly_total = sum(
+                            float(e.get("amount", 0))
+                            for e in all_expenses
+                            if e.get("date", "").startswith(current_month)
+                        )
+
+                        if monthly_total > 40000:
+                            # تحقق لو أرسلنا تنبيه الشهر ده قبل كده
+                            from services.firebase_service import firestore_db
+                            alert_flag_id = "monthly_alert_" + current_month
+                            flag_doc = firestore_db.collection("system_flags").document(alert_flag_id).get()
+                            if not flag_doc.exists:
+                                # أول مرة يتجاوز السقف
+                                firestore_db.collection("system_flags").document(alert_flag_id).set({
+                                    "sent": True, "month": current_month, "total": monthly_total
+                                })
+                                monthly_msg = "تحذير: اجمالي مصاريف " + current_month + " وصل " + str(round(monthly_total)) + " جنيه (تجاوز سقف 40,000)"
+                                bot.send_message(alert_chat_id, monthly_msg)
+                except Exception as alert_err:
+                    logger.warning("Financial alert error: " + str(alert_err))
+            else:
+                result = "فشل تسجيل المصروف: " + msg
         
         elif tool_name == "list_expenses":
             expenses = get_expenses(limit=20)
