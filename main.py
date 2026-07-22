@@ -241,6 +241,10 @@ def handle_callback(call):
 def handle_message(message):
     """معالجة الرسائل النصية"""
     try:
+        # تجاهل رسائل القائمة
+        if message.text and any(t in message.text for t in MENU_TRIGGERS):
+            return
+
         set_chat_id(message.chat.id)
         bot.send_chat_action(message.chat.id, 'typing')
 
@@ -248,7 +252,7 @@ def handle_message(message):
         execution = runtime.run(message)
 
         if execution.final_response:
-            bot.reply_to(message, execution.final_response)
+            bot.reply_to(message, execution.final_response, reply_markup=get_main_keyboard())
             logger.info(f"✅ ADAM responded | goal: {execution.execution_goal}")
         else:
             bot.reply_to(message, "❌ مش قادر أرد دلوقتي.")
