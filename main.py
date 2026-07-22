@@ -407,10 +407,8 @@ def check_projects_job():
                 alerts.append(f"❌ {project_id}: الحالة متأخر")
 
         if alerts:
-            message = "تنبيهات مشاريع بحر:
-
-" + "
-".join(alerts)
+            alert_lines = ["تنبيهات مشاريع بحر:", ""] + alerts
+            message = chr(10).join(alert_lines)
             bot.send_message(chat_id, message)
             logger.info(f"✅ Projects alert sent: {len(alerts)} alerts")
         else:
