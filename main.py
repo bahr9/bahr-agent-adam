@@ -38,7 +38,7 @@ openai_ok = init_openai()
 logger.info(f"{'✅' if openai_ok else '❌'} OpenAI")
 
 # Bot
-from bot import bot, load_config, get_chat_id, set_chat_id, send_error_message, safe_send_message
+from bot import bot, load_config, get_chat_id, set_chat_id, send_error_message, safe_send_message, get_main_keyboard, get_expenses_keyboard, get_projects_keyboard, get_reminders_keyboard, get_memory_keyboard, get_eye_expert_keyboard
 logger.info("✅ Telegram Bot")
 
 # ============================================================
@@ -108,6 +108,130 @@ logger.info("✅ Capabilities registered")
 # ============================================================
 # Telegram Handlers
 # ============================================================
+
+# ============================================================
+# 🎹 Keyboard Menu Handlers
+# ============================================================
+
+MENU_TRIGGERS = {
+    "المصاريف":  ("submenu_expenses",  get_expenses_keyboard),
+    "المشاريع":  ("submenu_projects",  get_projects_keyboard),
+    "التذكيرات": ("submenu_reminders", get_reminders_keyboard),
+    "الذاكرة":   ("submenu_memory",    get_memory_keyboard),
+    "الخبير":    ("submenu_eye",       get_eye_expert_keyboard),
+    "الطقس":     None,
+}
+
+@bot.message_handler(func=lambda message: (
+    message.text is not None and
+    any(t in message.text for t in MENU_TRIGGERS)
+))
+def handle_menu(message):
+    """معالجة أزرار القائمة الرئيسية"""
+    try:
+        set_chat_id(message.chat.id)
+        text = message.text
+
+        for trigger, handler in MENU_TRIGGERS.items():
+            if trigger in text:
+                if handler is None:
+                    # الطقس — مباشر
+                    if "الطقس" in text:
+                        fake_msg = type("M", (), {"text": "الطقس دلوقتي", "chat": type("C", (), {"id": message.chat.id})(), "from_user": message.from_user, "content_type": "text", "message_id": 0})()
+                        execution = runtime.run(fake_msg)
+                        if execution.final_response:
+                            bot.send_message(message.chat.id, execution.final_response)
+                    return
+                label, keyboard_func = handler
+                bot.send_message(message.chat.id, "اختار:", reply_markup=keyboard_func())
+                return
+
+    except Exception as e:
+        logger.error(f"❌ Menu error: {e}")
+
+@bot.callback_query_handler(func=lambda call: True)
+def handle_callback(call):
+    """معالجة الـ Inline Keyboard callbacks"""
+    try:
+        chat_id = call.message.chat.id
+        set_chat_id(chat_id)
+        data = call.data
+
+        bot.answer_callback_query(call.id)
+
+        if data == "back_main":
+            bot.send_message(chat_id, "القائمة الرئيسية:", reply_markup=get_main_keyboard())
+
+        elif data == "expenses_summary":
+            bot.send_message(chat_id, "ملخص المصاريف")
+            bot.send_message(chat_id, "جاري...")
+            fake_msg = type("M", (), {"text": "ملخص المصاريف", "chat": type("C", (), {"id": chat_id})(), "from_user": type("U", (), {"id": chat_id, "first_name": "Ahmed"})(), "content_type": "text", "message_id": 0})()
+            execution = runtime.run(fake_msg)
+            if execution.final_response:
+                bot.send_message(chat_id, execution.final_response)
+
+        elif data == "expenses_add":
+            bot.send_message(chat_id, "قولي: صرفت كام جنيه وعلى إيه؟")
+
+        elif data == "loans_month":
+            fake_msg = type("M", (), {"text": "الأقساط الشهر ده", "chat": type("C", (), {"id": chat_id})(), "from_user": type("U", (), {"id": chat_id, "first_name": "Ahmed"})(), "content_type": "text", "message_id": 0})()
+            execution = runtime.run(fake_msg)
+            if execution.final_response:
+                bot.send_message(chat_id, execution.final_response)
+
+        elif data == "projects_status":
+            fake_msg = type("M", (), {"text": "حالة المشاريع", "chat": type("C", (), {"id": chat_id})(), "from_user": type("U", (), {"id": chat_id, "first_name": "Ahmed"})(), "content_type": "text", "message_id": 0})()
+            execution = runtime.run(fake_msg)
+            if execution.final_response:
+                bot.send_message(chat_id, execution.final_response)
+
+        elif data == "projects_alerts":
+            fake_msg = type("M", (), {"text": "تنبيهات المشاريع المتأخرة", "chat": type("C", (), {"id": chat_id})(), "from_user": type("U", (), {"id": chat_id, "first_name": "Ahmed"})(), "content_type": "text", "message_id": 0})()
+            execution = runtime.run(fake_msg)
+            if execution.final_response:
+                bot.send_message(chat_id, execution.final_response)
+
+        elif data == "reminders_list":
+            fake_msg = type("M", (), {"text": "اعرض التذكيرات", "chat": type("C", (), {"id": chat_id})(), "from_user": type("U", (), {"id": chat_id, "first_name": "Ahmed"})(), "content_type": "text", "message_id": 0})()
+            execution = runtime.run(fake_msg)
+            if execution.final_response:
+                bot.send_message(chat_id, execution.final_response)
+
+        elif data == "reminders_recurring":
+            fake_msg = type("M", (), {"text": "اعرض التذكيرات المتكررة", "chat": type("C", (), {"id": chat_id})(), "from_user": type("U", (), {"id": chat_id, "first_name": "Ahmed"})(), "content_type": "text", "message_id": 0})()
+            execution = runtime.run(fake_msg)
+            if execution.final_response:
+                bot.send_message(chat_id, execution.final_response)
+
+        elif data == "memory_notes":
+            fake_msg = type("M", (), {"text": "آخر الملاحظات", "chat": type("C", (), {"id": chat_id})(), "from_user": type("U", (), {"id": chat_id, "first_name": "Ahmed"})(), "content_type": "text", "message_id": 0})()
+            execution = runtime.run(fake_msg)
+            if execution.final_response:
+                bot.send_message(chat_id, execution.final_response)
+
+        elif data == "memory_graph":
+            fake_msg = type("M", (), {"text": "اعرض خريطة بحر", "chat": type("C", (), {"id": chat_id})(), "from_user": type("U", (), {"id": chat_id, "first_name": "Ahmed"})(), "content_type": "text", "message_id": 0})()
+            execution = runtime.run(fake_msg)
+            if execution.final_response:
+                bot.send_message(chat_id, execution.final_response)
+
+        elif data == "projects_deadlines":
+            fake_msg = type("M", (), {"text": "المواعيد الجاية للمشاريع", "chat": type("C", (), {"id": chat_id})(), "from_user": type("U", (), {"id": chat_id, "first_name": "Ahmed"})(), "content_type": "text", "message_id": 0})()
+            execution = runtime.run(fake_msg)
+            if execution.final_response:
+                bot.send_message(chat_id, execution.final_response)
+
+        elif data == "reminders_new":
+            bot.send_message(chat_id, "قولي: ذكرني بعد كام دقيقة/ساعة وبإيه؟")
+
+        elif data == "eye_expert_logs":
+            fake_msg = type("M", (), {"text": "آخر أسئلة عملاء عين الخبير", "chat": type("C", (), {"id": chat_id})(), "from_user": type("U", (), {"id": chat_id, "first_name": "Ahmed"})(), "content_type": "text", "message_id": 0})()
+            execution = runtime.run(fake_msg)
+            if execution.final_response:
+                bot.send_message(chat_id, execution.final_response)
+
+    except Exception as e:
+        logger.error(f"❌ Callback error: {e}")
 
 @bot.message_handler(func=lambda message: (
     message.text is not None and
@@ -454,7 +578,7 @@ if __name__ == "__main__":
         logger.info("🚀 ADAM v1 — Waiting for Ahmed...")
         logger.info("=" * 50)
 
-        bot.infinity_polling(timeout=60, long_polling_timeout=60, restart_on_change=False)
+        bot.infinity_polling(timeout=30, long_polling_timeout=30)
 
     except KeyboardInterrupt:
         logger.info("👋 ADAM stopped")

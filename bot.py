@@ -8,36 +8,12 @@
 import telebot
 import os
 import json
-import time
-import threading
 from utils.logger import logger
 from config import TELEGRAM_TOKEN, DATA_FILE, CONFIG_FILE
 
 # إنشاء البوت
-bot = telebot.TeleBot(TELEGRAM_TOKEN, threaded=True)
+bot = telebot.TeleBot(TELEGRAM_TOKEN)
 logger.info(f"✅ تم تهيئة البوت")
-
-# ============================================================
-# Retry — إرسال رسالة مع إعادة المحاولة
-# ============================================================
-
-def safe_send_message(chat_id, text, max_retries=3, **kwargs):
-    """
-    يبعت رسالة مع retry تلقائي لو فشلت
-    بيجرب 3 مرات مع انتظار متزايد بينهم
-    """
-    for attempt in range(max_retries):
-        try:
-            return bot.send_message(chat_id, text, **kwargs)
-        except Exception as e:
-            err = str(e)
-            if attempt < max_retries - 1:
-                wait = (attempt + 1) * 3
-                logger.warning(f"⚠️ send_message فشل (محاولة {attempt+1}/{max_retries}): {err} — ننتظر {wait}s")
-                time.sleep(wait)
-            else:
-                logger.error(f"❌ send_message فشل نهائياً بعد {max_retries} محاولات: {err}")
-    return None
 
 # ملف الإعدادات
 config = {"chat_id": None, "reminder_time": "08:00"}
@@ -79,6 +55,75 @@ def set_reminder_time(time_str):
     save_config()
 
 # ============================================================
+# 🎹 Keyboard Menu
+# ============================================================
+
+def get_main_keyboard():
+    """الكيبورد الرئيسي"""
+    keyboard = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
+    keyboard.add(
+        telebot.types.KeyboardButton("💰 المصاريف والأقساط"),
+        telebot.types.KeyboardButton("🏗️ المشاريع"),
+        telebot.types.KeyboardButton("🔔 التذكيرات"),
+        telebot.types.KeyboardButton("🧠 الذاكرة والجراف"),
+        telebot.types.KeyboardButton("👁️ عين الخبير"),
+        telebot.types.KeyboardButton("🌤️ الطقس")
+    )
+    return keyboard
+
+def get_expenses_keyboard():
+    """كيبورد المصاريف"""
+    keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
+    keyboard.add(
+        telebot.types.InlineKeyboardButton("📊 ملخص المصاريف", callback_data="expenses_summary"),
+        telebot.types.InlineKeyboardButton("➕ صرفت فلوس", callback_data="expenses_add"),
+        telebot.types.InlineKeyboardButton("📅 الأقساط الشهر ده", callback_data="loans_month"),
+        telebot.types.InlineKeyboardButton("🔙 رجوع", callback_data="back_main")
+    )
+    return keyboard
+
+def get_projects_keyboard():
+    """كيبورد المشاريع"""
+    keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
+    keyboard.add(
+        telebot.types.InlineKeyboardButton("📋 حالة المشاريع", callback_data="projects_status"),
+        telebot.types.InlineKeyboardButton("📅 المواعيد الجاية", callback_data="projects_deadlines"),
+        telebot.types.InlineKeyboardButton("⚠️ تنبيهات المشاريع المتأخرة", callback_data="projects_alerts"),
+        telebot.types.InlineKeyboardButton("🔙 رجوع", callback_data="back_main")
+    )
+    return keyboard
+
+def get_reminders_keyboard():
+    """كيبورد التذكيرات"""
+    keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
+    keyboard.add(
+        telebot.types.InlineKeyboardButton("📋 تذكيرات حالية", callback_data="reminders_list"),
+        telebot.types.InlineKeyboardButton("⏰ ذكرني بعد كذا", callback_data="reminders_new"),
+        telebot.types.InlineKeyboardButton("🔁 تذكير متكرر", callback_data="reminders_recurring"),
+        telebot.types.InlineKeyboardButton("🔙 رجوع", callback_data="back_main")
+    )
+    return keyboard
+
+def get_memory_keyboard():
+    """كيبورد الذاكرة"""
+    keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
+    keyboard.add(
+        telebot.types.InlineKeyboardButton("📝 آخر الملاحظات", callback_data="memory_notes"),
+        telebot.types.InlineKeyboardButton("🗺️ عناصر خريطة بحر", callback_data="memory_graph"),
+        telebot.types.InlineKeyboardButton("🔙 رجوع", callback_data="back_main")
+    )
+    return keyboard
+
+def get_eye_expert_keyboard():
+    """كيبورد عين الخبير"""
+    keyboard = telebot.types.InlineKeyboardMarkup(row_width=1)
+    keyboard.add(
+        telebot.types.InlineKeyboardButton("👁️ آخر أسئلة العملاء", callback_data="eye_expert_logs"),
+        telebot.types.InlineKeyboardButton("🔙 رجوع", callback_data="back_main")
+    )
+    return keyboard
+
+# ============================================================
 # 📋 الأوامر الأساسية
 # ============================================================
 
@@ -111,7 +156,7 @@ def send_welcome(message):
 
 💬 أو فقط اكتب "ذكرني بعد ٥ دقايق" وهفهمك!"""
         
-        bot.reply_to(message, welcome_text)
+        bot.reply_to(message, welcome_text, reply_markup=get_main_keyboard())
         logger.info(f"✅ مستخدم جديد: {message.from_user.first_name} (ID: {message.chat.id})")
         
     except Exception as e:
