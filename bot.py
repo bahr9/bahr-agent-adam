@@ -12,8 +12,23 @@ from utils.logger import logger
 from config import TELEGRAM_TOKEN, DATA_FILE, CONFIG_FILE
 
 # إنشاء البوت
-bot = telebot.TeleBot(TELEGRAM_TOKEN)
+bot = telebot.TeleBot(TELEGRAM_TOKEN, threaded=True)
 logger.info(f"✅ تم تهيئة البوت")
+
+def safe_send_message(chat_id, text, max_retries=3, **kwargs):
+    """يبعت رسالة مع retry تلقائي"""
+    import time
+    for attempt in range(max_retries):
+        try:
+            return bot.send_message(chat_id, text, **kwargs)
+        except Exception as e:
+            if attempt < max_retries - 1:
+                wait = (attempt + 1) * 3
+                logger.warning("send_message فشل محاولة " + str(attempt+1) + " - ننتظر " + str(wait) + "s")
+                time.sleep(wait)
+            else:
+                logger.error("send_message فشل نهائياً: " + str(e))
+    return None
 
 # ملف الإعدادات
 config = {"chat_id": None, "reminder_time": "08:00"}
