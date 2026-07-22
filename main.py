@@ -235,7 +235,8 @@ def handle_callback(call):
 
 @bot.message_handler(func=lambda message: (
     message.text is not None and
-    not message.text.startswith('/')
+    not message.text.startswith('/') and
+    not any(t in message.text for t in MENU_TRIGGERS)
 ))
 def handle_message(message):
     """معالجة الرسائل النصية"""
