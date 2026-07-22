@@ -456,6 +456,22 @@ TOOLS = [
         "input_schema": {"type": "object", "properties": {}, "required": []}
     },
     {
+        "name": "get_eye_expert_prompt",
+        "description": "يجيب الـ System Prompt الحالي بتاع عين الخبير من Firestore. استخدمها لما أحمد يسأل عن prompt عين الخبير أو يريد مراجعته.",
+        "input_schema": {"type": "object", "properties": {}, "required": []}
+    },
+    {
+        "name": "update_eye_expert_prompt",
+        "description": "يعدل الـ System Prompt بتاع عين الخبير في Firestore. استخدمها لما أحمد يريد تعديل سلوك عين الخبير.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "new_prompt": {"type": "string", "description": "الـ System Prompt الجديد كامل"}
+            },
+            "required": ["new_prompt"]
+        }
+    },
+    {
         "name": "get_eye_expert_logs",
         "description": "يجيب آخر سجلات عين الخبير (أسئلة العملاء وردود النظام). استخدمها لما أحمد يسأل عن أسئلة العملاء أو يريد مراجعة أداء عين الخبير.",
         "input_schema": {
@@ -879,6 +895,34 @@ def _execute_tool(tool_name, tool_input, chat_id):
                     result = f"❌ مش قادر أوصل للـ repo: {r.status_code}"
             except Exception as ex:
                 result = f"❌ خطأ في جلب حالة الـ backup: {ex}"
+
+        elif tool_name == "get_eye_expert_prompt":
+            from services.firebase_service import firestore_db
+            try:
+                doc = firestore_db.collection("eye_expert_config").document("system_prompt").get()
+                if doc.exists:
+                    prompt = doc.to_dict().get("content", "")
+                    result = f"📋 System Prompt عين الخبير الحالي:\n\n{prompt}"
+                else:
+                    result = "❌ مفيش system prompt محفوظ"
+            except Exception as ex:
+                result = f"❌ خطأ: {ex}"
+
+        elif tool_name == "update_eye_expert_prompt":
+            from services.firebase_service import firestore_db
+            from utils.time_utils import now_cairo
+            new_prompt = tool_input.get("new_prompt", "").strip()
+            if not new_prompt:
+                result = "❌ الـ prompt فاضي"
+            else:
+                try:
+                    firestore_db.collection("eye_expert_config").document("system_prompt").set({
+                        "content": new_prompt,
+                        "updated_at": now_cairo().isoformat()
+                    })
+                    result = "✅ تم تحديث System Prompt عين الخبير بنجاح"
+                except Exception as ex:
+                    result = f"❌ خطأ في التحديث: {ex}"
 
         elif tool_name == "get_eye_expert_logs":
             from services.firebase_service import get_ain_al_khabeer_logs
