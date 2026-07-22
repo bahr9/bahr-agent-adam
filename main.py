@@ -407,7 +407,7 @@ def check_projects_job():
                 alerts.append(f"❌ {project_id}: الحالة متأخر")
 
         if alerts:
-            message = "🏗️ تنبيهات مشاريع بحر:
+            message = "تنبيهات مشاريع بحر:
 
 " + "
 ".join(alerts)
