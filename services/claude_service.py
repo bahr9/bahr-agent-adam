@@ -456,6 +456,67 @@ TOOLS = [
         "input_schema": {"type": "object", "properties": {}, "required": []}
     },
     {
+        "name": "add_client_followup",
+        "description": "يضيف عميل جديد في نظام المتابعة. استخدمها لما أحمد يقول اضف عميل أو ابدأ متابعة عميل جديد.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "name":                {"type": "string", "description": "اسم العميل"},
+                "phone":               {"type": "string", "description": "رقم التليفون"},
+                "type":                {"type": "string", "description": "project أو lead"},
+                "status":              {"type": "string", "description": "interested / hesitant / rejected / active"},
+                "last_contact_date":   {"type": "string", "description": "تاريخ آخر تواصل YYYY-MM-DD"},
+                "last_contact_method": {"type": "string", "description": "call / whatsapp / meeting"},
+                "last_reply":          {"type": "string", "description": "آخر رد من العميل"},
+                "next_followup_date":  {"type": "string", "description": "تاريخ المتابعة القادمة YYYY-MM-DD"},
+                "project_id":          {"type": "string", "description": "ID المشروع لو مرتبط بمشروع"},
+                "notes":               {"type": "string", "description": "ملاحظات"}
+            },
+            "required": ["name", "phone"]
+        }
+    },
+    {
+        "name": "update_client_followup",
+        "description": "يحدّث بيانات عميل موجود في نظام المتابعة.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "client_id":           {"type": "string", "description": "ID العميل"},
+                "status":              {"type": "string", "description": "interested / hesitant / rejected / active"},
+                "last_contact_date":   {"type": "string", "description": "تاريخ آخر تواصل YYYY-MM-DD"},
+                "last_contact_method": {"type": "string", "description": "call / whatsapp / meeting"},
+                "last_reply":          {"type": "string", "description": "آخر رد من العميل"},
+                "next_followup_date":  {"type": "string", "description": "تاريخ المتابعة القادمة YYYY-MM-DD"},
+                "notes":               {"type": "string", "description": "ملاحظات"}
+            },
+            "required": ["client_id"]
+        }
+    },
+    {
+        "name": "get_client_followups",
+        "description": "يجيب قائمة العملاء في نظام المتابعة. ممكن تفلتر بالحالة أو النوع.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "status": {"type": "string", "description": "فلتر بالحالة: interested / hesitant / rejected / active"},
+                "type":   {"type": "string", "description": "فلتر بالنوع: project / lead"},
+                "limit":  {"type": "integer", "description": "عدد النتائج (افتراضي 20)"}
+            },
+            "required": []
+        }
+    },
+    {
+        "name": "get_upcoming_followups",
+        "description": "يجيب العملاء اللي موعد متابعتهم القادمة خلال X أيام. استخدمها للتذكير بمواعيد المتابعة.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "days": {"type": "integer", "description": "عدد الأيام القادمة (افتراضي 3)"}
+            },
+            "required": []
+        }
+    },
+    {
         "name": "update_project_status",
         "description": "يحدّث بيانات مشروع في Bahr OS — status, deadline, completion, last_updated, notes. استخدمها بعد ما أحمد يوافق على التحديث.",
         "input_schema": {
@@ -911,6 +972,106 @@ def _execute_tool(tool_name, tool_input, chat_id):
                     result = f"❌ مش قادر أوصل للـ repo: {r.status_code}"
             except Exception as ex:
                 result = f"❌ خطأ في جلب حالة الـ backup: {ex}"
+
+        elif tool_name == "add_client_followup":
+            from services.firebase_service import firestore_db
+            from utils.time_utils import now_cairo
+            import uuid
+            try:
+                client_id = "CLT-" + str(uuid.uuid4())[:8].upper()
+                data = {
+                    "client_id":           client_id,
+                    "name":                tool_input.get("name", ""),
+                    "phone":               tool_input.get("phone", ""),
+                    "type":                tool_input.get("type", "lead"),
+                    "status":              tool_input.get("status", "interested"),
+                    "last_contact_date":   tool_input.get("last_contact_date", ""),
+                    "last_contact_method": tool_input.get("last_contact_method", ""),
+                    "last_reply":          tool_input.get("last_reply", ""),
+                    "next_followup_date":  tool_input.get("next_followup_date", ""),
+                    "project_id":          tool_input.get("project_id", ""),
+                    "notes":               tool_input.get("notes", ""),
+                    "created_at":          now_cairo().isoformat()
+                }
+                firestore_db.collection("client_followups").document(client_id).set(data)
+                result = f"✅ تم اضافة العميل {data['name']} | ID: {client_id}"
+            except Exception as ex:
+                result = f"❌ خطأ: {ex}"
+
+        elif tool_name == "update_client_followup":
+            from services.firebase_service import firestore_db
+            from utils.time_utils import now_cairo
+            client_id = tool_input.get("client_id", "")
+            if not client_id:
+                result = "❌ محتاج client_id"
+            else:
+                try:
+                    update_data = {"updated_at": now_cairo().isoformat()}
+                    for field in ["status","last_contact_date","last_contact_method","last_reply","next_followup_date","notes"]:
+                        if field in tool_input:
+                            update_data[field] = tool_input[field]
+                    firestore_db.collection("client_followups").document(client_id).set(update_data, merge=True)
+                    result = f"✅ تم تحديث العميل {client_id}"
+                except Exception as ex:
+                    result = f"❌ خطأ: {ex}"
+
+        elif tool_name == "get_client_followups":
+            from services.firebase_service import firestore_db
+            try:
+                limit  = int(tool_input.get("limit", 20))
+                status = tool_input.get("status", "")
+                ctype  = tool_input.get("type", "")
+                docs   = firestore_db.collection("client_followups").limit(limit).stream()
+                clients = []
+                for doc in docs:
+                    d = doc.to_dict()
+                    if status and d.get("status") != status: continue
+                    if ctype  and d.get("type")   != ctype:  continue
+                    clients.append(d)
+                if not clients:
+                    result = "مفيش عملاء مسجلين"
+                else:
+                    lines = []
+                    for c in clients:
+                        lines.append(f"• {c.get('name')} ({c.get('phone')}) | {c.get('status')} | آخر تواصل: {c.get('last_contact_date','—')}")
+                    result = f"قائمة العملاء ({len(clients)}):
+
+" + "
+".join(lines)
+            except Exception as ex:
+                result = f"❌ خطأ: {ex}"
+
+        elif tool_name == "get_upcoming_followups":
+            from services.firebase_service import firestore_db
+            from utils.time_utils import now_cairo
+            from datetime import timedelta
+            try:
+                days = int(tool_input.get("days", 3))
+                now  = now_cairo()
+                docs = firestore_db.collection("client_followups").stream()
+                upcoming = []
+                for doc in docs:
+                    d = doc.to_dict()
+                    nfd = d.get("next_followup_date", "")
+                    if nfd:
+                        try:
+                            from datetime import datetime
+                            followup_date = datetime.fromisoformat(nfd)
+                            if 0 <= (followup_date - now).days <= days:
+                                upcoming.append(d)
+                        except: pass
+                if not upcoming:
+                    result = f"مفيش متابعات خلال {days} أيام"
+                else:
+                    lines = []
+                    for c in upcoming:
+                        lines.append(f"• {c.get('name')} ({c.get('phone')}) | {c.get('next_followup_date')}")
+                    result = f"متابعات خلال {days} أيام:
+
+" + "
+".join(lines)
+            except Exception as ex:
+                result = f"❌ خطأ: {ex}"
 
         elif tool_name == "update_project_status":
             from services.firebase_service import firestore_db
