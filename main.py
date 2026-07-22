@@ -410,15 +410,11 @@ def health():
     return jsonify({"status": "ok", "service": "ADAM"}), 200
 
 def run_flask():
-    """تشغيل Flask بـ Gunicorn — worker واحد فقط"""
-    import subprocess
-    subprocess.Popen([
-        "gunicorn",
-        "--bind", "0.0.0.0:8080",
-        "--workers", "1",
-        "--timeout", "120",
-        "main:flask_app"
-    ])
+    """تشغيل Flask في thread منفصل"""
+    import logging
+    log = logging.getLogger('werkzeug')
+    log.setLevel(logging.ERROR)
+    flask_app.run(host="0.0.0.0", port=8080, debug=False, use_reloader=False)
 
 # ============================================================
 # Main
