@@ -456,6 +456,22 @@ TOOLS = [
         "input_schema": {"type": "object", "properties": {}, "required": []}
     },
     {
+        "name": "update_project_status",
+        "description": "يحدّث بيانات مشروع في Bahr OS — status, deadline, completion, last_updated, notes. استخدمها بعد ما أحمد يوافق على التحديث.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "project_id":  {"type": "string",  "description": "ID المشروع مثل PRJ-MRE9OHLK"},
+                "status":      {"type": "string",  "description": "حالة المشروع: active / delayed / suspended / completed"},
+                "deadline":    {"type": "string",  "description": "تاريخ التسليم YYYY-MM-DD"},
+                "completion":  {"type": "integer", "description": "نسبة الإنجاز 0-100"},
+                "last_report": {"type": "string",  "description": "تاريخ آخر تقرير YYYY-MM-DD"},
+                "notes":       {"type": "string",  "description": "ملاحظات إضافية"}
+            },
+            "required": ["project_id"]
+        }
+    },
+    {
         "name": "get_eye_expert_prompt",
         "description": "يجيب الـ System Prompt الحالي بتاع عين الخبير من Firestore. استخدمها لما أحمد يسأل عن prompt عين الخبير أو يريد مراجعته.",
         "input_schema": {"type": "object", "properties": {}, "required": []}
@@ -895,6 +911,32 @@ def _execute_tool(tool_name, tool_input, chat_id):
                     result = f"❌ مش قادر أوصل للـ repo: {r.status_code}"
             except Exception as ex:
                 result = f"❌ خطأ في جلب حالة الـ backup: {ex}"
+
+        elif tool_name == "update_project_status":
+            from services.firebase_service import firestore_db
+            from utils.time_utils import now_cairo
+
+            project_id = tool_input.get("project_id", "").strip()
+            if not project_id:
+                result = "❌ محتاج project_id"
+            else:
+                try:
+                    update_data = {"last_updated": now_cairo().isoformat()}
+
+                    if "status"      in tool_input: update_data["status"]      = tool_input["status"]
+                    if "deadline"    in tool_input: update_data["deadline"]    = tool_input["deadline"]
+                    if "completion"  in tool_input: update_data["completion"]  = tool_input["completion"]
+                    if "last_report" in tool_input: update_data["last_report"] = tool_input["last_report"]
+                    if "notes"       in tool_input: update_data["notes"]       = tool_input["notes"]
+
+                    firestore_db.collection("projects").document(project_id).set(
+                        update_data, merge=True
+                    )
+
+                    lines = [f"  • {k}: {v}" for k, v in update_data.items()]
+                    result = f"✅ تم تحديث {project_id}:\n" + "\n".join(lines)
+                except Exception as ex:
+                    result = f"❌ خطأ في التحديث: {ex}"
 
         elif tool_name == "get_eye_expert_prompt":
             from services.firebase_service import firestore_db

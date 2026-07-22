@@ -353,6 +353,73 @@ def check_recurring_reminders_job():
         logger.error(f"❌ Recurring reminders error: {e}")
 
 
+def check_projects_job():
+    """فحص المشاريع يومياً الساعة 9:30 صباحاً"""
+    try:
+        from services.firebase_service import firestore_db
+        from utils.time_utils import now_cairo
+        from datetime import datetime, timedelta
+
+        chat_id = get_chat_id()
+        if not chat_id:
+            return
+
+        now = now_cairo()
+        alerts = []
+
+        docs = firestore_db.collection("projects").stream()
+        for doc in docs:
+            data = doc.to_dict()
+            project_id = doc.id
+            status     = data.get("status", "active")
+
+            if status == "completed":
+                continue
+
+            # تنبيه 1: مفيش تحديث من أكتر من 5 أيام
+            last_updated = data.get("last_updated")
+            if last_updated:
+                try:
+                    lu = datetime.fromisoformat(last_updated)
+                    if (now - lu).days >= 5:
+                        alerts.append(
+                            f"⚠️ {project_id}: مفيش تحديث من {(now - lu).days} أيام"
+                        )
+                except:
+                    pass
+
+            # تنبيه 2: deadline قريب وإنجاز قليل
+            deadline    = data.get("deadline")
+            completion  = data.get("completion", 0)
+            if deadline:
+                try:
+                    dl = datetime.fromisoformat(deadline)
+                    days_left = (dl - now).days
+                    if days_left <= 14 and completion < 70:
+                        alerts.append(
+                            f"🔶 {project_id}: {days_left} يوم للتسليم والإنجاز {completion}% بس"
+                        )
+                except:
+                    pass
+
+            # تنبيه 3: status متأخر
+            if status == "delayed":
+                alerts.append(f"❌ {project_id}: الحالة متأخر")
+
+        if alerts:
+            message = "🏗️ تنبيهات مشاريع بحر:
+
+" + "
+".join(alerts)
+            bot.send_message(chat_id, message)
+            logger.info(f"✅ Projects alert sent: {len(alerts)} alerts")
+        else:
+            logger.info("✅ Projects check: كل حاجة تمام")
+
+    except Exception as e:
+        logger.error(f"❌ Projects check error: {e}")
+
+
 def backup_job():
     """💾 Backup يومي لكل Firestore collections — الساعة 2:00 صباحاً"""
     try:
@@ -411,9 +478,6 @@ def health():
 
 def run_flask():
     """تشغيل Flask في thread منفصل"""
-    import logging
-    log = logging.getLogger('werkzeug')
-    log.setLevel(logging.ERROR)
     flask_app.run(host="0.0.0.0", port=8080, debug=False, use_reloader=False)
 
 # ============================================================
@@ -442,6 +506,8 @@ if __name__ == "__main__":
                          id='morning', timezone='Africa/Cairo', misfire_grace_time=60)
         scheduler.add_job(weekly_report_job, 'cron', day_of_week='fri', hour=13, minute=0,
                          id='weekly_report', timezone='Africa/Cairo', misfire_grace_time=300)
+        scheduler.add_job(check_projects_job, 'cron', hour=9, minute=30,
+                         id='projects_check', timezone='Africa/Cairo', misfire_grace_time=300)
         scheduler.add_job(backup_job, 'cron', hour=2, minute=0,
                          id='daily_backup', timezone='Africa/Cairo', misfire_grace_time=300)
 
