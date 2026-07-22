@@ -1034,10 +1034,9 @@ def _execute_tool(tool_name, tool_input, chat_id):
                     lines = []
                     for c in clients:
                         lines.append(f"• {c.get('name')} ({c.get('phone')}) | {c.get('status')} | آخر تواصل: {c.get('last_contact_date','—')}")
-                    result = f"قائمة العملاء ({len(clients)}):
-
-" + "
-".join(lines)
+                    count = str(len(clients))
+                    joined = chr(10).join(lines)
+                    result = "قائمة العملاء (" + count + "):" + chr(10) + chr(10) + joined
             except Exception as ex:
                 result = f"❌ خطأ: {ex}"
 
@@ -1061,15 +1060,13 @@ def _execute_tool(tool_name, tool_input, chat_id):
                                 upcoming.append(d)
                         except: pass
                 if not upcoming:
-                    result = f"مفيش متابعات خلال {days} أيام"
+                    result = "مفيش متابعات خلال " + str(days) + " أيام"
                 else:
                     lines = []
                     for c in upcoming:
                         lines.append(f"• {c.get('name')} ({c.get('phone')}) | {c.get('next_followup_date')}")
-                    result = f"متابعات خلال {days} أيام:
-
-" + "
-".join(lines)
+                    joined2 = chr(10).join(lines)
+                    result = "متابعات خلال " + str(days) + " ايام:" + chr(10) + chr(10) + joined2
             except Exception as ex:
                 result = f"❌ خطأ: {ex}"
 
