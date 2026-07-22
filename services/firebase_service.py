@@ -691,6 +691,77 @@ def update_human_model_bulk(data: dict):
 BAHR_SITES_COLLECTION = "bahrSites"
 DEPA_PROJECTS_COLLECTION = "depaProjects"
 
+def create_bahr_project(client, area, supervisors=None, status="active"):
+    """إنشاء مشروع جديد في Bahr OS"""
+    if firestore_db is None:
+        return None, "Firestore مش متصل"
+    try:
+        import uuid
+        from utils.time_utils import now_cairo
+        project_id = "PRJ-" + str(uuid.uuid4())[:8].upper()
+        data = {
+            "client": client,
+            "area": float(area) if area else 0,
+            "status": status,
+            "allowedSupervisors": supervisors or [],
+            "createdBy": "ADAM",
+            "createdAt": now_cairo().isoformat(),
+            "items": []
+        }
+        firestore_db.collection("projects").document(project_id).set(data)
+        logger.info(f"✅ مشروع جديد: {project_id} — {client}")
+        return project_id, "تم"
+    except Exception as e:
+        logger.error(f"❌ خطأ في إنشاء المشروع: {e}")
+        return None, str(e)
+
+def update_bahr_project(project_id, **kwargs):
+    """تعديل بيانات مشروع موجود"""
+    if firestore_db is None:
+        return False, "Firestore مش متصل"
+    try:
+        from utils.time_utils import now_cairo
+        update_data = {"updatedAt": now_cairo().isoformat()}
+        if "client"      in kwargs: update_data["client"]             = kwargs["client"]
+        if "area"        in kwargs: update_data["area"]               = float(kwargs["area"])
+        if "supervisors" in kwargs: update_data["allowedSupervisors"] = kwargs["supervisors"]
+        if "status"      in kwargs: update_data["status"]             = kwargs["status"]
+        firestore_db.collection("projects").document(project_id).set(update_data, merge=True)
+        return True, "تم التعديل"
+    except Exception as e:
+        return False, str(e)
+
+def delete_bahr_project(project_id):
+    """حذف مشروع"""
+    if firestore_db is None:
+        return False, "Firestore مش متصل"
+    try:
+        firestore_db.collection("projects").document(project_id).delete()
+        return True, "تم الحذف"
+    except Exception as e:
+        return False, str(e)
+
+def add_bahr_site(project_id, site_name, supervisors=None):
+    """إضافة موقع جديد في Bahr Sites"""
+    if firestore_db is None:
+        return None, "Firestore مش متصل"
+    try:
+        import uuid
+        from utils.time_utils import now_cairo
+        site_id = "SITE-" + str(uuid.uuid4())[:8].upper()
+        data = {
+            "projectId": project_id,
+            "name": site_name,
+            "allowedSupervisors": supervisors or [],
+            "status": "نشط",
+            "createdAt": now_cairo().isoformat(),
+            "items": []
+        }
+        firestore_db.collection(BAHR_SITES_COLLECTION).document(site_id).set(data)
+        return site_id, "تم"
+    except Exception as e:
+        return None, str(e)
+
 def get_bahr_projects(limit=20):
     """جلب مشاريع Bahr OS من Firestore (read-only)"""
     if firestore_db is None:

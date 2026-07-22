@@ -74,6 +74,10 @@ def build_system_prompt_parts(pending_tasks=None, memory_summary=None):
 - update_human_model: حدّث أو صحح معلومة عن أحمد في نموذجه الشخصي
 - get_weather: اجلب الطقس الحالي للمواقع (البيت/6 أكتوبر/التجمع/الكل) — استخدمها تلقائياً في الـ Morning Brief
 - get_bahr_projects: اجلب كل مشاريع Bahr OS (العميل، المساحة، الحالة، المشرفين)
+- create_project: انشئ مشروع جديد في Bahr OS
+- update_project_details: عدّل بيانات مشروع (عميل/مساحة/مشرفين/حالة)
+- delete_project: احذف مشروع (بعد تأكيد من أحمد فقط)
+- add_site: اضف موقع جديد في Bahr Sites مرتبط بمشروع
 - get_bahr_sites: اجلب مواقع Bahr Sites
 - get_project_details: اجلب تفاصيل مشروع معين بالـ ID
 - create_recurring_reminder: اعمل تذكير متكرر (كل يوم، كل أسبوع، كل X دقيقة)
@@ -517,6 +521,59 @@ TOOLS = [
                 "days": {"type": "integer", "description": "عدد الأيام القادمة (افتراضي 3)"}
             },
             "required": []
+        }
+    },
+    {
+        "name": "create_project",
+        "description": "ينشئ مشروع جديد في Bahr OS. استخدمها لما أحمد يقول اضف مشروع جديد.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "client":      {"type": "string", "description": "اسم العميل"},
+                "area":        {"type": "number", "description": "المساحة بالمتر المربع"},
+                "supervisors": {"type": "array",  "items": {"type": "string"}, "description": "إيميلات المشرفين"},
+                "status":      {"type": "string", "description": "حالة المشروع (افتراضي: active)"}
+            },
+            "required": ["client"]
+        }
+    },
+    {
+        "name": "update_project_details",
+        "description": "يعدل بيانات مشروع موجود — العميل، المساحة، المشرفين، الحالة.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "project_id":  {"type": "string", "description": "ID المشروع"},
+                "client":      {"type": "string", "description": "اسم العميل الجديد"},
+                "area":        {"type": "number", "description": "المساحة الجديدة"},
+                "supervisors": {"type": "array",  "items": {"type": "string"}, "description": "إيميلات المشرفين الجدد"},
+                "status":      {"type": "string", "description": "الحالة الجديدة"}
+            },
+            "required": ["project_id"]
+        }
+    },
+    {
+        "name": "delete_project",
+        "description": "يحذف مشروع من Bahr OS. استخدمها بعد تأكيد من أحمد فقط.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "project_id": {"type": "string", "description": "ID المشروع"}
+            },
+            "required": ["project_id"]
+        }
+    },
+    {
+        "name": "add_site",
+        "description": "يضيف موقع جديد في Bahr Sites مرتبط بمشروع.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "project_id":  {"type": "string", "description": "ID المشروع"},
+                "site_name":   {"type": "string", "description": "اسم الموقع"},
+                "supervisors": {"type": "array",  "items": {"type": "string"}, "description": "إيميلات المشرفين"}
+            },
+            "required": ["project_id", "site_name"]
         }
     },
     {
@@ -1128,6 +1185,42 @@ def _execute_tool(tool_name, tool_input, chat_id):
                     result = "متابعات خلال " + str(days) + " ايام:" + chr(10) + chr(10) + joined2
             except Exception as ex:
                 result = f"❌ خطأ: {ex}"
+
+        elif tool_name == "create_project":
+            from services.firebase_service import create_bahr_project
+            client      = tool_input.get("client", "")
+            area        = tool_input.get("area", 0)
+            supervisors = tool_input.get("supervisors", [])
+            status      = tool_input.get("status", "active")
+            project_id, msg = create_bahr_project(client, area, supervisors, status)
+            if project_id:
+                result = "تم انشاء المشروع: " + project_id + " — العميل: " + client
+            else:
+                result = "فشل انشاء المشروع: " + msg
+
+        elif tool_name == "update_project_details":
+            from services.firebase_service import update_bahr_project
+            project_id = tool_input.get("project_id", "")
+            kwargs = {k: v for k, v in tool_input.items() if k != "project_id"}
+            ok, msg = update_bahr_project(project_id, **kwargs)
+            result = "تم تعديل المشروع " + project_id if ok else "فشل: " + msg
+
+        elif tool_name == "delete_project":
+            from services.firebase_service import delete_bahr_project
+            project_id = tool_input.get("project_id", "")
+            ok, msg = delete_bahr_project(project_id)
+            result = "تم حذف المشروع " + project_id if ok else "فشل: " + msg
+
+        elif tool_name == "add_site":
+            from services.firebase_service import add_bahr_site
+            project_id  = tool_input.get("project_id", "")
+            site_name   = tool_input.get("site_name", "")
+            supervisors = tool_input.get("supervisors", [])
+            site_id, msg = add_bahr_site(project_id, site_name, supervisors)
+            if site_id:
+                result = "تم اضافة الموقع: " + site_id + " — " + site_name
+            else:
+                result = "فشل اضافة الموقع: " + msg
 
         elif tool_name == "delete_expense":
             from services.firebase_service import delete_expense
