@@ -95,7 +95,11 @@ class AdamMind:
         "مشروع", "تذكير", "جراف", "مصاريف", "فاتورة", "قسط",
         "فريق", "عميل", "موقع", "تقرير",
         # English
-        "project", "remind", "save", "show", "delete", "graph"
+        "project", "remind", "save", "show", "delete", "graph",
+        # قائمة ADAM
+        "الطقس", "المصاريف", "المشاريع", "التذكيرات", "الذاكرة", "الخبير",
+        "الاقساط", "الجراف", "ملخص", "حالة", "متأخر", "جاية",
+        "اوك", "ماشي", "تمام", "آه", "اه", "يلا", "ok", "fahem", "فاهم"
     ]
 
     def thinking(self, situation: str, context: dict = None) -> list:
