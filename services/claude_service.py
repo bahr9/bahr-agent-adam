@@ -221,17 +221,6 @@ TOOLS = [
         "input_schema": {"type": "object", "properties": {}, "required": []}
     },
     {
-        "name": "delete_expense",
-        "description": "يحذف مصروف بالـ ID بتاعه. لازم تستخدم list_expenses الأول عشان تجيب الـ ID الصح، وبعدين تمرره هنا.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "expense_id": {"type": "string", "description": "الـ ID بتاع المصروف اللي هيتحذف (مش الاسم، الـ ID نفسه)"}
-            },
-            "required": ["expense_id"]
-        }
-    },
-    {
         "name": "expense_summary",
         "description": "يجيب ملخص إجمالي المصاريف (الإجمالي الكلي + التقسيم حسب كل تصنيف). استخدمها لما أحمد يسأل 'اصرفت كام' أو 'إجمالي المصاريف إيه'.",
         "input_schema": {
@@ -801,14 +790,6 @@ def _execute_tool(tool_name, tool_input, chat_id):
                 ]
                 result = "\n".join(lines)
 
-        elif tool_name == "delete_expense":
-            expense_id = tool_input.get("expense_id", "")
-            if not expense_id:
-                result = "محتاج الـ ID بتاع المصروف -- استخدم list_expenses الأول."
-            else:
-                ok, msg = delete_expense(expense_id)
-                result = "تم حذف المصروف." if ok else ("فشل الحذف: " + msg)
-        
         elif tool_name == "expense_summary":
             summary = get_expense_summary(
                 category=tool_input.get("category"),
