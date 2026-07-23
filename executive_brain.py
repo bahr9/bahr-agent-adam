@@ -144,12 +144,7 @@ class ExecutiveBrain:
             # Stage 1: Intent Analysis
             intent = self._stage_intent(event)
 
-            # Short-circuit: لو محتاج توضيح
-            if intent.requires_clarification:
-                reason = intent.missing_info or "مش فاهم المقصود"
-                return "محتاج توضيح: " + reason + "\n\nتقدر توضحلي اكتر؟"
-
-            # Stage 2: Context Collection
+            # Stage 2: Context Collection -- دايماً قبل أي قرار
             context = self._stage_context(intent, event)
 
             # Stage 3: Planning
@@ -221,13 +216,10 @@ class ExecutiveBrain:
                 "intent": intent.intent,
             }
 
-            # History + Memory -- للـ chat و question فقط
-            needs_history = intent.intent in {
-                "chat", "question", "unknown", "get_query",
-                "morning_brief", "add_operation", "update_operation"
-            }
-
-            if needs_history and event.chat_id:
+            # History + Memory -- دايماً للكل
+            # السبب: الرسايل القصيرة زي "آه امسح" أو "لأ" محتاجة السياق
+            # حتى لو الـ intent واضح -- من غير history Claude مش هيعرف إيه المقصود
+            if event.chat_id:
                 from services.firebase_service import get_conversation_history
                 from services.memory_service import get_memory
                 from services.claude_service import format_history_for_claude
@@ -235,9 +227,6 @@ class ExecutiveBrain:
                 stored = get_conversation_history(event.chat_id, limit=50)
                 context["history"] = format_history_for_claude(stored, limit=15)
                 context["memory"] = get_memory(event.chat_id)
-            else:
-                context["history"] = []
-                context["memory"] = None
 
             return context
 
@@ -353,13 +342,17 @@ class ExecutiveBrain:
 
     def _stage_learn(self, event: BahrEvent, result: str) -> None:
         """
-        حفظ المحادثة في Firestore.
+        حفظ المحادثة وتحديث الذاكرة الدائمة.
 
-        v1: save_conversation فقط.
-        update_memory متوقف مؤقتاً.
+        TEMPORARY COMPATIBILITY:
+        update_memory شغال دلوقتي عشان الذاكرة الدائمة جزء أساسي من تجربة ADAM.
+        لما LearningDecision يكتمل في v2، هيتشال الاستدعاء ده وتتنقل
+        المسؤولية لـ LearningDecision بالكامل.
 
-        السبب: طول الرسالة مش دليل على الأهمية.
-        المستقبل: LearningDecision object بيقرر ايه يتحفظ وليه.
+        TODO v2:
+            decision = self._decide_learning(event, result, intent)
+            if decision.should_store:
+                update_memory(chat_id, event.text, result)
 
         Learning مش بتوقف الـ pipeline لو فشل.
         """
@@ -368,12 +361,13 @@ class ExecutiveBrain:
                 return
 
             from services.firebase_service import save_conversation
+            from services.memory_service import update_memory
+
             save_conversation(event.chat_id, event.text, result)
 
-            # TODO v2: LearningDecision
-            # decision = self._decide_learning(event, result, intent)
-            # if decision.should_store:
-            #     update_memory(chat_id, event.text, result)
+            # Temporary Compatibility -- بيتشال لما LearningDecision يكتمل
+            if len(event.text) > 15 or len(result) > 60:
+                update_memory(event.chat_id, event.text, result)
 
         except Exception as e:
             logger.warning("Learning stage warning: " + str(e))
