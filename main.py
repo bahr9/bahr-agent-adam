@@ -197,15 +197,14 @@ def handle_callback(call):
 @bot.message_handler(func=lambda message: (
     message.text is not None and
     not message.text.startswith('/') and
-    not any(t in message.text for t in MENU_TRIGGERS)
+    (
+        not any(t in message.text for t in MENU_TRIGGERS) or
+        len(message.text.strip().split()) > 4
+    )
 ))
 def handle_message(message):
     """معالجة الرسائل النصية"""
     try:
-        # تجاهل رسائل القائمة
-        if message.text and any(t in message.text for t in MENU_TRIGGERS):
-            return
-
         set_chat_id(message.chat.id)
         bot.send_chat_action(message.chat.id, 'typing')
 
