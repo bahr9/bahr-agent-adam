@@ -34,7 +34,7 @@ def safe_send_message(chat_id, text, max_retries=3, **kwargs):
 config = {"chat_id": None, "reminder_time": "08:00"}
 
 def load_config():
-    """تحميل الإعدادات"""
+    """تحميل الإعدادات — من الملف المحلي أو Firestore"""
     global config
     if os.path.exists(CONFIG_FILE):
         try:
@@ -42,6 +42,17 @@ def load_config():
                 config = json.load(f)
         except Exception as e:
             logger.error(f"❌ خطأ في تحميل الإعدادات: {e}")
+    # لو chat_id مش موجود → اجبه من Firestore
+    if not config.get("chat_id"):
+        try:
+            from services.firebase_service import firestore_db
+            if firestore_db:
+                doc = firestore_db.collection("system_flags").document("chat_id").get()
+                if doc.exists:
+                    config["chat_id"] = doc.to_dict().get("chat_id")
+                    logger.info("✅ chat_id استُرد من Firestore")
+        except Exception:
+            pass
 
 def save_config():
     """حفظ الإعدادات"""
@@ -56,9 +67,18 @@ def get_chat_id():
     return config.get("chat_id")
 
 def set_chat_id(chat_id):
-    """حفظ chat_id"""
+    """حفظ chat_id — محلياً + Firestore backup"""
     config["chat_id"] = chat_id
     save_config()
+    # Firestore backup عشان متضيعش بعد restart
+    try:
+        from services.firebase_service import firestore_db
+        if firestore_db:
+            firestore_db.collection("system_flags").document("chat_id").set(
+                {"chat_id": chat_id, "updated_at": str(__import__("datetime").datetime.now())}
+            )
+    except Exception:
+        pass  # مش هيكراش لو Firebase مش شغال
 
 def get_reminder_time():
     """جلب وقت التذكير الصباحي"""
@@ -142,7 +162,7 @@ def get_eye_expert_keyboard():
 # 📋 الأوامر الأساسية
 # ============================================================
 
-@bot.message_handler(commands=['start', 'help'])
+@bot.message_handler(commands=['help'])
 def send_welcome(message):
     """أمر البدء"""
     try:

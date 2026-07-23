@@ -168,6 +168,15 @@ def save_conversation(user_id, user_message, assistant_response):
     
     try:
         doc_ref = firestore_db.collection(CONVERSATIONS_COLLECTION).document(str(user_id))
+        # فحص الحجم — لو اقترب من الـ 200 رسالة امسح القديم
+        try:
+            existing = doc_ref.get()
+            if existing.exists:
+                msgs = existing.to_dict().get("messages", [])
+                if len(msgs) >= 200:
+                    doc_ref.update({"messages": msgs[-100:]})  # سيب آخر 100 بس
+        except Exception:
+            pass
         doc_ref.set({
             "messages": firestore.ArrayUnion([
                 {
@@ -1053,9 +1062,10 @@ def get_upcoming_deadlines(user_id: str, days_ahead: int = 30) -> list:
         now = dt.datetime.now()
         future = now + dt.timedelta(days=days_ahead)
         
-        # جلب كل الملاحظات
+        # جلب الملاحظات بـ limit عشان ما تأخرش
         docs = firestore_db.collection(MEMORY_NOTES_COLLECTION)\
             .where("user_id", "==", str(user_id))\
+            .limit(500)\
             .stream()
         
         deadlines = []
