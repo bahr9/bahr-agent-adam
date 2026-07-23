@@ -221,6 +221,17 @@ TOOLS = [
         "input_schema": {"type": "object", "properties": {}, "required": []}
     },
     {
+        "name": "delete_expense",
+        "description": "يحذف مصروف بالـ ID بتاعه. لازم تستخدم list_expenses الأول عشان تجيب الـ ID الصح، وبعدين تمرره هنا.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "expense_id": {"type": "string", "description": "الـ ID بتاع المصروف اللي هيتحذف (مش الاسم، الـ ID نفسه)"}
+            },
+            "required": ["expense_id"]
+        }
+    },
+    {
         "name": "expense_summary",
         "description": "يجيب ملخص إجمالي المصاريف (الإجمالي الكلي + التقسيم حسب كل تصنيف). استخدمها لما أحمد يسأل 'اصرفت كام' أو 'إجمالي المصاريف إيه'.",
         "input_schema": {
@@ -679,7 +690,7 @@ def _resolve_node_id(node_id, label):
 def _execute_tool(tool_name, tool_input, chat_id):
     """تنفيذ الأداة اللي طلبها الموديل، وإرجاع نتيجة نصية توصفله يحصل إيه"""
     from services.firebase_service import graph_list_nodes, graph_add_node, graph_edit_node, graph_delete_node
-    from services.firebase_service import add_expense, get_expenses, get_expense_summary
+    from services.firebase_service import add_expense, get_expenses, get_expense_summary, delete_expense
     from services.reminder_service import add_reminder
     from services import loan_service
     from datetime import timedelta
@@ -785,10 +796,18 @@ def _execute_tool(tool_name, tool_input, chat_id):
                 result = "مفيش مصاريف مسجلة لسه."
             else:
                 lines = [
-                    f"- {e.get('amount')} جنيه | {e.get('category')} | {e.get('description', '')} | {e.get('date', '')}"
+                    "- [ID: " + e.get("id", "?") + "] " + str(e.get("amount", "")) + " جنيه | " + str(e.get("category", "")) + " | " + str(e.get("description", "")) + " | " + str(e.get("date", ""))
                     for e in expenses
                 ]
                 result = "\n".join(lines)
+
+        elif tool_name == "delete_expense":
+            expense_id = tool_input.get("expense_id", "")
+            if not expense_id:
+                result = "محتاج الـ ID بتاع المصروف -- استخدم list_expenses الأول."
+            else:
+                ok, msg = delete_expense(expense_id)
+                result = "تم حذف المصروف." if ok else ("فشل الحذف: " + msg)
         
         elif tool_name == "expense_summary":
             summary = get_expense_summary(
