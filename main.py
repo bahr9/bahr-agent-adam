@@ -322,42 +322,30 @@ scheduler = BackgroundScheduler(timezone="Africa/Cairo")
 def check_loans_job():
     """فحص الأقساط القريبة — كل يوم الساعة 9 صباحاً"""
     try:
-        from services.loan_service import LoanService
+        from services.loan_service import get_month_installments, get_current_month_key
         from utils.time_utils import now_cairo
-        from datetime import timedelta
 
         chat_id = get_chat_id()
         if not chat_id:
             return
 
-        loan_service = LoanService()
-        installments = loan_service.get_month_installments()
-        now = now_cairo()
+        month_key = get_current_month_key()
+        installments, total = get_month_installments(month_key)
 
-        urgent = []
-        for inst in installments:
-            if inst.get("paid"):
-                continue
-            # لو القسط في الـ 3 أيام الجاية
-            try:
-                from datetime import datetime
-                # الأقساط في أول الشهر عادةً
-                days_remaining = inst.get("days_remaining", 999)
-                if isinstance(days_remaining, (int, float)) and days_remaining <= 3:
-                    urgent.append(inst)
-            except:
-                continue
+        urgent = [i for i in installments if not i.get("paid")]
 
         if urgent:
-            lines = [f"- {i.get('program', '')}: {i.get('amount', '')} جنيه" for i in urgent]
-            message = "⚠️ تنبيه أقساط قريبة:" + chr(10) + chr(10).join(lines)
-
-
+            lines = ["- " + i.get("program", "") + ": " + str(i.get("amount", "")) + " جنيه"
+                     for i in urgent]
+            message = "تنبيه اقساط الشهر ده:" + chr(10) + chr(10).join(lines)
+            message += chr(10) + "الاجمالي: " + str(total) + " جنيه"
             bot.send_message(chat_id, message)
-            logger.info(f"✅ Loan alert sent: {len(urgent)} installments")
+            logger.info("✅ Loan alert sent: " + str(len(urgent)) + " installments")
+        else:
+            logger.info("✅ Loans check: كل الاقساط متدفعة")
 
     except Exception as e:
-        logger.error(f"❌ Loans check error: {e}")
+        logger.error("❌ Loans check error: " + str(e))
 
 
 def weekly_report_job():
