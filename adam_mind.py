@@ -1,259 +1,243 @@
 # -*- coding: utf-8 -*-
 """
-🧠 THE ADAM MIND — v1
+ADAM MIND v2
 =====================================================
-ترجمة THE_ADAM_MIND.md لكود Python.
+المسؤولية الوحيدة: تحليل النية (Intent Analysis)
 
-ثلاث عمليات معرفية فقط:
-    Thinking  → يولد فهوم محتملة
-    Judgment  → يختار الأكثر منطقية
-    Decision  → يحدد الالتزام المعرفي
+لا يعرف Firebase / Weather / Graph / اي Service.
+لا ياخد قرارات تنفيذ.
+بيعرف بس: يفهم الكلام ويحلله.
 
-Execution خارج النطاق.
+Fast Path  -> Keyword matching  (zero cost, zero latency)
+Slow Path  -> Claude Haiku      (cheap, for ambiguous messages)
+
+ما اتغير من v1:
+  - اتشال: Thinking / Judgment / Decision
+  - اتشال: CandidateUnderstanding / JudgmentResult / CognitiveCommitment
+  + اتضاف: IntentAnalysis -- وحدة الناتج الوحيدة
+  + اتضاف: _fast_path  -- keyword map
+  + اتضاف: _deep_analyze -- Haiku fallback
 """
 
+import json
 from dataclasses import dataclass, field
 from typing import Optional
 from enum import Enum
+from utils.logger import logger
 
 
 # ============================================================
-# 📊 Epistemic States — حالات اليقين
-# من ADAM_HUMILITY.md
+# Confidence
 # ============================================================
 
 class Confidence(Enum):
-    CERTAIN   = "certain"    # متأكد — معلومة موثقة
-    PROBABLE  = "probable"   # محتمل — استنتاج منطقي
-    UNCERTAIN = "uncertain"  # مش متأكد — محتاج توضيح
+    CERTAIN   = "certain"
+    PROBABLE  = "probable"
+    UNCERTAIN = "uncertain"
 
 
 # ============================================================
-# 💭 Thinking Output
-# ============================================================
-
-@dataclass
-class CandidateUnderstanding:
-    """فهم محتمل للموقف"""
-    description: str
-    confidence: Confidence
-    reasoning: str
-    requires_clarification: bool = False
-
-
-# ============================================================
-# ⚖️ Judgment Output
+# IntentAnalysis -- الناتج الوحيد
 # ============================================================
 
 @dataclass
-class JudgmentResult:
-    """ناتج تقييم الفهوم المحتملة"""
-    selected: CandidateUnderstanding
-    confidence: Confidence
-    acknowledged_uncertainty: str
-    alternatives_count: int = 0
+class IntentAnalysis:
+    """
+    ده اللي بيرجعه Adam Mind للـ Executive Brain.
+    EB هو اللي بيقرر بناءً عليه إيه اللي هيتعمل.
+    """
+    intent:                 str
+    goal:                   str
+    confidence:             Confidence
+    missing_info:           Optional[str]
+    entities:               dict
+    requires_clarification: bool
 
-    def is_reliable(self) -> bool:
-        return self.confidence in [Confidence.CERTAIN, Confidence.PROBABLE]
-
-
-# ============================================================
-# 🎯 Decision Output
-# ============================================================
-
-@dataclass
-class CognitiveCommitment:
-    """الالتزام المعرفي — ناتج عملية Decision"""
-    commitment: str
-    confidence: Confidence
-    requires_human_input: bool = False
-    human_input_reason: Optional[str] = None
-    action_direction: Optional[str] = None
-
-    def should_ask_clarification(self) -> bool:
-        return self.requires_human_input and self.confidence == Confidence.UNCERTAIN
+    def is_clear(self) -> bool:
+        return (
+            self.confidence in [Confidence.CERTAIN, Confidence.PROBABLE]
+            and not self.requires_clarification
+        )
 
 
 # ============================================================
-# 🧠 THE ADAM MIND
+# AdamMind
 # ============================================================
 
 class AdamMind:
     """
-    THE ADAM MIND — العقل المعرفي لـ ADAM.
+    خبير التحليل اللغوي -- مش صاحب قرار.
 
-    يعمل مع Human Model لفهم أحمد بشكل أعمق.
+    Fast Path (keyword):   "ذكرني بالاجتماع" -> save_reminder [CERTAIN, 0ms, $0]
+    Slow Path (Haiku):     "مش عارف" -> chat [PROBABLE, ~300ms, cheap]
     """
 
-    # كلمات دالة على نية واضحة
-    CLEAR_INTENT_KEYWORDS = [
-        # أوامر
-        "ذكرني", "فكرني", "سجل", "احفظ", "امسح", "عدل", "اضف", "وريني", "اعرض",
-        # استفسارات
-        "ايه", "كام", "امتى", "فين", "مين", "ليه", "ازاى",
-        # موضوعات
-        "مشروع", "تذكير", "جراف", "مصاريف", "فاتورة", "قسط",
-        "فريق", "عميل", "موقع", "تقرير",
-        # English
-        "project", "remind", "save", "show", "delete", "graph",
-        # قائمة ADAM
-        "الطقس", "المصاريف", "المشاريع", "التذكيرات", "الذاكرة", "الخبير",
-        "الاقساط", "الجراف", "ملخص", "حالة", "متأخر", "جاية",
-        "اوك", "ماشي", "تمام", "آه", "اه", "يلا", "ok", "fahem", "فاهم"
-    ]
+    CLEAR_INTENT_MAP = {
+        "save_reminder":      ["ذكرني", "فكرني", "تذكير جديد", "remind me", "reminder"],
+        "delete_reminder":    ["امسح التذكير", "احذف التذكير", "شيل التذكير"],
+        "get_reminders":      ["تذكيراتي", "التذكيرات", "وريني التذكيرات", "show reminders"],
+        "create_recurring":   ["تذكير متكرر", "كل يوم ذكرني", "recurring"],
+        "save_memory":        ["ملاحظة جديدة", "دون", "خلي في بالك", "note this", "save note"],
+        "get_memory":         ["ملاحظاتي", "ذاكرتي", "اللي حفظته", "memory notes"],
+        "add_expense":        ["صرفت", "دفعت", "مصروف", "expense", "spent"],
+        "get_expenses":       ["المصاريف", "صرف الشهر", "ملخص المصاريف"],
+        "delete_expense":     ["امسح المصروف", "احذف المصروف"],
+        "get_weather":        ["الطقس", "الجو", "weather"],
+        "get_projects":       ["المشاريع", "مشاريعي", "projects", "bahr os"],
+        "update_project":     ["حدث المشروع", "وضع المشروع", "update project"],
+        "create_project":     ["مشروع جديد", "انشئ مشروع", "create project"],
+        "get_loans":          ["الاقساط", "القسط", "ديوني", "loans"],
+        "get_graph":          ["الجراف", "خريطة المعرفة", "graph"],
+        "add_graph_node":     ["اضف للجراف", "سجل في الجراف", "add to graph"],
+        "get_clients":        ["متابعة العملاء", "العملاء", "clients", "followup"],
+        "add_client":         ["عميل جديد", "اضف عميل"],
+        "eye_expert_logs":    ["عين الخبير", "اسئلة العملاء", "eye expert"],
+        "backup_status":      ["الباكب", "اخر باكب", "backup"],
+        "morning_brief":      ["البريف", "ملخص الصبح", "morning brief"],
+    }
 
-    def thinking(self, situation: str, context: dict = None) -> list:
+    COMMAND_PREFIXES = {
+        "ذكرني":   "save_reminder",
+        "فكرني":   "save_reminder",
+        "احفظ":    "save_memory",
+        "سجل":     "save_memory",
+        "صرفت":    "add_expense",
+        "دفعت":    "add_expense",
+        "وريني":   "get_query",
+        "اعرض":    "get_query",
+        "امسح":    "delete_operation",
+        "احذف":    "delete_operation",
+        "اضف":     "add_operation",
+        "انشئ":    "create_operation",
+        "show":    "get_query",
+        "remind":  "save_reminder",
+        "delete":  "delete_operation",
+        "add":     "add_operation",
+    }
+
+    def analyze(self, message: str, context: dict = None) -> IntentAnalysis:
         """
-        Generate candidate understandings.
-        Starts: situation requires understanding.
-        Ends: one or more candidates exist.
+        Fast Path -> Slow Path.
+        دايماً بيرجع IntentAnalysis، ما بيرفعش Exception.
         """
-        context = context or {}
-        candidates = []
-
-        # الفهم الأساسي
-        candidates.append(CandidateUnderstanding(
-            description=situation,
-            confidence=Confidence.PROBABLE,
-            reasoning="الفهم الظاهر للموقف"
-        ))
-
-        # لو في Human Model context
-        if context.get("human_context"):
-            candidates.append(CandidateUnderstanding(
-                description=f"في سياق شغل أحمد: {situation}",
-                confidence=Confidence.PROBABLE,
-                reasoning=f"بناءً على Human Model: {context['human_context']}"
-            ))
-
-        # لو الرسالة قصيرة جداً
-        word_count = len(situation.strip().split())
-        has_clear_intent = any(
-            kw in situation.lower()
-            for kw in self.CLEAR_INTENT_KEYWORDS
-        )
-
-        if word_count < 3 and not has_clear_intent:
-            candidates.append(CandidateUnderstanding(
-                description=f"رسالة غير واضحة: {situation}",
+        if not message or not message.strip():
+            return IntentAnalysis(
+                intent="unknown",
+                goal="رسالة فارغة",
                 confidence=Confidence.UNCERTAIN,
-                reasoning="الرسالة قصيرة جداً",
+                missing_info="الرسالة فارغة",
+                entities={},
                 requires_clarification=True
-            ))
-
-        return candidates
-
-    def judgment(self, candidates: list) -> JudgmentResult:
-        """
-        Determine most justified understanding.
-        Starts: candidates available.
-        Ends: most justified identified.
-        """
-        if not candidates:
-            return JudgmentResult(
-                selected=CandidateUnderstanding(
-                    description="لا يوجد فهم",
-                    confidence=Confidence.UNCERTAIN,
-                    reasoning="مفيش candidates"
-                ),
-                confidence=Confidence.UNCERTAIN,
-                acknowledged_uncertainty="مفيش معلومات كافية"
             )
 
-        # ترتيب حسب اليقين
-        priority = {
-            Confidence.CERTAIN: 0,
-            Confidence.PROBABLE: 1,
-            Confidence.UNCERTAIN: 2
-        }
+        fast = self._fast_path(message)
+        if fast:
+            return fast
 
-        sorted_candidates = sorted(
-            candidates,
-            key=lambda c: (priority[c.confidence], c.requires_clarification)
-        )
+        return self._deep_analyze(message, context or {})
 
-        best = sorted_candidates[0]
-        uncertain_count = sum(
-            1 for c in candidates
-            if c.confidence == Confidence.UNCERTAIN
-        )
-
-        uncertainty = (
-            f"فيه {uncertain_count} فهم غير مؤكد"
-            if uncertain_count > 0
-            else "الفهم المختار هو الأوضح"
-        )
-
-        return JudgmentResult(
-            selected=best,
-            confidence=best.confidence,
-            acknowledged_uncertainty=uncertainty,
-            alternatives_count=len(candidates) - 1
-        )
-
-    def decision(
-        self,
-        judgment: JudgmentResult,
-        original_situation: str = ""
-    ) -> CognitiveCommitment:
+    def _fast_path(self, message: str) -> Optional[IntentAnalysis]:
         """
-        Establish cognitive commitment.
-        Starts: reliable judgment available.
-        Ends: cognitive commitment established.
-        """
+        Keyword matching -- zero API call.
 
-        # Humility Rule 1: لو غير موثوق → اسأل
-        if not judgment.is_reliable():
-            return CognitiveCommitment(
-                commitment=f"ADAM غير متأكد: {judgment.selected.description}",
-                confidence=Confidence.UNCERTAIN,
-                requires_human_input=True,
-                human_input_reason=judgment.acknowledged_uncertainty,
-                action_direction="اسأل للتوضيح"
+        الترتيب الصح:
+          1. CLEAR_INTENT_MAP اول -- specific keywords (اعلى دقة)
+          2. COMMAND_PREFIXES تاني -- generic prefixes (fallback)
+
+        السبب: "وريني التذكيرات" لازم يطلع get_reminders مش get_query.
+        لو قلبنا الترتيب، الـ prefix "وريني" بيمسك الرسالة قبل ما
+        الكلمة المحددة "التذكيرات" تتفحص.
+        """
+        msg_lower = message.lower().strip()
+
+        # 1. Specific intent keywords -- الاعلى دقة اول
+        for intent, keywords in self.CLEAR_INTENT_MAP.items():
+            if any(kw in msg_lower for kw in keywords):
+                return IntentAnalysis(
+                    intent=intent,
+                    goal=message,
+                    confidence=Confidence.PROBABLE,
+                    missing_info=None,
+                    entities={"raw": message},
+                    requires_clarification=False
+                )
+
+        # 2. Generic command prefixes -- fallback لو مفيش keyword محدد
+        for prefix, intent in self.COMMAND_PREFIXES.items():
+            if msg_lower.startswith(prefix):
+                return IntentAnalysis(
+                    intent=intent,
+                    goal=message,
+                    confidence=Confidence.CERTAIN,
+                    missing_info=None,
+                    entities={"raw": message},
+                    requires_clarification=False
+                )
+
+        return None
+
+    def _deep_analyze(self, message: str, context: dict) -> IntentAnalysis:
+        """
+        Claude Haiku للرسايل الغامضة.
+        تصنيف فقط -- مش execution.
+        لو فشل -> fallback آمن (intent=chat).
+        """
+        try:
+            from services.claude_service import claude_client, CLAUDE_HAIKU_MODEL
+
+            valid_intents = (
+                "save_reminder/get_reminders/save_memory/get_memory/"
+                "add_expense/get_expenses/get_weather/get_projects/"
+                "update_project/get_loans/get_graph/get_clients/"
+                "eye_expert_logs/backup_status/morning_brief/chat/question/unknown"
             )
 
-        # Humility Rule 2: رسالة قصيرة + مش واضحة → اسأل
-        word_count = len(original_situation.strip().split())
-        has_clear_intent = any(
-            kw in original_situation.lower()
-            for kw in self.CLEAR_INTENT_KEYWORDS
-        )
-
-        if word_count < 3 and not has_clear_intent:
-            return CognitiveCommitment(
-                commitment=f"رسالة غير واضحة: {original_situation}",
-                confidence=Confidence.UNCERTAIN,
-                requires_human_input=True,
-                human_input_reason="الرسالة قصيرة جداً — مش واضح المقصود",
-                action_direction="اسأل للتوضيح"
+            prompt = (
+                "حلل نية الرسالة وارجع JSON فقط بدون اي كلام تاني.\n"
+                "الـ intent الممكنة: " + valid_intents + "\n"
+                '{"intent":"...","goal":"...","confidence":"certain|probable|uncertain",'
+                '"missing_info":null,"entities":{},"requires_clarification":false}\n'
+                "الرسالة: " + message
             )
 
-        # القرار الموثوق
-        return CognitiveCommitment(
-            commitment=judgment.selected.description,
-            confidence=judgment.confidence,
-            requires_human_input=judgment.selected.requires_clarification,
-            human_input_reason=(
-                "يحتاج توضيح من أحمد"
-                if judgment.selected.requires_clarification else None
-            ),
-            action_direction="تصرف بناءً على الفهم المحدد"
-        )
+            response = claude_client.messages.create(
+                model=CLAUDE_HAIKU_MODEL,
+                max_tokens=200,
+                messages=[{"role": "user", "content": prompt}]
+            )
 
-    def process(
-        self,
-        situation: str,
-        context: dict = None
-    ) -> CognitiveCommitment:
-        """
-        الدورة المعرفية الكاملة:
-        Thinking → Judgment → Decision
-        """
-        candidates = self.thinking(situation, context)
-        judgment_result = self.judgment(candidates)
-        commitment = self.decision(judgment_result, situation)
-        return commitment
+            raw = ""
+            for block in response.content:
+                if hasattr(block, "text"):
+                    raw += block.text
+
+            raw = raw.strip()
+            if raw.startswith("```"):
+                raw = "\n".join(raw.split("\n")[1:-1])
+
+            data = json.loads(raw)
+
+            return IntentAnalysis(
+                intent=data.get("intent", "chat"),
+                goal=data.get("goal", message),
+                confidence=Confidence(data.get("confidence", "probable")),
+                missing_info=data.get("missing_info"),
+                entities=data.get("entities", {}),
+                requires_clarification=bool(data.get("requires_clarification", False))
+            )
+
+        except Exception as e:
+            # لا نبلع الخطا صامت -- نسجّل warning عشان نعرف لو التحليل فشل
+            # entities بتحمل "analysis_fallback": True عشان EB يعرف ده مش تحليل حقيقي
+            logger.warning("AdamMind deep_analyze fallback: " + str(e))
+            return IntentAnalysis(
+                intent="chat",
+                goal=message,
+                confidence=Confidence.PROBABLE,
+                missing_info=None,
+                entities={"raw": message, "analysis_fallback": True},
+                requires_clarification=False
+            )
 
 
-# Instance واحد
 adam_mind = AdamMind()

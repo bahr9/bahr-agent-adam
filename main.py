@@ -51,58 +51,18 @@ logger.info("✅ Human Model")
 from adam_mind import adam_mind
 logger.info("✅ ADAM Mind")
 
+from executive_brain import ExecutiveBrain
+executive_brain = ExecutiveBrain(adam_mind)
+logger.info("✅ Executive Brain")
+
 from adam_runtime import AdamRuntime
-runtime = AdamRuntime(human_model, adam_mind)
+runtime = AdamRuntime(executive_brain)
 logger.info("✅ ADAM Runtime")
 
 # ============================================================
 # Capabilities
 # ============================================================
 
-from services.claude_service import ask_claude_agentic, format_history_for_claude
-from services.firebase_service import get_conversation_history, save_conversation
-from services.memory_service import get_memory, update_memory
-
-def claude_capability(execution):
-    """Claude — يعالج الـ user requests"""
-    text = execution.event.text
-    chat_id = execution.event.chat_id
-
-    # Context
-    stored_history = get_conversation_history(chat_id, limit=50)
-    recent_history = format_history_for_claude(stored_history, limit=15)
-    memory_summary = get_memory(chat_id)
-
-    reply = ask_claude_agentic(
-        text,
-        chat_id,
-        conversation_history=recent_history,
-        memory_summary=memory_summary
-    )
-
-    # حفظ المحادثة
-    save_conversation(chat_id, text, reply)
-
-    # تحديث الذاكرة
-    if len(text) > 15 or len(reply) > 60:
-        update_memory(chat_id, text, reply)
-
-    return reply
-
-def morning_brief_capability(execution):
-    """Morning Brief — ADAM يفكر ويصيغ من تلقاء نفسه"""
-    from morning_brief import generate_morning_brief
-    chat_id = execution.event.chat_id
-    return generate_morning_brief(str(chat_id))
-
-def reminder_capability(execution):
-    """إرسال تذكير"""
-    return f"⏰ تذكير: {execution.event.metadata.get('text', '')}"
-
-# تسجيل الـ Capabilities
-runtime.register_capability("claude", claude_capability)
-runtime.register_capability("morning_brief", morning_brief_capability)
-runtime.register_capability("reminder", reminder_capability)
 logger.info("✅ Capabilities registered")
 
 # ============================================================
@@ -139,9 +99,9 @@ def handle_menu(message):
                     # الطقس — مباشر
                     if "الطقس" in text:
                         fake_msg = type("M", (), {"text": "الطقس دلوقتي", "chat": type("C", (), {"id": message.chat.id})(), "from_user": message.from_user, "content_type": "text", "message_id": 0})()
-                        execution = runtime.run(fake_msg)
-                        if execution.final_response:
-                            bot.send_message(message.chat.id, execution.final_response)
+                        response = runtime.run(fake_msg)
+                        if response:
+                            bot.send_message(message.chat.id, response)
                     return
                 label, keyboard_func = handler
                 bot.send_message(message.chat.id, "اختار:", reply_markup=keyboard_func())
@@ -167,69 +127,69 @@ def handle_callback(call):
             bot.send_message(chat_id, "ملخص المصاريف")
             bot.send_message(chat_id, "جاري...")
             fake_msg = type("M", (), {"text": "ملخص المصاريف", "chat": type("C", (), {"id": chat_id})(), "from_user": type("U", (), {"id": chat_id, "first_name": "Ahmed"})(), "content_type": "text", "message_id": 0})()
-            execution = runtime.run(fake_msg)
-            if execution.final_response:
-                bot.send_message(chat_id, execution.final_response)
+            response = runtime.run(fake_msg)
+            if response:
+                bot.send_message(chat_id, response)
 
         elif data == "expenses_add":
             bot.send_message(chat_id, "قولي: صرفت كام جنيه وعلى إيه؟")
 
         elif data == "loans_month":
             fake_msg = type("M", (), {"text": "الأقساط الشهر ده", "chat": type("C", (), {"id": chat_id})(), "from_user": type("U", (), {"id": chat_id, "first_name": "Ahmed"})(), "content_type": "text", "message_id": 0})()
-            execution = runtime.run(fake_msg)
-            if execution.final_response:
-                bot.send_message(chat_id, execution.final_response)
+            response = runtime.run(fake_msg)
+            if response:
+                bot.send_message(chat_id, response)
 
         elif data == "projects_status":
             fake_msg = type("M", (), {"text": "حالة المشاريع", "chat": type("C", (), {"id": chat_id})(), "from_user": type("U", (), {"id": chat_id, "first_name": "Ahmed"})(), "content_type": "text", "message_id": 0})()
-            execution = runtime.run(fake_msg)
-            if execution.final_response:
-                bot.send_message(chat_id, execution.final_response)
+            response = runtime.run(fake_msg)
+            if response:
+                bot.send_message(chat_id, response)
 
         elif data == "projects_alerts":
             fake_msg = type("M", (), {"text": "تنبيهات المشاريع المتأخرة", "chat": type("C", (), {"id": chat_id})(), "from_user": type("U", (), {"id": chat_id, "first_name": "Ahmed"})(), "content_type": "text", "message_id": 0})()
-            execution = runtime.run(fake_msg)
-            if execution.final_response:
-                bot.send_message(chat_id, execution.final_response)
+            response = runtime.run(fake_msg)
+            if response:
+                bot.send_message(chat_id, response)
 
         elif data == "reminders_list":
             fake_msg = type("M", (), {"text": "اعرض التذكيرات", "chat": type("C", (), {"id": chat_id})(), "from_user": type("U", (), {"id": chat_id, "first_name": "Ahmed"})(), "content_type": "text", "message_id": 0})()
-            execution = runtime.run(fake_msg)
-            if execution.final_response:
-                bot.send_message(chat_id, execution.final_response)
+            response = runtime.run(fake_msg)
+            if response:
+                bot.send_message(chat_id, response)
 
         elif data == "reminders_recurring":
             fake_msg = type("M", (), {"text": "اعرض التذكيرات المتكررة", "chat": type("C", (), {"id": chat_id})(), "from_user": type("U", (), {"id": chat_id, "first_name": "Ahmed"})(), "content_type": "text", "message_id": 0})()
-            execution = runtime.run(fake_msg)
-            if execution.final_response:
-                bot.send_message(chat_id, execution.final_response)
+            response = runtime.run(fake_msg)
+            if response:
+                bot.send_message(chat_id, response)
 
         elif data == "memory_notes":
             fake_msg = type("M", (), {"text": "آخر الملاحظات", "chat": type("C", (), {"id": chat_id})(), "from_user": type("U", (), {"id": chat_id, "first_name": "Ahmed"})(), "content_type": "text", "message_id": 0})()
-            execution = runtime.run(fake_msg)
-            if execution.final_response:
-                bot.send_message(chat_id, execution.final_response)
+            response = runtime.run(fake_msg)
+            if response:
+                bot.send_message(chat_id, response)
 
         elif data == "memory_graph":
             fake_msg = type("M", (), {"text": "اعرض خريطة بحر", "chat": type("C", (), {"id": chat_id})(), "from_user": type("U", (), {"id": chat_id, "first_name": "Ahmed"})(), "content_type": "text", "message_id": 0})()
-            execution = runtime.run(fake_msg)
-            if execution.final_response:
-                bot.send_message(chat_id, execution.final_response)
+            response = runtime.run(fake_msg)
+            if response:
+                bot.send_message(chat_id, response)
 
         elif data == "projects_deadlines":
             fake_msg = type("M", (), {"text": "المواعيد الجاية للمشاريع", "chat": type("C", (), {"id": chat_id})(), "from_user": type("U", (), {"id": chat_id, "first_name": "Ahmed"})(), "content_type": "text", "message_id": 0})()
-            execution = runtime.run(fake_msg)
-            if execution.final_response:
-                bot.send_message(chat_id, execution.final_response)
+            response = runtime.run(fake_msg)
+            if response:
+                bot.send_message(chat_id, response)
 
         elif data == "reminders_new":
             bot.send_message(chat_id, "قولي: ذكرني بعد كام دقيقة/ساعة وبإيه؟")
 
         elif data == "eye_expert_logs":
             fake_msg = type("M", (), {"text": "آخر أسئلة عملاء عين الخبير", "chat": type("C", (), {"id": chat_id})(), "from_user": type("U", (), {"id": chat_id, "first_name": "Ahmed"})(), "content_type": "text", "message_id": 0})()
-            execution = runtime.run(fake_msg)
-            if execution.final_response:
-                bot.send_message(chat_id, execution.final_response)
+            response = runtime.run(fake_msg)
+            if response:
+                bot.send_message(chat_id, response)
 
     except Exception as e:
         logger.error(f"❌ Callback error: {e}")
@@ -249,12 +209,12 @@ def handle_message(message):
         set_chat_id(message.chat.id)
         bot.send_chat_action(message.chat.id, 'typing')
 
-        # ADAM Runtime — 9 مراحل
-        execution = runtime.run(message)
+        # ADAM Runtime -> Executive Brain
+        response = runtime.run(message)
 
-        if execution.final_response:
-            bot.reply_to(message, execution.final_response, reply_markup=get_main_keyboard())
-            logger.info(f"✅ ADAM responded | goal: {execution.execution_goal}")
+        if response:
+            bot.reply_to(message, response, reply_markup=get_main_keyboard())
+            logger.info("✅ ADAM responded")
         else:
             bot.reply_to(message, "❌ مش قادر أرد دلوقتي.")
 
@@ -396,9 +356,9 @@ def morning_brief_job():
         chat_id = get_chat_id()
         if not chat_id:
             return
-        execution = runtime.run_scheduled("morning_brief", chat_id)
-        if execution.final_response:
-            bot.send_message(chat_id, execution.final_response)
+        response = runtime.run_scheduled("morning_brief", chat_id)
+        if response:
+            bot.send_message(chat_id, response)
             logger.info("✅ Morning Brief sent")
     except Exception as e:
         logger.error(f"❌ Morning Brief error: {e}")
