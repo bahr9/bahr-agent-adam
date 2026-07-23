@@ -34,10 +34,9 @@ def build_morning_context(chat_id: str) -> dict:
 
     # 2. Upcoming Loans
     try:
-        from services.loan_service import LoanService
-        loan_service = LoanService()
-        installments = loan_service.get_month_installments()
-        # فلتر الأقساط اللي لسه متدفعتش
+        from services.loan_service import get_month_installments, get_current_month_key
+        month_key = get_current_month_key()
+        installments, total = get_month_installments(month_key)
         pending = [i for i in installments if not i.get("paid")]
         context["pending_loans"] = pending[:3]  # أول 3 بس
     except Exception as e:
