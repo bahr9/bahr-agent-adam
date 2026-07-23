@@ -494,6 +494,13 @@ flask_app = Flask(__name__)
 def log_eye_expert():
     """استقبال logs من Make.com وحفظها في Firestore"""
     try:
+        # التحقق من الـ Secret Token
+        import os
+        secret = os.getenv("EYE_EXPERT_SECRET", "")
+        token  = request.headers.get("X-Secret-Token", "") or request.args.get("token", "")
+        if secret and token != secret:
+            return jsonify({"status": "unauthorized"}), 401
+
         data = request.get_json(force=True, silent=True) or {}
 
         question   = data.get("question", "")
