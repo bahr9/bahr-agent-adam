@@ -41,6 +41,10 @@ MEMORY_COLLECTION = "user_memory"  # الذاكرة الدائمة (ملخص م�
 EXPENSES_COLLECTION = "expenses"  # متابعة المصاريف
 LOANS_COLLECTION = "loans"  # متابعة الأقساط والقروض
 HUMAN_MODEL_COLLECTION = "adam_human_model"  # Human Model لأحمد
+EVENTS_COLLECTION = "adam_events"  # Event Store -- سجل الأحداث الثابت (ADAM Self-State & Observation System)
+SELF_STATE_COLLECTION = "adam_self_state"  # State History محدودة -- آخر مستوى Active اتبلّغ بيه لكل بُعد (Stage 5)
+STATE_SNAPSHOTS_COLLECTION = "adam_state_snapshots"  # لقطات Self-State وقت التعبير الفعلي بس (Stage 6/7 -- Evidence Trace)
+EXPRESSIONS_COLLECTION = "adam_expressions"  # سجل كل تعبير اتبعت لأحمد + رابطه بالـ state/evidence (Stage 6/7)
 
 # ============================================================
 # 📋 الثوابت العامة

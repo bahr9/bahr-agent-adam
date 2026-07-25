@@ -128,11 +128,10 @@ def is_paid(program_id, index, paid_map=None):
     return bool(paid_map.get(f"{program_id}_{index}"))
 
 
-def set_paid(program_id, index, paid=True):
-    """تحديث حالة الدفع لقسط معيّن"""
-    from services.firebase_service import save_loan_paid_status
-    key = f"{program_id}_{index}"
-    return save_loan_paid_status(key, paid)
+# ملاحظة: الكتابة المباشرة لحالة الدفع (set_paid / mark_installment_paid) اتشالت
+# في Stage 2 (ADAM Self-State & Observation System). الكتابة دلوقتي بتمر حصريًا
+# من services/loan_commands.py عبر event_store.record_event_with_write --
+# مفيش مسار كتابة تاني هنا عن قصد.
 
 
 # ============================================================
@@ -188,24 +187,3 @@ def get_month_installments(month_key):
 
     total = sum(x["amount"] for x in items)
     return items, total
-
-
-def mark_installment_paid(program_name, month_key=None, paid=True):
-    """
-    تعليم قسط كمدفوع/غير مدفوع لبرنامج معيّن.
-    لو month_key مش متبعت، بيستخدم الشهر الحالي افتراضيًا.
-    """
-    program = _find_program(program_name)
-    if not program:
-        available = ", ".join(p["name"] for p in PROGRAMS)
-        return False, f"مش لاقي برنامج اسمه '{program_name}'. البرامج المتاحة: {available}"
-
-    target_month = month_key or get_current_month_key()
-
-    for i, inst in enumerate(program["installments"]):
-        if inst["date"] == target_month:
-            set_paid(program["id"], i, paid)
-            status = "مدفوع" if paid else "غير مدفوع"
-            return True, f"تم تحديث قسط {program['name']} لشهر {target_month} ({inst['amount']} جنيه) → {status}"
-
-    return False, f"مفيش قسط لبرنامج {program['name']} في تاريخ {target_month}"

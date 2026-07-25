@@ -172,6 +172,8 @@ def send_morning_brief(bot, chat_id: int):
     """إرسال Morning Brief"""
     try:
         message = generate_morning_brief(str(chat_id))
+        from services import verified_expression
+        message = verified_expression.verify_and_finalize(chat_id, message)
         bot.send_message(chat_id, message)
         logger.info("✅ Morning Brief sent")
     except Exception as e:

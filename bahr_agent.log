@@ -1163,3 +1163,536 @@ id: bahr-os | label: BAHR OS | catego
 2026-07-21 12:08:43 - INFO - 🚀 ADAM v1 — Waiting for Ahmed...
 2026-07-21 12:08:43 - INFO - ==================================================
 2026-07-21 12:10:24 - INFO - 👋 ADAM stopped
+2026-07-24 01:34:22 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 01:34:23 - INFO - 📒 event recorded: [test:stage1_verification].smoke_test (None -> 'ok') id=e16a0f71-f9b6-41b6-8b59-d2e588ab0389
+2026-07-24 01:34:36 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 01:34:37 - INFO - 📒 event recorded: [test:stage1_verification].smoke_test (None -> 'ok') id=352d597e-040a-4d38-ad51-62922033eabd
+2026-07-24 01:34:48 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 01:34:59 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 01:35:00 - INFO - 📒 event recorded: [test:stage1_verification].smoke_test (None -> 'ok') id=c03a0a2d-fa7d-4e78-8bd2-fc45c3eb427a
+2026-07-24 01:48:33 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 01:49:34 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 01:49:35 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (False -> True) id=c99e433d-1de2-4012-ab3c-b2526ffab1b3 domain=loans/paid_status
+2026-07-24 01:49:59 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 01:50:15 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 01:50:30 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 02:01:33 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 02:01:34 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (False -> True) id=56845fe0-6729-4927-8a5d-804a5c110596 domain=loans/paid_status
+2026-07-24 02:01:34 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (True -> False) id=9f05d13c-0267-4f12-80bf-585b51e27c1f domain=loans/paid_status
+2026-07-24 02:01:47 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 02:01:57 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 02:02:11 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 02:11:07 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 02:11:08 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (False -> True) id=e26f46e0-c1a8-41c0-a152-89b33ce90c20 domain=loans/paid_status
+2026-07-24 02:11:08 - INFO - 👁️ [loan_installment:ca_71].paid_status -> new (event=e26f46e0-c1a8-41c0-a152-89b33ce90c20)
+2026-07-24 02:11:08 - INFO - 👁️ [loan_installment:ca_71].paid_status -> new (event=e26f46e0-c1a8-41c0-a152-89b33ce90c20)
+2026-07-24 02:11:08 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (True -> True) id=a8196372-30ee-48e6-9688-cc99e40beaea domain=loans/paid_status
+2026-07-24 02:11:08 - INFO - 👁️ [loan_installment:ca_71].paid_status -> duplicate (event=a8196372-30ee-48e6-9688-cc99e40beaea, prev=e26f46e0-c1a8-41c0-a152-89b33ce90c20)
+2026-07-24 02:11:08 - INFO - 👁️ [loan_installment:ca_71].paid_status -> duplicate (event=a8196372-30ee-48e6-9688-cc99e40beaea, prev=e26f46e0-c1a8-41c0-a152-89b33ce90c20)
+2026-07-24 02:11:09 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (True -> False) id=58c492a4-4d3a-4c5d-bf26-e6c682016980 domain=loans/paid_status
+2026-07-24 02:11:09 - WARNING - 👁️ [loan_installment:ca_71].paid_status -> conflict (event=58c492a4-4d3a-4c5d-bf26-e6c682016980, prev=a8196372-30ee-48e6-9688-cc99e40beaea)
+2026-07-24 02:11:09 - WARNING - 👁️ [loan_installment:ca_71].paid_status -> conflict (event=58c492a4-4d3a-4c5d-bf26-e6c682016980, prev=a8196372-30ee-48e6-9688-cc99e40beaea)
+2026-07-24 02:11:09 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (False -> True) id=2c28eb7f-6a1d-4521-a1b4-b86ba1f0a8f2 domain=loans/paid_status
+2026-07-24 02:11:09 - INFO - 👁️ [loan_installment:ca_71].paid_status -> update (event=2c28eb7f-6a1d-4521-a1b4-b86ba1f0a8f2, prev=58c492a4-4d3a-4c5d-bf26-e6c682016980)
+2026-07-24 02:11:09 - INFO - 👁️ [loan_installment:ca_71].paid_status -> update (event=2c28eb7f-6a1d-4521-a1b4-b86ba1f0a8f2, prev=58c492a4-4d3a-4c5d-bf26-e6c682016980)
+2026-07-24 02:11:09 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (True -> False) id=0198f667-e0b1-477b-829a-f5574498af2b domain=loans/paid_status
+2026-07-24 02:11:09 - INFO - 👁️ [loan_installment:ca_71].paid_status -> update (event=0198f667-e0b1-477b-829a-f5574498af2b, prev=2c28eb7f-6a1d-4521-a1b4-b86ba1f0a8f2)
+2026-07-24 02:11:09 - INFO - 👁️ [loan_installment:ca_71].paid_status -> update (event=0198f667-e0b1-477b-829a-f5574498af2b, prev=2c28eb7f-6a1d-4521-a1b4-b86ba1f0a8f2)
+2026-07-24 02:18:42 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 02:18:43 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (False -> True) id=48e24d44-0957-4d87-9e2b-aaca1ebf57c7 domain=loans/paid_status
+2026-07-24 02:18:43 - INFO - 👁️ [loan_installment:ca_71].paid_status -> new (event=48e24d44-0957-4d87-9e2b-aaca1ebf57c7)
+2026-07-24 02:18:43 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (True -> True) id=7a9bb725-63fa-4efa-b237-5ad8804f5111 domain=loans/paid_status
+2026-07-24 02:18:43 - INFO - 👁️ [loan_installment:ca_71].paid_status -> duplicate (event=7a9bb725-63fa-4efa-b237-5ad8804f5111, prev=48e24d44-0957-4d87-9e2b-aaca1ebf57c7)
+2026-07-24 02:18:44 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (True -> False) id=5fd8fba1-987e-4803-9555-07908c2b9a8a domain=loans/paid_status
+2026-07-24 02:18:44 - INFO - 👁️ [loan_installment:ca_71].paid_status -> update (event=5fd8fba1-987e-4803-9555-07908c2b9a8a, prev=7a9bb725-63fa-4efa-b237-5ad8804f5111)
+2026-07-24 02:18:44 - INFO - 👁️ [loan_installment:ca_71].paid_status -> update (event=5fd8fba1-987e-4803-9555-07908c2b9a8a, prev=7a9bb725-63fa-4efa-b237-5ad8804f5111)
+2026-07-24 03:47:47 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 03:47:49 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (False -> True) id=29fad5a9-67a4-4935-947d-a2c4f17b79da domain=loans/paid_status
+2026-07-24 03:47:49 - INFO - 👁️ [loan_installment:ca_71].paid_status -> new (event=29fad5a9-67a4-4935-947d-a2c4f17b79da)
+2026-07-24 03:47:49 - INFO - 📒 event recorded: [loan_installment:ca_71].conflict_status (None -> 'pending') id=00979340-762b-495c-b31f-c5528bfe8990
+2026-07-24 03:47:50 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (True -> False) id=74aa7530-9201-4af3-a7ab-589b352a04f3 domain=loans/paid_status
+2026-07-24 03:47:50 - INFO - 👁️ [loan_installment:ca_71].paid_status -> update (event=74aa7530-9201-4af3-a7ab-589b352a04f3, prev=29fad5a9-67a4-4935-947d-a2c4f17b79da)
+2026-07-24 03:47:50 - INFO - 📒 event recorded: [loan_installment:ca_71].conflict_status ('pending' -> 'resolved') id=70d7428b-2f28-4b75-a311-5289cd12f4f7
+2026-07-24 03:57:46 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 03:57:47 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (False -> True) id=084bbbf1-cb75-4aa5-8437-d9fe4914f03a domain=loans/paid_status
+2026-07-24 03:57:47 - INFO - 👁️ [loan_installment:ca_71].paid_status -> new (event=084bbbf1-cb75-4aa5-8437-d9fe4914f03a)
+2026-07-24 03:57:47 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (True -> False) id=9d14ba4b-d078-42c3-a358-2f3de8615002 domain=loans/paid_status
+2026-07-24 03:57:47 - INFO - 👁️ [loan_installment:ca_71].paid_status -> update (event=9d14ba4b-d078-42c3-a358-2f3de8615002, prev=084bbbf1-cb75-4aa5-8437-d9fe4914f03a)
+2026-07-24 03:57:48 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (False -> True) id=a394eacf-c812-48f8-a949-47067b9cb48a domain=loans/paid_status
+2026-07-24 03:57:48 - INFO - 👁️ [loan_installment:ca_71].paid_status -> update (event=a394eacf-c812-48f8-a949-47067b9cb48a, prev=9d14ba4b-d078-42c3-a358-2f3de8615002)
+2026-07-24 03:57:48 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (True -> False) id=9b7d1ead-0fab-429b-aa27-956c896f550b domain=loans/paid_status
+2026-07-24 03:57:48 - INFO - 👁️ [loan_installment:ca_71].paid_status -> update (event=9b7d1ead-0fab-429b-aa27-956c896f550b, prev=a394eacf-c812-48f8-a949-47067b9cb48a)
+2026-07-24 03:57:48 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (False -> True) id=d01acb33-cb30-4f2a-a377-99bc7a53acaa domain=loans/paid_status
+2026-07-24 03:57:48 - INFO - 👁️ [loan_installment:ca_71].paid_status -> update (event=d01acb33-cb30-4f2a-a377-99bc7a53acaa, prev=9b7d1ead-0fab-429b-aa27-956c896f550b)
+2026-07-24 03:57:49 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (True -> False) id=e1aa7d8f-2767-44ea-a460-4c9aa6984221 domain=loans/paid_status
+2026-07-24 03:57:49 - INFO - 👁️ [loan_installment:ca_71].paid_status -> update (event=e1aa7d8f-2767-44ea-a460-4c9aa6984221, prev=d01acb33-cb30-4f2a-a377-99bc7a53acaa)
+2026-07-24 05:56:20 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 05:56:24 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (False -> True) id=c07d4310-ab5e-484d-bfdc-a37a80048222 domain=loans/paid_status
+2026-07-24 05:56:24 - INFO - 👁️ [loan_installment:ca_71].paid_status -> new (event=c07d4310-ab5e-484d-bfdc-a37a80048222)
+2026-07-24 05:56:24 - INFO - 📒 event recorded: [loan_installment:ca_71].conflict_status (None -> 'pending') id=45023689-f1f8-4b73-8b62-f2763586a9a1
+2026-07-24 05:56:25 - WARNING - ⚠️ Verbatim mismatch -- الرد النهائي مفيهوش نص التعبير المعتمد بالحرف (expression_id=37ace7ca-f7b0-4ad9-bd16-0c6ccd39bd49). بنستبدله بالنص الأصلي.
+2026-07-24 05:56:54 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 05:57:06 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 05:57:19 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 05:57:20 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (True -> False) id=08a312ee-d27c-47b7-aa33-336e670491ca domain=loans/paid_status
+2026-07-24 05:57:20 - INFO - 👁️ [loan_installment:ca_71].paid_status -> update (event=08a312ee-d27c-47b7-aa33-336e670491ca, prev=c07d4310-ab5e-484d-bfdc-a37a80048222)
+2026-07-24 05:57:28 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 05:57:31 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (False -> True) id=c498e2b9-8607-4361-bb91-0e7fb351c059 domain=loans/paid_status
+2026-07-24 05:57:31 - INFO - 👁️ [loan_installment:ca_71].paid_status -> new (event=c498e2b9-8607-4361-bb91-0e7fb351c059)
+2026-07-24 05:57:32 - INFO - 📒 event recorded: [loan_installment:ca_71].conflict_status (None -> 'pending') id=91591c14-ca80-4f6f-bf44-82ad42365486
+2026-07-24 05:57:34 - WARNING - ⚠️ Verbatim mismatch -- الرد النهائي مفيهوش نص التعبير المعتمد بالحرف (expression_id=76d318a2-0cfa-42be-9258-d9f17d78a95d). بنستبدله بالنص الأصلي.
+2026-07-24 05:57:36 - INFO - ℹ️ Active expression تجاهلت -- الحالة اتغيرت من وقت القرار (unresolved_conflict)
+2026-07-24 05:57:36 - INFO - 📒 event+write atomic commit: [loan_installment:ca_70].paid_status (False -> True) id=aca0c726-61a8-4e72-bafc-ed8a2cb0c5c8 domain=loans/paid_status
+2026-07-24 05:57:36 - INFO - 👁️ [loan_installment:ca_70].paid_status -> new (event=aca0c726-61a8-4e72-bafc-ed8a2cb0c5c8)
+2026-07-24 05:57:36 - INFO - 📒 event recorded: [loan_installment:ca_70].conflict_status (None -> 'pending') id=da54b8bb-33a9-46dc-a0dd-bbc792bdffc4
+2026-07-24 05:57:37 - INFO - 📒 event+write atomic commit: [loan_installment:ca_69].paid_status (False -> True) id=1d870239-2b0a-4a06-a30c-5509044a38a3 domain=loans/paid_status
+2026-07-24 05:57:37 - INFO - 👁️ [loan_installment:ca_69].paid_status -> new (event=1d870239-2b0a-4a06-a30c-5509044a38a3)
+2026-07-24 05:57:37 - INFO - 📒 event recorded: [loan_installment:ca_69].conflict_status (None -> 'pending') id=a338aa05-eccf-494e-b4e9-a8d1bed16f69
+2026-07-24 05:57:38 - INFO - ✅ تم تهيئة البوت
+2026-07-24 05:57:57 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 05:57:58 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (True -> False) id=5cf473f2-09c2-43d3-8786-a3d2722aa703 domain=loans/paid_status
+2026-07-24 05:57:58 - INFO - 👁️ [loan_installment:ca_71].paid_status -> update (event=5cf473f2-09c2-43d3-8786-a3d2722aa703, prev=c498e2b9-8607-4361-bb91-0e7fb351c059)
+2026-07-24 05:57:59 - INFO - 📒 event+write atomic commit: [loan_installment:ca_70].paid_status (True -> False) id=522e7d12-18eb-431b-ba43-62f31ee5967e domain=loans/paid_status
+2026-07-24 05:57:59 - INFO - 👁️ [loan_installment:ca_70].paid_status -> update (event=522e7d12-18eb-431b-ba43-62f31ee5967e, prev=aca0c726-61a8-4e72-bafc-ed8a2cb0c5c8)
+2026-07-24 05:57:59 - INFO - 📒 event+write atomic commit: [loan_installment:ca_69].paid_status (True -> False) id=2dc15a73-247f-4526-a8cf-21301a3353da domain=loans/paid_status
+2026-07-24 05:57:59 - INFO - 👁️ [loan_installment:ca_69].paid_status -> update (event=2dc15a73-247f-4526-a8cf-21301a3353da, prev=1d870239-2b0a-4a06-a30c-5509044a38a3)
+2026-07-24 05:58:23 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 05:58:26 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (False -> True) id=243f94ad-85ea-4e10-a181-b72ecc642ae8 domain=loans/paid_status
+2026-07-24 05:58:26 - INFO - 👁️ [loan_installment:ca_71].paid_status -> new (event=243f94ad-85ea-4e10-a181-b72ecc642ae8)
+2026-07-24 05:58:26 - INFO - 📒 event recorded: [loan_installment:ca_71].conflict_status (None -> 'pending') id=4264d0ae-e001-445c-ac0b-3e3cf940cf97
+2026-07-24 05:58:28 - WARNING - ⚠️ Verbatim mismatch -- الرد النهائي مفيهوش نص التعبير المعتمد بالحرف (expression_id=c17b939f-8e6d-4fc9-a772-fcca2fcc5efb). بنستبدله بالنص الأصلي.
+2026-07-24 05:58:30 - INFO - ℹ️ Active expression تجاهلت -- الحالة اتغيرت من وقت القرار (unresolved_conflict)
+2026-07-24 05:58:31 - INFO - 📒 event+write atomic commit: [loan_installment:ca_70].paid_status (False -> True) id=0c02b307-3be5-4b1c-a3c4-65fbcdb81cab domain=loans/paid_status
+2026-07-24 05:58:31 - INFO - 👁️ [loan_installment:ca_70].paid_status -> new (event=0c02b307-3be5-4b1c-a3c4-65fbcdb81cab)
+2026-07-24 05:58:31 - INFO - 📒 event recorded: [loan_installment:ca_70].conflict_status (None -> 'pending') id=900dfcbc-c12d-4b22-9a1b-c3aa68bc7cc2
+2026-07-24 05:58:31 - INFO - 📒 event+write atomic commit: [loan_installment:ca_69].paid_status (False -> True) id=ce21ac87-46b3-4078-8cd3-84c9d4c548ba domain=loans/paid_status
+2026-07-24 05:58:31 - INFO - 👁️ [loan_installment:ca_69].paid_status -> new (event=ce21ac87-46b3-4078-8cd3-84c9d4c548ba)
+2026-07-24 05:58:32 - INFO - 📒 event recorded: [loan_installment:ca_69].conflict_status (None -> 'pending') id=343e6be8-0394-4a02-a03c-81e6f26f3d1b
+2026-07-24 05:58:32 - INFO - ✅ تم تهيئة البوت
+2026-07-24 05:58:33 - INFO - 📢 Active expression sent: unresolved_conflict=high (expression_id=9a76a29c-a360-41cf-9977-4b69df974436)
+2026-07-24 05:58:33 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (True -> False) id=6eb204cc-fdad-44e8-a55c-4fbb79028658 domain=loans/paid_status
+2026-07-24 05:58:33 - INFO - 👁️ [loan_installment:ca_71].paid_status -> update (event=6eb204cc-fdad-44e8-a55c-4fbb79028658, prev=243f94ad-85ea-4e10-a181-b72ecc642ae8)
+2026-07-24 05:58:34 - INFO - 📒 event+write atomic commit: [loan_installment:ca_70].paid_status (True -> False) id=b8198df4-8fb6-4a66-81c2-013849a44a2d domain=loans/paid_status
+2026-07-24 05:58:34 - INFO - 👁️ [loan_installment:ca_70].paid_status -> update (event=b8198df4-8fb6-4a66-81c2-013849a44a2d, prev=0c02b307-3be5-4b1c-a3c4-65fbcdb81cab)
+2026-07-24 05:58:35 - INFO - 📒 event+write atomic commit: [loan_installment:ca_69].paid_status (True -> False) id=c4a2a293-5f78-4131-99a3-0759bd9ec752 domain=loans/paid_status
+2026-07-24 05:58:35 - INFO - 👁️ [loan_installment:ca_69].paid_status -> update (event=c4a2a293-5f78-4131-99a3-0759bd9ec752, prev=ce21ac87-46b3-4078-8cd3-84c9d4c548ba)
+2026-07-24 05:58:57 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 05:59:18 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 06:00:11 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 06:00:15 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (False -> True) id=eae2e98d-f2d7-4133-aed4-8629aef49db2 domain=loans/paid_status
+2026-07-24 06:00:15 - INFO - 👁️ [loan_installment:ca_71].paid_status -> new (event=eae2e98d-f2d7-4133-aed4-8629aef49db2)
+2026-07-24 06:00:15 - INFO - 📒 event recorded: [loan_installment:ca_71].conflict_status (None -> 'pending') id=f6723f29-a470-4335-be17-60511d9739a1
+2026-07-24 06:00:17 - WARNING - ⚠️ Verbatim mismatch -- الرد النهائي مفيهوش نص التعبير المعتمد بالحرف (expression_id=e049114b-a3e7-4f89-bbca-656855460c28). بنستبدله بالنص الأصلي.
+2026-07-24 06:00:18 - INFO - ℹ️ Active expression تجاهلت -- الحالة اتغيرت من وقت القرار (unresolved_conflict)
+2026-07-24 06:00:18 - INFO - 📒 event+write atomic commit: [loan_installment:ca_70].paid_status (False -> True) id=3620e530-a68f-4889-ba92-224e966bab85 domain=loans/paid_status
+2026-07-24 06:00:19 - INFO - 👁️ [loan_installment:ca_70].paid_status -> new (event=3620e530-a68f-4889-ba92-224e966bab85)
+2026-07-24 06:00:19 - INFO - 📒 event recorded: [loan_installment:ca_70].conflict_status (None -> 'pending') id=05e2c1e3-63a4-4e78-844b-c59d9020a854
+2026-07-24 06:00:19 - INFO - 📒 event+write atomic commit: [loan_installment:ca_69].paid_status (False -> True) id=aafb653f-b470-4a84-9703-afb405932b51 domain=loans/paid_status
+2026-07-24 06:00:19 - INFO - 👁️ [loan_installment:ca_69].paid_status -> new (event=aafb653f-b470-4a84-9703-afb405932b51)
+2026-07-24 06:00:19 - INFO - 📒 event recorded: [loan_installment:ca_69].conflict_status (None -> 'pending') id=4673d769-4bdd-4bd7-bf8f-f797107c0538
+2026-07-24 06:00:19 - INFO - ✅ تم تهيئة البوت
+2026-07-24 06:00:20 - INFO - 📢 Active expression sent: unresolved_conflict=high (expression_id=baeacccb-3be0-4db3-88e4-ef86a4d05dea)
+2026-07-24 06:00:21 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (True -> False) id=ed32dc7c-a100-40c0-9a2a-8e7544b2ce8f domain=loans/paid_status
+2026-07-24 06:00:21 - INFO - 👁️ [loan_installment:ca_71].paid_status -> update (event=ed32dc7c-a100-40c0-9a2a-8e7544b2ce8f, prev=eae2e98d-f2d7-4133-aed4-8629aef49db2)
+2026-07-24 06:00:22 - INFO - 📒 event+write atomic commit: [loan_installment:ca_70].paid_status (True -> False) id=c4e85983-078b-4635-ab33-687fd6b0922c domain=loans/paid_status
+2026-07-24 06:00:22 - INFO - 👁️ [loan_installment:ca_70].paid_status -> update (event=c4e85983-078b-4635-ab33-687fd6b0922c, prev=3620e530-a68f-4889-ba92-224e966bab85)
+2026-07-24 06:00:23 - INFO - 📒 event+write atomic commit: [loan_installment:ca_69].paid_status (True -> False) id=fcde72ef-62ee-423b-aeab-40c82fb67282 domain=loans/paid_status
+2026-07-24 06:00:23 - INFO - 👁️ [loan_installment:ca_69].paid_status -> update (event=fcde72ef-62ee-423b-aeab-40c82fb67282, prev=aafb653f-b470-4a84-9703-afb405932b51)
+2026-07-24 06:00:33 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 06:04:34 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 06:07:49 - INFO - ==================================================
+2026-07-24 06:07:49 - INFO - 🚀 ADAM v1 — Starting...
+2026-07-24 06:07:49 - INFO - ==================================================
+2026-07-24 06:07:50 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 06:07:50 - INFO - ✅ Firebase
+2026-07-24 06:07:51 - INFO - ✅ اتصلت بـ OpenAI
+2026-07-24 06:07:51 - INFO - ✅ اتصلت بـ OpenAI
+2026-07-24 06:07:51 - INFO - ✅ OpenAI
+2026-07-24 06:07:51 - INFO - ✅ تم تهيئة البوت
+2026-07-24 06:07:51 - INFO - ✅ Telegram Bot
+2026-07-24 06:07:51 - INFO - ✅ Human Model
+2026-07-24 06:07:51 - INFO - ✅ ADAM Mind
+2026-07-24 06:07:51 - INFO - ✅ Executive Brain
+2026-07-24 06:07:51 - INFO - ✅ ADAM Runtime
+2026-07-24 06:07:51 - INFO - ✅ Capabilities registered
+2026-07-24 06:08:11 - INFO - ==================================================
+2026-07-24 06:08:11 - INFO - 🚀 ADAM v1 — Starting...
+2026-07-24 06:08:11 - INFO - ==================================================
+2026-07-24 06:08:12 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 06:08:12 - INFO - ✅ Firebase
+2026-07-24 06:08:14 - INFO - ✅ اتصلت بـ OpenAI
+2026-07-24 06:08:14 - INFO - ✅ اتصلت بـ OpenAI
+2026-07-24 06:08:14 - INFO - ✅ OpenAI
+2026-07-24 06:08:14 - INFO - ✅ تم تهيئة البوت
+2026-07-24 06:08:14 - INFO - ✅ Telegram Bot
+2026-07-24 06:08:14 - INFO - ✅ Human Model
+2026-07-24 06:08:14 - INFO - ✅ ADAM Mind
+2026-07-24 06:08:14 - INFO - ✅ Executive Brain
+2026-07-24 06:08:14 - INFO - ✅ ADAM Runtime
+2026-07-24 06:08:14 - INFO - ✅ Capabilities registered
+2026-07-24 08:01:09 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 10:09:45 - INFO - ==================================================
+2026-07-24 10:09:45 - INFO - 🚀 ADAM v1 — Starting...
+2026-07-24 10:09:45 - INFO - ==================================================
+2026-07-24 10:09:46 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 10:09:46 - INFO - ✅ Firebase
+2026-07-24 10:09:47 - INFO - ✅ اتصلت بـ OpenAI
+2026-07-24 10:09:47 - INFO - ✅ اتصلت بـ OpenAI
+2026-07-24 10:09:47 - INFO - ✅ OpenAI
+2026-07-24 10:09:47 - INFO - ✅ تم تهيئة البوت
+2026-07-24 10:09:47 - INFO - ✅ Telegram Bot
+2026-07-24 10:09:47 - INFO - ✅ Human Model
+2026-07-24 10:09:47 - INFO - ✅ ADAM Mind
+2026-07-24 10:09:47 - INFO - ✅ Executive Brain
+2026-07-24 10:09:47 - INFO - ✅ ADAM Runtime
+2026-07-24 10:09:47 - INFO - ✅ Capabilities registered
+2026-07-24 11:01:47 - INFO - ==================================================
+2026-07-24 11:01:47 - INFO - 🚀 ADAM v1 — Starting...
+2026-07-24 11:01:47 - INFO - ==================================================
+2026-07-24 11:01:48 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 11:01:48 - INFO - ✅ Firebase
+2026-07-24 11:01:49 - INFO - ✅ اتصلت بـ OpenAI
+2026-07-24 11:01:49 - INFO - ✅ اتصلت بـ OpenAI
+2026-07-24 11:01:49 - INFO - ✅ OpenAI
+2026-07-24 11:01:49 - INFO - ✅ تم تهيئة البوت
+2026-07-24 11:01:49 - INFO - ✅ Telegram Bot
+2026-07-24 11:01:49 - INFO - ✅ Human Model
+2026-07-24 11:01:49 - INFO - ✅ ADAM Mind
+2026-07-24 11:01:49 - INFO - ✅ Executive Brain
+2026-07-24 11:01:49 - INFO - ✅ ADAM Runtime
+2026-07-24 11:01:49 - INFO - ✅ Capabilities registered
+2026-07-24 11:02:23 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 15:54:47 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 15:55:23 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'heuristic', 'message': "كلمة تقريب 'يمكن' قريبة من قيمة مؤكدة -- الحقيقة الأصلية exact مش approximate"}]
+2026-07-24 15:55:25 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'deterministic', 'message': "رقم خام '7' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}]
+2026-07-24 15:55:25 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'deterministic', 'message': "رقم خام '7' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}]
+2026-07-24 15:55:25 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (pending_obligation_load) -- fallback للقاموس المقفول
+2026-07-24 15:56:39 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 15:56:44 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'deterministic', 'message': "رقم خام '7' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}]
+2026-07-24 15:56:44 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'deterministic', 'message': "رقم خام '7' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}]
+2026-07-24 15:56:44 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (pending_obligation_load) -- fallback للقاموس المقفول
+2026-07-24 16:02:08 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 16:02:13 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'deterministic', 'message': "رقم خام '7' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}]
+2026-07-24 16:02:13 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'deterministic', 'message': "رقم خام '7' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}]
+2026-07-24 16:02:13 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (pending_obligation_load) -- fallback للقاموس المقفول
+2026-07-24 16:02:13 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'الوضع مستقر' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]
+2026-07-24 16:02:13 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (pending_obligation_load) -- fallback للقاموس المقفول
+2026-07-24 16:02:28 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 16:02:32 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'deterministic', 'message': "رقم خام '7' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}]
+2026-07-24 16:02:32 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'deterministic', 'message': "رقم خام '7' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}]
+2026-07-24 16:02:32 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (pending_obligation_load) -- fallback للقاموس المقفول
+2026-07-24 16:02:32 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'الوضع مستقر' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]
+2026-07-24 16:02:32 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (pending_obligation_load) -- fallback للقاموس المقفول
+2026-07-24 18:49:45 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 18:49:46 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (False -> True) id=1bcc1445-090c-40d4-b2de-becaf29f0e35 domain=loans/paid_status
+2026-07-24 18:49:46 - INFO - 👁️ [loan_installment:ca_71].paid_status -> new (event=1bcc1445-090c-40d4-b2de-becaf29f0e35)
+2026-07-24 18:49:46 - INFO - 📒 event recorded: [loan_installment:ca_71].conflict_status (None -> 'pending') id=83a56348-2070-4916-b68f-946f7afed83f
+2026-07-24 18:49:48 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (True -> False) id=ef92472d-be76-4360-896d-141d98402302 domain=loans/paid_status
+2026-07-24 18:49:48 - INFO - 👁️ [loan_installment:ca_71].paid_status -> update (event=ef92472d-be76-4360-896d-141d98402302, prev=1bcc1445-090c-40d4-b2de-becaf29f0e35)
+2026-07-24 18:50:01 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 18:50:31 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 18:50:32 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (False -> True) id=d8740a68-aa7a-4241-81c3-1046f270a434 domain=loans/paid_status
+2026-07-24 18:50:32 - INFO - 👁️ [loan_installment:ca_71].paid_status -> new (event=d8740a68-aa7a-4241-81c3-1046f270a434)
+2026-07-24 18:50:32 - INFO - 📒 event recorded: [loan_installment:ca_71].conflict_status (None -> 'pending') id=692e23d5-687b-4bc7-ac57-066018054d16
+2026-07-24 18:50:37 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (unresolved_conflict): [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'الوضع مستقر' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'مفيش أي مشكلة' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]
+2026-07-24 18:50:37 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (unresolved_conflict) -- fallback للقاموس المقفول
+2026-07-24 18:50:37 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (True -> False) id=09273c87-f511-4e51-899f-c9857b61d148 domain=loans/paid_status
+2026-07-24 18:50:37 - INFO - 👁️ [loan_installment:ca_71].paid_status -> update (event=09273c87-f511-4e51-899f-c9857b61d148, prev=d8740a68-aa7a-4241-81c3-1046f270a434)
+2026-07-24 18:51:12 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 18:51:17 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'heuristic', 'message': "كلمة تقريب 'يمكن' قريبة من قيمة مؤكدة -- الحقيقة الأصلية exact مش approximate"}]
+2026-07-24 18:51:20 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'deterministic', 'message': "رقم خام '7' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}]
+2026-07-24 18:51:20 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'deterministic', 'message': "رقم خام '7' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}]
+2026-07-24 18:51:20 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (pending_obligation_load) -- fallback للقاموس المقفول
+2026-07-24 18:51:20 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'الوضع مستقر' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]
+2026-07-24 18:51:20 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (pending_obligation_load) -- fallback للقاموس المقفول
+2026-07-24 18:51:21 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 19:01:16 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 19:01:20 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'heuristic', 'message': "كلمة تقريب 'يمكن' قريبة من قيمة مؤكدة -- الحقيقة الأصلية exact مش approximate"}]
+2026-07-24 19:01:22 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'deterministic', 'message': "رقم خام '7' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}]
+2026-07-24 19:01:22 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'deterministic', 'message': "رقم خام '7' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}]
+2026-07-24 19:01:22 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (pending_obligation_load) -- fallback للقاموس المقفول
+2026-07-24 19:01:22 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'الوضع مستقر' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]
+2026-07-24 19:01:22 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (pending_obligation_load) -- fallback للقاموس المقفول
+2026-07-24 19:01:33 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 19:01:34 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (False -> True) id=71c00f43-2e6e-4d67-9b34-45924bbe8a2f domain=loans/paid_status
+2026-07-24 19:01:34 - INFO - 👁️ [loan_installment:ca_71].paid_status -> new (event=71c00f43-2e6e-4d67-9b34-45924bbe8a2f)
+2026-07-24 19:01:35 - INFO - 📒 event recorded: [loan_installment:ca_71].conflict_status (None -> 'pending') id=627819f8-750d-4b99-b372-cf104bf8d5b8
+2026-07-24 19:01:40 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (unresolved_conflict): [{'type': 'heuristic', 'message': "كلمة تقريب 'يمكن' قريبة من قيمة مؤكدة -- الحقيقة الأصلية exact مش approximate"}, {'type': 'heuristic', 'message': "تناقض حل/إغلاق: 'محلولة' بيتناقض مع unresolved_conflict.count=1 الموثّق -- لغة الحل/الإغلاق لازم تيجي من slot أو inference معتمد، مش نص حر"}]
+2026-07-24 19:01:43 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (unresolved_conflict) -- fallback للقاموس المقفول
+2026-07-24 19:01:44 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (True -> False) id=ad1f3d1a-c441-4570-92ff-4afb82df79bc domain=loans/paid_status
+2026-07-24 19:01:44 - INFO - 👁️ [loan_installment:ca_71].paid_status -> update (event=ad1f3d1a-c441-4570-92ff-4afb82df79bc, prev=71c00f43-2e6e-4d67-9b34-45924bbe8a2f)
+2026-07-24 19:02:29 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 19:02:30 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (False -> True) id=f1f10803-639a-4d40-bd78-be7135ef2ef6 domain=loans/paid_status
+2026-07-24 19:02:30 - INFO - 👁️ [loan_installment:ca_71].paid_status -> new (event=f1f10803-639a-4d40-bd78-be7135ef2ef6)
+2026-07-24 19:02:31 - INFO - 📒 event recorded: [loan_installment:ca_71].conflict_status (None -> 'pending') id=d42d0371-913c-4200-b402-40f07e23954b
+2026-07-24 19:02:36 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (unresolved_conflict): [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'الوضع مستقر' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'مفيش أي مشكلة' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]
+2026-07-24 19:02:36 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (unresolved_conflict) -- fallback للقاموس المقفول
+2026-07-24 19:02:37 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (True -> False) id=3738e52f-d101-4bc8-829e-683130d789e1 domain=loans/paid_status
+2026-07-24 19:02:37 - INFO - 👁️ [loan_installment:ca_71].paid_status -> update (event=3738e52f-d101-4bc8-829e-683130d789e1, prev=f1f10803-639a-4d40-bd78-be7135ef2ef6)
+2026-07-24 19:04:34 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 19:04:38 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'heuristic', 'message': "كلمة تقريب 'يمكن' قريبة من قيمة مؤكدة -- الحقيقة الأصلية exact مش approximate"}]
+2026-07-24 19:04:41 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'deterministic', 'message': "رقم خام '7' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}]
+2026-07-24 19:04:41 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'deterministic', 'message': "رقم خام '7' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}]
+2026-07-24 19:04:41 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (pending_obligation_load) -- fallback للقاموس المقفول
+2026-07-24 19:04:41 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'الوضع مستقر' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]
+2026-07-24 19:04:41 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (pending_obligation_load) -- fallback للقاموس المقفول
+2026-07-24 19:05:38 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 19:05:39 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (False -> True) id=65e648e3-f62d-4243-82f2-1c3ceabef785 domain=loans/paid_status
+2026-07-24 19:05:39 - INFO - 👁️ [loan_installment:ca_71].paid_status -> new (event=65e648e3-f62d-4243-82f2-1c3ceabef785)
+2026-07-24 19:05:40 - INFO - 📒 event recorded: [loan_installment:ca_71].conflict_status (None -> 'pending') id=7c377a6b-e673-4bd2-af04-754155c4fbbe
+2026-07-24 19:05:45 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (unresolved_conflict): [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'الوضع مستقر' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'مفيش أي مشكلة' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]
+2026-07-24 19:05:45 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (unresolved_conflict) -- fallback للقاموس المقفول
+2026-07-24 19:05:45 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (True -> False) id=b54bad7e-2016-4895-a8d0-5471a062455e domain=loans/paid_status
+2026-07-24 19:05:45 - INFO - 👁️ [loan_installment:ca_71].paid_status -> update (event=b54bad7e-2016-4895-a8d0-5471a062455e, prev=65e648e3-f62d-4243-82f2-1c3ceabef785)
+2026-07-24 19:06:10 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 19:34:28 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 19:34:29 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (unresolved_conflict): [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]
+2026-07-24 19:34:29 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].validator_rejection (None -> ["ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر", "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"]) id=3ad4d461-983a-4958-a247-599f21ae2d02
+2026-07-24 19:34:29 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (unresolved_conflict) -- fallback للقاموس المقفول
+2026-07-24 19:34:29 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].validator_rejection (None -> ["ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر", "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"]) id=f8b12134-8756-4577-8d2a-edd5bf4750c8
+2026-07-24 19:34:29 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].fallback_activation (None -> True) id=d2cc4f2c-06f8-4222-a7de-beb546aa7c0b
+2026-07-24 19:34:41 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 19:35:45 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 19:35:45 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (unresolved_conflict): [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]
+2026-07-24 19:35:45 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].validator_rejection (None -> ["ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر", "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"]) id=f7b06339-91f2-4547-881f-cd279616c19d
+2026-07-24 19:35:45 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (unresolved_conflict) -- fallback للقاموس المقفول
+2026-07-24 19:35:45 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].validator_rejection (None -> ["ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر", "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"]) id=d7e7fe66-9160-4244-b968-1ab11b797eba
+2026-07-24 19:35:46 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].fallback_activation (None -> True) id=34fbd9f9-82fe-4458-ab9d-ff99fb479653
+2026-07-24 19:35:56 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 19:36:02 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'deterministic', 'message': "رقم خام '7' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}]
+2026-07-24 19:36:02 - INFO - 📒 event recorded: [self_diagnosis:pending_obligation_load].validator_rejection (None -> ["رقم خام '7' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"]) id=ea6dd280-7051-400a-a98a-fd752fec6fef
+2026-07-24 19:36:02 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'deterministic', 'message': "رقم خام '7' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}]
+2026-07-24 19:36:02 - INFO - 📒 event recorded: [self_diagnosis:pending_obligation_load].validator_rejection (None -> ["رقم خام '7' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"]) id=42727cb8-8aee-46fa-8667-6756c594e625
+2026-07-24 19:36:02 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (pending_obligation_load) -- fallback للقاموس المقفول
+2026-07-24 19:36:02 - INFO - 📒 event recorded: [self_diagnosis:pending_obligation_load].validator_rejection (None -> ["رقم خام '7' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"]) id=f6024e2f-219f-4106-a871-ff4e139f29ac
+2026-07-24 19:36:02 - INFO - 📒 event recorded: [self_diagnosis:pending_obligation_load].fallback_activation (None -> True) id=a17c8e89-e931-4fd9-acc9-4555555d4931
+2026-07-24 19:36:02 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'الوضع مستقر' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]
+2026-07-24 19:36:03 - INFO - 📒 event recorded: [self_diagnosis:pending_obligation_load].validator_rejection (None -> ["ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر", "ادّعاء طمأنة/حالة غير مرخّص 'الوضع مستقر' -- لازم يجي من inference معتمد عبر Slot، مش نص حر", "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"]) id=e62269d9-0e1f-410b-9140-9ae920faabdf
+2026-07-24 19:36:03 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (pending_obligation_load) -- fallback للقاموس المقفول
+2026-07-24 19:36:03 - INFO - 📒 event recorded: [self_diagnosis:pending_obligation_load].validator_rejection (None -> ["ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر", "ادّعاء طمأنة/حالة غير مرخّص 'الوضع مستقر' -- لازم يجي من inference معتمد عبر Slot، مش نص حر", "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"]) id=4dad4060-cea8-477b-bc33-7e51a3562c1e
+2026-07-24 19:36:03 - INFO - 📒 event recorded: [self_diagnosis:pending_obligation_load].fallback_activation (None -> True) id=460ef367-18f3-49bb-9da2-62cf797537c5
+2026-07-24 19:36:16 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 19:36:17 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (False -> True) id=c2cc50d3-1ce1-405b-9773-3153faf5c461 domain=loans/paid_status
+2026-07-24 19:36:17 - INFO - 👁️ [loan_installment:ca_71].paid_status -> new (event=c2cc50d3-1ce1-405b-9773-3153faf5c461)
+2026-07-24 19:36:17 - INFO - 📒 event recorded: [loan_installment:ca_71].conflict_status (None -> 'pending') id=6df1eede-2d92-4afe-a441-7d8fbd6f191b
+2026-07-24 19:36:22 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (unresolved_conflict): [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'الوضع مستقر' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'مفيش أي مشكلة' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]
+2026-07-24 19:36:23 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].validator_rejection (None -> ["ادّعاء طمأنة/حالة غير مرخّص 'الوضع مستقر' -- لازم يجي من inference معتمد عبر Slot، مش نص حر", "ادّعاء طمأنة/حالة غير مرخّص 'مفيش أي مشكلة' -- لازم يجي من inference معتمد عبر Slot، مش نص حر", "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"]) id=b1afb7b9-8fbd-42a2-8d61-b0ddbe70c25a
+2026-07-24 19:36:23 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (unresolved_conflict) -- fallback للقاموس المقفول
+2026-07-24 19:36:23 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].validator_rejection (None -> ["ادّعاء طمأنة/حالة غير مرخّص 'الوضع مستقر' -- لازم يجي من inference معتمد عبر Slot، مش نص حر", "ادّعاء طمأنة/حالة غير مرخّص 'مفيش أي مشكلة' -- لازم يجي من inference معتمد عبر Slot، مش نص حر", "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"]) id=3d2181f4-76bf-40ee-a33a-c945327ea34b
+2026-07-24 19:36:23 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].fallback_activation (None -> True) id=66bbeaf6-f311-49c1-bcd6-ae495aad6530
+2026-07-24 19:36:23 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (True -> False) id=45d2fc8c-858f-4e89-b18d-67cd36e26d58 domain=loans/paid_status
+2026-07-24 19:36:23 - INFO - 👁️ [loan_installment:ca_71].paid_status -> update (event=45d2fc8c-858f-4e89-b18d-67cd36e26d58, prev=c2cc50d3-1ce1-405b-9773-3153faf5c461)
+2026-07-24 19:36:42 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 19:48:06 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 19:48:07 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (unresolved_conflict): [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]
+2026-07-24 19:48:07 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].validator_rejection (None -> ["ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر", "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"]) id=ae40cd3d-105f-4cc2-aaa5-ae7f7fee560d
+2026-07-24 19:48:07 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (unresolved_conflict) -- fallback للقاموس المقفول
+2026-07-24 19:48:07 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].validator_rejection (None -> ["ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر", "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"]) id=4153399a-3772-4532-a98b-c8db27214e5a
+2026-07-24 19:48:08 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].fallback_activation (None -> True) id=2f080b77-83bf-4c6a-9709-91aba0aed6f2
+2026-07-24 19:49:54 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 19:49:55 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (unresolved_conflict): [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]
+2026-07-24 19:49:55 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].validator_rejection (None -> [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]) id=7bc4c421-cc37-4810-88e8-be0bf812305f
+2026-07-24 19:49:55 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (unresolved_conflict) -- fallback للقاموس المقفول
+2026-07-24 19:49:55 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].validator_rejection (None -> [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]) id=ddf00f98-d95a-4efd-8508-e6ecc1451af9
+2026-07-24 19:49:55 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].fallback_activation (None -> True) id=b935efc4-51ad-40c0-a03a-93b3dd09f6ba
+2026-07-24 19:50:36 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 19:50:37 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (unresolved_conflict): [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]
+2026-07-24 19:50:37 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].validator_rejection (None -> [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]) id=442e05e5-a751-409c-b832-a2b68829b304
+2026-07-24 19:50:37 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (unresolved_conflict) -- fallback للقاموس المقفول
+2026-07-24 19:50:37 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].validator_rejection (None -> [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]) id=d262686a-b1e2-4c02-93db-e6cab5694027
+2026-07-24 19:50:37 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].fallback_activation (None -> True) id=819eada0-0422-4e2b-abbd-b020494598cd
+2026-07-24 19:50:37 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (unresolved_conflict): [{'type': 'deterministic', 'message': "رقم خام '5' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]
+2026-07-24 19:50:37 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].validator_rejection (None -> [{'type': 'deterministic', 'message': "رقم خام '5' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]) id=7a01af9d-7fe7-409d-81ae-65779b271c72
+2026-07-24 19:50:37 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (unresolved_conflict) -- fallback للقاموس المقفول
+2026-07-24 19:50:37 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].validator_rejection (None -> [{'type': 'deterministic', 'message': "رقم خام '5' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]) id=5867f93f-23dc-4d07-97a1-b2dbabf0be6d
+2026-07-24 19:50:38 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].fallback_activation (None -> True) id=65d8452b-7601-4335-90e4-542ef309de94
+2026-07-24 19:50:46 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 19:50:51 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'heuristic', 'message': "كلمة تقريب 'يمكن' قريبة من قيمة مؤكدة -- الحقيقة الأصلية exact مش approximate"}]
+2026-07-24 19:50:51 - INFO - 📒 event recorded: [self_diagnosis:pending_obligation_load].validator_rejection (None -> [{'type': 'heuristic', 'message': "كلمة تقريب 'يمكن' قريبة من قيمة مؤكدة -- الحقيقة الأصلية exact مش approximate"}]) id=07e790d0-79ec-4bf0-bafc-bb25da6876e9
+2026-07-24 19:50:53 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'deterministic', 'message': "رقم خام '7' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}]
+2026-07-24 19:50:53 - INFO - 📒 event recorded: [self_diagnosis:pending_obligation_load].validator_rejection (None -> [{'type': 'deterministic', 'message': "رقم خام '7' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}]) id=96944997-c1af-40d0-8225-a05dd3801617
+2026-07-24 19:50:53 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'deterministic', 'message': "رقم خام '7' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}]
+2026-07-24 19:50:53 - INFO - 📒 event recorded: [self_diagnosis:pending_obligation_load].validator_rejection (None -> [{'type': 'deterministic', 'message': "رقم خام '7' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}]) id=8f795ff2-5843-446b-afbb-f20e35e63522
+2026-07-24 19:50:53 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (pending_obligation_load) -- fallback للقاموس المقفول
+2026-07-24 19:50:53 - INFO - 📒 event recorded: [self_diagnosis:pending_obligation_load].validator_rejection (None -> [{'type': 'deterministic', 'message': "رقم خام '7' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}]) id=743f9bfe-e248-4032-a92e-3784a5744c04
+2026-07-24 19:50:53 - INFO - 📒 event recorded: [self_diagnosis:pending_obligation_load].fallback_activation (None -> True) id=c15c8158-2e5d-4050-8994-d05dea5115e3
+2026-07-24 19:50:53 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'الوضع مستقر' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]
+2026-07-24 19:50:53 - INFO - 📒 event recorded: [self_diagnosis:pending_obligation_load].validator_rejection (None -> [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'الوضع مستقر' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]) id=975f9d5b-6b2a-45c8-88c5-954e957c18aa
+2026-07-24 19:50:53 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (pending_obligation_load) -- fallback للقاموس المقفول
+2026-07-24 19:50:53 - INFO - 📒 event recorded: [self_diagnosis:pending_obligation_load].validator_rejection (None -> [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'الوضع مستقر' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]) id=6ae7cc4a-73ca-4540-b353-3429dbac991a
+2026-07-24 19:50:54 - INFO - 📒 event recorded: [self_diagnosis:pending_obligation_load].fallback_activation (None -> True) id=4bccd614-43dd-433f-a9ac-505117f2cc8a
+2026-07-24 19:51:03 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 19:51:04 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (False -> True) id=e33c9428-1e69-4641-8de0-870f5d304b90 domain=loans/paid_status
+2026-07-24 19:51:04 - INFO - 👁️ [loan_installment:ca_71].paid_status -> new (event=e33c9428-1e69-4641-8de0-870f5d304b90)
+2026-07-24 19:51:04 - INFO - 📒 event recorded: [loan_installment:ca_71].conflict_status (None -> 'pending') id=cac1cd76-106f-4f51-ba92-d87845b6afec
+2026-07-24 19:51:09 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (unresolved_conflict): [{'type': 'heuristic', 'message': "تناقض حل/إغلاق: 'محسومة' بيتناقض مع unresolved_conflict.count=1 الموثّق -- لغة الحل/الإغلاق لازم تيجي من slot أو inference معتمد، مش نص حر"}]
+2026-07-24 19:51:10 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].validator_rejection (None -> [{'type': 'heuristic', 'message': "تناقض حل/إغلاق: 'محسومة' بيتناقض مع unresolved_conflict.count=1 الموثّق -- لغة الحل/الإغلاق لازم تيجي من slot أو inference معتمد، مش نص حر"}]) id=727c8565-d4a3-49e3-a5e8-857de0d6b6fe
+2026-07-24 19:51:12 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (unresolved_conflict): [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'الوضع مستقر' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'مفيش أي مشكلة' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]
+2026-07-24 19:51:12 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].validator_rejection (None -> [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'الوضع مستقر' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'مفيش أي مشكلة' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]) id=77446541-a5ff-4b97-8c1c-852c5bbc4993
+2026-07-24 19:51:12 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (unresolved_conflict) -- fallback للقاموس المقفول
+2026-07-24 19:51:12 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].validator_rejection (None -> [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'الوضع مستقر' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'مفيش أي مشكلة' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]) id=5c23a618-5db6-4151-a8b1-035399a3cd42
+2026-07-24 19:51:13 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].fallback_activation (None -> True) id=a9325296-3d33-4d6a-8746-74577ed793b9
+2026-07-24 19:51:13 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (True -> False) id=5ed3e1ea-7168-4950-af8b-0ea3b57d243c domain=loans/paid_status
+2026-07-24 19:51:13 - INFO - 👁️ [loan_installment:ca_71].paid_status -> update (event=5ed3e1ea-7168-4950-af8b-0ea3b57d243c, prev=e33c9428-1e69-4641-8de0-870f5d304b90)
+2026-07-24 22:02:07 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 22:02:11 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (False -> True) id=c5d90b26-bf5e-4b92-a048-0787861a445e domain=loans/paid_status
+2026-07-24 22:02:11 - INFO - 👁️ [loan_installment:ca_71].paid_status -> new (event=c5d90b26-bf5e-4b92-a048-0787861a445e)
+2026-07-24 22:02:11 - INFO - 📒 event recorded: [loan_installment:ca_71].conflict_status (None -> 'pending') id=dc505d6d-68be-4558-8cfc-922a6af4f4f2
+2026-07-24 22:02:13 - WARNING - ⚠️ Verbatim mismatch -- الرد النهائي مفيهوش نص التعبير المعتمد بالحرف (expression_id=80f7d4ae-2be4-4238-bdce-c0129ab31f9d). بنستبدله بالنص الأصلي.
+2026-07-24 22:02:15 - INFO - ℹ️ Active expression تجاهلت -- الحالة اتغيرت من وقت القرار (unresolved_conflict)
+2026-07-24 22:02:16 - INFO - 📒 event+write atomic commit: [loan_installment:ca_70].paid_status (False -> True) id=e68a2ec6-d8c8-4f11-9df7-f8ed9ae7df77 domain=loans/paid_status
+2026-07-24 22:02:16 - INFO - 👁️ [loan_installment:ca_70].paid_status -> new (event=e68a2ec6-d8c8-4f11-9df7-f8ed9ae7df77)
+2026-07-24 22:02:16 - INFO - 📒 event recorded: [loan_installment:ca_70].conflict_status (None -> 'pending') id=e14dd625-0837-4381-9e38-953c71acafa2
+2026-07-24 22:02:16 - INFO - 📒 event+write atomic commit: [loan_installment:ca_69].paid_status (False -> True) id=e98e10df-61af-42b4-8646-d31a1035b0fa domain=loans/paid_status
+2026-07-24 22:02:16 - INFO - 👁️ [loan_installment:ca_69].paid_status -> new (event=e98e10df-61af-42b4-8646-d31a1035b0fa)
+2026-07-24 22:02:16 - INFO - 📒 event recorded: [loan_installment:ca_69].conflict_status (None -> 'pending') id=c2f5cdfa-4560-49d0-868a-3491da2c456a
+2026-07-24 22:02:17 - INFO - ✅ تم تهيئة البوت
+2026-07-24 22:02:18 - INFO - 📢 Active expression sent: unresolved_conflict=high (expression_id=488d6dc5-7ad7-4c38-b38f-76f4d5828761)
+2026-07-24 22:02:37 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 22:02:38 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (True -> False) id=f57c99a3-fbfe-4679-afaa-fea53314e3b6 domain=loans/paid_status
+2026-07-24 22:02:38 - INFO - 👁️ [loan_installment:ca_71].paid_status -> update (event=f57c99a3-fbfe-4679-afaa-fea53314e3b6, prev=c5d90b26-bf5e-4b92-a048-0787861a445e)
+2026-07-24 22:02:39 - INFO - 📒 event+write atomic commit: [loan_installment:ca_70].paid_status (True -> False) id=82971a29-57f2-4b2b-83cb-7f744d8db1b0 domain=loans/paid_status
+2026-07-24 22:02:39 - INFO - 👁️ [loan_installment:ca_70].paid_status -> update (event=82971a29-57f2-4b2b-83cb-7f744d8db1b0, prev=e68a2ec6-d8c8-4f11-9df7-f8ed9ae7df77)
+2026-07-24 22:02:39 - INFO - 📒 event+write atomic commit: [loan_installment:ca_69].paid_status (True -> False) id=24d1020f-5569-4886-b10c-f8c1d89c9ccd domain=loans/paid_status
+2026-07-24 22:02:39 - INFO - 👁️ [loan_installment:ca_69].paid_status -> update (event=24d1020f-5569-4886-b10c-f8c1d89c9ccd, prev=e98e10df-61af-42b4-8646-d31a1035b0fa)
+2026-07-24 22:03:03 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 22:03:07 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (False -> True) id=c4a5445d-c496-462f-b054-7343141ad003 domain=loans/paid_status
+2026-07-24 22:03:07 - INFO - 👁️ [loan_installment:ca_71].paid_status -> new (event=c4a5445d-c496-462f-b054-7343141ad003)
+2026-07-24 22:03:07 - INFO - 📒 event recorded: [loan_installment:ca_71].conflict_status (None -> 'pending') id=6a0f537a-91b6-4507-9f62-6f886e28beb8
+2026-07-24 22:03:10 - WARNING - ⚠️ Verbatim mismatch -- الرد النهائي مفيهوش نص التعبير المعتمد بالحرف (expression_id=4df5556a-e346-44f9-a1ed-9d08c0a72998). بنستبدله بالنص الأصلي.
+2026-07-24 22:03:10 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].verbatim_mismatch (None -> True) id=e51f42a6-d3aa-48ac-8fe3-99fe7a2daac6
+2026-07-24 22:03:11 - INFO - ℹ️ Active expression تجاهلت -- الحالة اتغيرت من وقت القرار (unresolved_conflict)
+2026-07-24 22:03:12 - INFO - 📒 event+write atomic commit: [loan_installment:ca_70].paid_status (False -> True) id=cff49e69-e84e-46cf-846c-602fff5618dd domain=loans/paid_status
+2026-07-24 22:03:12 - INFO - 👁️ [loan_installment:ca_70].paid_status -> new (event=cff49e69-e84e-46cf-846c-602fff5618dd)
+2026-07-24 22:03:12 - INFO - 📒 event recorded: [loan_installment:ca_70].conflict_status (None -> 'pending') id=40d01577-792a-487f-a42f-8c952ce7c839
+2026-07-24 22:03:12 - INFO - 📒 event+write atomic commit: [loan_installment:ca_69].paid_status (False -> True) id=6a518781-d414-4c1e-a0a2-a5633c56381f domain=loans/paid_status
+2026-07-24 22:03:12 - INFO - 👁️ [loan_installment:ca_69].paid_status -> new (event=6a518781-d414-4c1e-a0a2-a5633c56381f)
+2026-07-24 22:03:13 - INFO - 📒 event recorded: [loan_installment:ca_69].conflict_status (None -> 'pending') id=3de66892-de2c-41c4-af79-f4454c046a36
+2026-07-24 22:03:13 - INFO - ✅ تم تهيئة البوت
+2026-07-24 22:03:14 - INFO - 📢 Active expression sent: unresolved_conflict=high (expression_id=f0197960-dfbb-4437-a08e-1b3b1e88b775)
+2026-07-24 22:03:50 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 22:03:51 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (True -> False) id=3f734935-9c61-4fcb-8fe8-f8712893793e domain=loans/paid_status
+2026-07-24 22:03:51 - INFO - 👁️ [loan_installment:ca_71].paid_status -> update (event=3f734935-9c61-4fcb-8fe8-f8712893793e, prev=c4a5445d-c496-462f-b054-7343141ad003)
+2026-07-24 22:03:52 - INFO - 📒 event+write atomic commit: [loan_installment:ca_70].paid_status (True -> False) id=3c34c5bb-61f0-42d9-8653-544a0d1e00fe domain=loans/paid_status
+2026-07-24 22:03:52 - INFO - 👁️ [loan_installment:ca_70].paid_status -> update (event=3c34c5bb-61f0-42d9-8653-544a0d1e00fe, prev=cff49e69-e84e-46cf-846c-602fff5618dd)
+2026-07-24 22:03:52 - INFO - 📒 event+write atomic commit: [loan_installment:ca_69].paid_status (True -> False) id=0dfa7b87-1fae-402e-a064-4a937609c9df domain=loans/paid_status
+2026-07-24 22:03:52 - INFO - 👁️ [loan_installment:ca_69].paid_status -> update (event=0dfa7b87-1fae-402e-a064-4a937609c9df, prev=6a518781-d414-4c1e-a0a2-a5633c56381f)
+2026-07-24 22:04:00 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 22:04:03 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (False -> True) id=dd7f53b6-42e9-4e28-9aff-58ae2b45242d domain=loans/paid_status
+2026-07-24 22:04:03 - INFO - 👁️ [loan_installment:ca_71].paid_status -> new (event=dd7f53b6-42e9-4e28-9aff-58ae2b45242d)
+2026-07-24 22:04:03 - INFO - 📒 event recorded: [loan_installment:ca_71].conflict_status (None -> 'pending') id=101a7119-807d-41f9-bfce-19d62cf241e0
+2026-07-24 22:04:05 - WARNING - ⚠️ Verbatim mismatch -- الرد النهائي مفيهوش نص التعبير المعتمد بالحرف (expression_id=744000d7-455b-4e65-9128-befdea5bd007). بنستبدله بالنص الأصلي.
+2026-07-24 22:04:05 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].verbatim_mismatch (None -> True) id=4f91133e-a3dd-4d40-9a55-85f64f1b887e
+2026-07-24 22:04:07 - INFO - ℹ️ Active expression تجاهلت -- الحالة اتغيرت من وقت القرار (unresolved_conflict)
+2026-07-24 22:04:07 - INFO - 📒 event+write atomic commit: [loan_installment:ca_70].paid_status (False -> True) id=8b8d94f2-4531-4310-b07f-48802fec6a3a domain=loans/paid_status
+2026-07-24 22:04:07 - INFO - 👁️ [loan_installment:ca_70].paid_status -> new (event=8b8d94f2-4531-4310-b07f-48802fec6a3a)
+2026-07-24 22:04:08 - INFO - 📒 event recorded: [loan_installment:ca_70].conflict_status (None -> 'pending') id=1d13814f-e60c-4f24-8191-94978c2a82a3
+2026-07-24 22:04:08 - INFO - 📒 event+write atomic commit: [loan_installment:ca_69].paid_status (False -> True) id=6830798d-974a-4e6c-ba33-1cb9a976686c domain=loans/paid_status
+2026-07-24 22:04:08 - INFO - 👁️ [loan_installment:ca_69].paid_status -> new (event=6830798d-974a-4e6c-ba33-1cb9a976686c)
+2026-07-24 22:04:08 - INFO - 📒 event recorded: [loan_installment:ca_69].conflict_status (None -> 'pending') id=e9fcbf4c-9c59-404a-9a9b-0d15363042d7
+2026-07-24 22:04:08 - INFO - ✅ تم تهيئة البوت
+2026-07-24 22:04:09 - INFO - 📢 Active expression sent: unresolved_conflict=high (expression_id=0ff2cc20-40fb-461f-8899-f9cc8518fb97)
+2026-07-24 22:04:12 - WARNING - ⚠️ Verbatim mismatch -- الرد النهائي مفيهوش نص التعبير المعتمد بالحرف (expression_id=cf14f8c1-d8c5-4e62-ae88-218e052df531). بنستبدله بالنص الأصلي.
+2026-07-24 22:04:12 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].verbatim_mismatch (None -> True) id=b3692adb-bcae-4edd-b3cb-b26577419292
+2026-07-24 22:04:13 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (True -> False) id=c96d8ced-d67c-41df-938e-5025e2ab9321 domain=loans/paid_status
+2026-07-24 22:04:13 - INFO - 👁️ [loan_installment:ca_71].paid_status -> update (event=c96d8ced-d67c-41df-938e-5025e2ab9321, prev=dd7f53b6-42e9-4e28-9aff-58ae2b45242d)
+2026-07-24 22:04:14 - INFO - 📒 event+write atomic commit: [loan_installment:ca_70].paid_status (True -> False) id=c357b42c-2063-4a8d-8d8b-3ffee5d05d15 domain=loans/paid_status
+2026-07-24 22:04:14 - INFO - 👁️ [loan_installment:ca_70].paid_status -> update (event=c357b42c-2063-4a8d-8d8b-3ffee5d05d15, prev=8b8d94f2-4531-4310-b07f-48802fec6a3a)
+2026-07-24 22:04:15 - INFO - 📒 event+write atomic commit: [loan_installment:ca_69].paid_status (True -> False) id=7685216d-2890-4807-8722-374d538d0b99 domain=loans/paid_status
+2026-07-24 22:04:15 - INFO - 👁️ [loan_installment:ca_69].paid_status -> update (event=7685216d-2890-4807-8722-374d538d0b99, prev=6830798d-974a-4e6c-ba33-1cb9a976686c)
+2026-07-24 22:04:46 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 22:04:47 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (unresolved_conflict): [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]
+2026-07-24 22:04:47 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].validator_rejection (None -> [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]) id=43178f52-5384-4326-9f4f-f46f9c617b97
+2026-07-24 22:04:47 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (unresolved_conflict) -- fallback للقاموس المقفول
+2026-07-24 22:04:47 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].validator_rejection (None -> [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]) id=893c0803-8988-45fe-bbbe-c25130fbb162
+2026-07-24 22:04:47 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].fallback_activation (None -> True) id=90c8b526-e686-4ede-badf-444d1bc9f9d1
+2026-07-24 22:04:47 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (unresolved_conflict): [{'type': 'deterministic', 'message': "رقم خام '5' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]
+2026-07-24 22:04:48 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].validator_rejection (None -> [{'type': 'deterministic', 'message': "رقم خام '5' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]) id=40237ef0-788d-4b17-95cc-4fc204d1d152
+2026-07-24 22:04:48 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (unresolved_conflict) -- fallback للقاموس المقفول
+2026-07-24 22:04:48 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].validator_rejection (None -> [{'type': 'deterministic', 'message': "رقم خام '5' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]) id=3371e898-1673-4e0c-8a9a-66a4efa03112
+2026-07-24 22:04:48 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].fallback_activation (None -> True) id=556a5fdb-f1a0-4d02-a589-f560302e4857
+2026-07-24 22:23:54 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 22:23:57 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (False -> True) id=6aad289d-d0dd-47a6-8971-2f95bd7b4d56 domain=loans/paid_status
+2026-07-24 22:23:57 - INFO - 👁️ [loan_installment:ca_71].paid_status -> new (event=6aad289d-d0dd-47a6-8971-2f95bd7b4d56)
+2026-07-24 22:23:58 - INFO - 📒 event recorded: [loan_installment:ca_71].conflict_status (None -> 'pending') id=f872827b-6659-43e1-a622-11f49b479fa5
+2026-07-24 22:24:00 - WARNING - ⚠️ Verbatim mismatch -- الرد النهائي مفيهوش نص التعبير المعتمد بالحرف (expression_id=f3526b10-07ae-49cb-9556-79814a7f3d99). بنستبدله بالنص الأصلي.
+2026-07-24 22:24:00 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].verbatim_mismatch (None -> True) id=5beee986-12e1-4e6e-a61b-37f3ff07a576
+2026-07-24 22:24:02 - INFO - ℹ️ Active expression تجاهلت -- الحالة اتغيرت من وقت القرار (unresolved_conflict)
+2026-07-24 22:24:02 - INFO - 📒 event+write atomic commit: [loan_installment:ca_70].paid_status (False -> True) id=87a8f5ec-fe9c-42d2-8615-c5835adc177d domain=loans/paid_status
+2026-07-24 22:24:02 - INFO - 👁️ [loan_installment:ca_70].paid_status -> new (event=87a8f5ec-fe9c-42d2-8615-c5835adc177d)
+2026-07-24 22:24:03 - INFO - 📒 event recorded: [loan_installment:ca_70].conflict_status (None -> 'pending') id=d5b2662b-461d-4699-83a3-168b25793f59
+2026-07-24 22:24:03 - INFO - 📒 event+write atomic commit: [loan_installment:ca_69].paid_status (False -> True) id=012262b9-b124-4586-8cb0-f70e439ce906 domain=loans/paid_status
+2026-07-24 22:24:03 - INFO - 👁️ [loan_installment:ca_69].paid_status -> new (event=012262b9-b124-4586-8cb0-f70e439ce906)
+2026-07-24 22:24:03 - INFO - 📒 event recorded: [loan_installment:ca_69].conflict_status (None -> 'pending') id=400ddc8c-9268-470b-8a9f-b23e331a0158
+2026-07-24 22:24:03 - INFO - ✅ تم تهيئة البوت
+2026-07-24 22:24:04 - INFO - 📢 Active expression sent: unresolved_conflict=high (expression_id=353ab84c-aa2b-42ba-bed7-614431960dac)
+2026-07-24 22:24:07 - WARNING - ⚠️ Verbatim mismatch -- الرد النهائي مفيهوش نص التعبير المعتمد بالحرف (expression_id=4587fabf-e210-47a8-8d90-5ac6db98c47a). بنستبدله بالنص الأصلي.
+2026-07-24 22:24:07 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].verbatim_mismatch (None -> True) id=36205964-955b-4159-9213-65ded8352ad4
+2026-07-24 22:24:08 - WARNING - ⚠️ Verbatim mismatch -- الرد النهائي مفيهوش نص التعبير المعتمد بالحرف (expression_id=a3e71d51-0ea3-4b3c-9c33-828c8ff6e49a). بنستبدله بالنص الأصلي.
+2026-07-24 22:24:21 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 22:24:22 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (True -> False) id=bf9fd909-e353-4a9d-9239-98f29c70ec05 domain=loans/paid_status
+2026-07-24 22:24:22 - INFO - 👁️ [loan_installment:ca_71].paid_status -> update (event=bf9fd909-e353-4a9d-9239-98f29c70ec05, prev=6aad289d-d0dd-47a6-8971-2f95bd7b4d56)
+2026-07-24 22:24:22 - INFO - 📒 event+write atomic commit: [loan_installment:ca_70].paid_status (True -> False) id=e392af07-b65d-4e60-a315-d00f096d04c8 domain=loans/paid_status
+2026-07-24 22:24:22 - INFO - 👁️ [loan_installment:ca_70].paid_status -> update (event=e392af07-b65d-4e60-a315-d00f096d04c8, prev=87a8f5ec-fe9c-42d2-8615-c5835adc177d)
+2026-07-24 22:24:23 - INFO - 📒 event+write atomic commit: [loan_installment:ca_69].paid_status (True -> False) id=fa0d871e-0ddf-4ec4-a702-9c0d4a86dc22 domain=loans/paid_status
+2026-07-24 22:24:23 - INFO - 👁️ [loan_installment:ca_69].paid_status -> update (event=fa0d871e-0ddf-4ec4-a702-9c0d4a86dc22, prev=012262b9-b124-4586-8cb0-f70e439ce906)
+2026-07-24 22:24:53 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 22:24:57 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (False -> True) id=714be8fe-fbaf-4c8c-b7b2-b747d60cb354 domain=loans/paid_status
+2026-07-24 22:24:57 - INFO - 👁️ [loan_installment:ca_71].paid_status -> new (event=714be8fe-fbaf-4c8c-b7b2-b747d60cb354)
+2026-07-24 22:24:57 - INFO - 📒 event recorded: [loan_installment:ca_71].conflict_status (None -> 'pending') id=72f8b434-57dd-4e05-a733-23f8d1ddb399
+2026-07-24 22:25:00 - WARNING - ⚠️ Verbatim mismatch -- الرد النهائي مفيهوش نص التعبير المعتمد بالحرف (expression_id=24309cb8-c4aa-46f4-979b-61649320c8f7). بنستبدله بالنص الأصلي.
+2026-07-24 22:25:00 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].verbatim_mismatch (None -> True) id=21b895c1-b3bc-4949-bede-ea90dffdd9d3
+2026-07-24 22:25:01 - INFO - ℹ️ Active expression تجاهلت -- الحالة اتغيرت من وقت القرار (unresolved_conflict)
+2026-07-24 22:25:02 - INFO - 📒 event+write atomic commit: [loan_installment:ca_70].paid_status (False -> True) id=4093710d-adbd-46e2-9259-d5905bfa5bed domain=loans/paid_status
+2026-07-24 22:25:02 - INFO - 👁️ [loan_installment:ca_70].paid_status -> new (event=4093710d-adbd-46e2-9259-d5905bfa5bed)
+2026-07-24 22:25:02 - INFO - 📒 event recorded: [loan_installment:ca_70].conflict_status (None -> 'pending') id=4ec987e5-5f69-4424-a2a7-dcf48cda1ea7
+2026-07-24 22:25:02 - INFO - 📒 event+write atomic commit: [loan_installment:ca_69].paid_status (False -> True) id=37731dc1-cd6a-4c14-b4b4-40f2574967f0 domain=loans/paid_status
+2026-07-24 22:25:02 - INFO - 👁️ [loan_installment:ca_69].paid_status -> new (event=37731dc1-cd6a-4c14-b4b4-40f2574967f0)
+2026-07-24 22:25:02 - INFO - 📒 event recorded: [loan_installment:ca_69].conflict_status (None -> 'pending') id=747faa92-e554-4a99-8841-2d38189745b3
+2026-07-24 22:25:03 - INFO - ✅ تم تهيئة البوت
+2026-07-24 22:25:04 - INFO - 📢 Active expression sent: unresolved_conflict=high (expression_id=fc563915-b0e1-4b33-bc97-4d00d831b2b6)
+2026-07-24 22:25:06 - WARNING - ⚠️ Verbatim mismatch -- الرد النهائي مفيهوش نص التعبير المعتمد بالحرف (expression_id=69694204-fae1-4979-8715-9ed8da87412f). بنستبدله بالنص الأصلي.
+2026-07-24 22:25:06 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].verbatim_mismatch (None -> True) id=ebade8c6-8dff-4046-99f9-3b56f92987c3
+2026-07-24 22:25:07 - WARNING - ⚠️ Verbatim mismatch -- الرد النهائي مفيهوش نص التعبير المعتمد بالحرف (expression_id=972cbcc9-f26f-41de-9c82-10b12d6bf278). بنستبدله بالنص الأصلي.
+2026-07-24 22:25:07 - ERROR - ❌ فشل تسجيل self_diagnosis verbatim_mismatch (مش حرج -- التصحيح الفعلي كمّل زي ما هو): محاكاة فشل كتابة حقيقي في Event Store
+2026-07-24 22:25:09 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (True -> False) id=2c5816d6-db61-4b07-bdb4-c9485f511944 domain=loans/paid_status
+2026-07-24 22:25:09 - INFO - 👁️ [loan_installment:ca_71].paid_status -> update (event=2c5816d6-db61-4b07-bdb4-c9485f511944, prev=714be8fe-fbaf-4c8c-b7b2-b747d60cb354)
+2026-07-24 22:25:10 - INFO - 📒 event+write atomic commit: [loan_installment:ca_70].paid_status (True -> False) id=cc7ff535-9576-4a16-a397-8f4c6d37be8b domain=loans/paid_status
+2026-07-24 22:25:10 - INFO - 👁️ [loan_installment:ca_70].paid_status -> update (event=cc7ff535-9576-4a16-a397-8f4c6d37be8b, prev=4093710d-adbd-46e2-9259-d5905bfa5bed)
+2026-07-24 22:25:10 - INFO - 📒 event+write atomic commit: [loan_installment:ca_69].paid_status (True -> False) id=b4300ebf-3d5f-4732-aa39-a2cab843fb29 domain=loans/paid_status
+2026-07-24 22:25:10 - INFO - 👁️ [loan_installment:ca_69].paid_status -> update (event=b4300ebf-3d5f-4732-aa39-a2cab843fb29, prev=37731dc1-cd6a-4c14-b4b4-40f2574967f0)
+2026-07-24 22:25:53 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 22:25:54 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (unresolved_conflict): [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]
+2026-07-24 22:25:54 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].validator_rejection (None -> [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]) id=eef3bef3-5293-4192-82fc-c815e8150adb
+2026-07-24 22:25:54 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (unresolved_conflict) -- fallback للقاموس المقفول
+2026-07-24 22:25:54 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].validator_rejection (None -> [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]) id=fec01f49-98e7-46b4-9f35-73dc46c33e88
+2026-07-24 22:25:54 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].fallback_activation (None -> True) id=8a67decb-5f32-4330-ae74-a1f62a8ff115
+2026-07-24 22:25:54 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (unresolved_conflict): [{'type': 'deterministic', 'message': "رقم خام '5' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]
+2026-07-24 22:25:54 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].validator_rejection (None -> [{'type': 'deterministic', 'message': "رقم خام '5' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]) id=b846ef75-c637-419f-b435-d6c2ccd514d9
+2026-07-24 22:25:54 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (unresolved_conflict) -- fallback للقاموس المقفول
+2026-07-24 22:25:54 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].validator_rejection (None -> [{'type': 'deterministic', 'message': "رقم خام '5' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]) id=96d9d321-d993-4377-a4b0-2a691a87038a
+2026-07-24 22:25:54 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].fallback_activation (None -> True) id=72417e6f-0f07-4a49-aaac-59b0282eb7ab
+2026-07-24 22:26:05 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 22:26:10 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'deterministic', 'message': "رقم خام '7' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}]
+2026-07-24 22:26:10 - INFO - 📒 event recorded: [self_diagnosis:pending_obligation_load].validator_rejection (None -> [{'type': 'deterministic', 'message': "رقم خام '7' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}]) id=f193c9cd-9606-444f-9954-b391aa3f1e19
+2026-07-24 22:26:10 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'deterministic', 'message': "رقم خام '7' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}]
+2026-07-24 22:26:10 - INFO - 📒 event recorded: [self_diagnosis:pending_obligation_load].validator_rejection (None -> [{'type': 'deterministic', 'message': "رقم خام '7' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}]) id=7492a3be-2205-4de4-a335-1cf1fd393589
+2026-07-24 22:26:10 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (pending_obligation_load) -- fallback للقاموس المقفول
+2026-07-24 22:26:10 - INFO - 📒 event recorded: [self_diagnosis:pending_obligation_load].validator_rejection (None -> [{'type': 'deterministic', 'message': "رقم خام '7' خارج أي slot -- غير مسموح، لازم يتحط جوه slot معتمد"}]) id=0642b3db-40c6-439b-843e-7abe09fc31d0
+2026-07-24 22:26:10 - INFO - 📒 event recorded: [self_diagnosis:pending_obligation_load].fallback_activation (None -> True) id=69400011-37d1-4502-8c7c-6a8ffffe2260
+2026-07-24 22:26:10 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (pending_obligation_load): [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'الوضع مستقر' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]
+2026-07-24 22:26:10 - INFO - 📒 event recorded: [self_diagnosis:pending_obligation_load].validator_rejection (None -> [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'الوضع مستقر' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]) id=e51967b7-7257-4d8a-90a6-b3174a6fa859
+2026-07-24 22:26:10 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (pending_obligation_load) -- fallback للقاموس المقفول
+2026-07-24 22:26:10 - INFO - 📒 event recorded: [self_diagnosis:pending_obligation_load].validator_rejection (None -> [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'كله تمام' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'الوضع مستقر' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]) id=79d11d3b-50cd-4462-a89c-0d16a3ea2f95
+2026-07-24 22:26:10 - INFO - 📒 event recorded: [self_diagnosis:pending_obligation_load].fallback_activation (None -> True) id=ac0c9e7c-c8be-466a-ba85-66446c9e06e6
+2026-07-24 22:26:14 - INFO - ✅ اتصلت بـ Firebase Firestore
+2026-07-24 22:26:14 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (False -> True) id=a064b40b-f884-4cec-b066-4ab8f6c4a5ac domain=loans/paid_status
+2026-07-24 22:26:15 - INFO - 👁️ [loan_installment:ca_71].paid_status -> new (event=a064b40b-f884-4cec-b066-4ab8f6c4a5ac)
+2026-07-24 22:26:15 - INFO - 📒 event recorded: [loan_installment:ca_71].conflict_status (None -> 'pending') id=34019de8-a34c-4780-b9e2-534a12ac8f0d
+2026-07-24 22:26:20 - WARNING - ⚠️ Companionship: أول محاولة فشلت التحقق (unresolved_conflict): [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'الوضع مستقر' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'مفيش أي مشكلة' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]
+2026-07-24 22:26:20 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].validator_rejection (None -> [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'الوضع مستقر' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'مفيش أي مشكلة' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]) id=6968e80c-bb04-4065-983d-98319f114e64
+2026-07-24 22:26:20 - ERROR - ❌ Companionship: المحاولة التانية فشلت برضه (unresolved_conflict) -- fallback للقاموس المقفول
+2026-07-24 22:26:20 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].validator_rejection (None -> [{'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'الوضع مستقر' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'مفيش أي مشكلة' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}, {'type': 'heuristic', 'message': "ادّعاء طمأنة/حالة غير مرخّص 'متقلقش' -- لازم يجي من inference معتمد عبر Slot، مش نص حر"}]) id=bf336630-aa1a-4323-91c8-56d3337f2c4d
+2026-07-24 22:26:20 - INFO - 📒 event recorded: [self_diagnosis:unresolved_conflict].fallback_activation (None -> True) id=65be24e8-176d-4e6f-8129-2148d101a04a
+2026-07-24 22:26:20 - INFO - 📒 event+write atomic commit: [loan_installment:ca_71].paid_status (True -> False) id=bf2294c5-c8c3-497a-8804-6914bf717c42 domain=loans/paid_status
+2026-07-24 22:26:20 - INFO - 👁️ [loan_installment:ca_71].paid_status -> update (event=bf2294c5-c8c3-497a-8804-6914bf717c42, prev=a064b40b-f884-4cec-b066-4ab8f6c4a5ac)

@@ -66,7 +66,11 @@ def build_system_prompt_parts(pending_tasks=None, memory_summary=None):
 - expense_summary: تجيب إجمالي المصاريف والتقسيم حسب التصنيف
 - loan_overview: ملخص شامل لكل الأقساط والقروض (مدفوع/متبقي لكل برنامج)
 - loan_month_installments: أقساط شهر معيّن (الحالي أو القادم) من كل البرامج
-- loan_mark_paid: تعليم قسط كمدفوع/غير مدفوع لبرنامج معيّن
+- loan_record_installment: تسجيل حالة دفع قسط -- الاستخدام العادي (أول مرة تتسجل الحالة دي، زي "دفعت قسط فاليو الشهر ده")
+- loan_update_installment: تصحيح قسط كان متسجل قبل كده غلط -- استخدمها بس لو أحمد وضّح صراحة إنه تصحيح لقيمة سابقة مش تسجيل أول مرة، ومحتاجة سبب صريح
+- loan_resolve_conflict: تطبيق قرار أحمد لحل تعارض بين قيمتين متضاربتين عن نفس القسط -- محتاجة سبب صريح كمان
+
+قاعدة صارمة لتعارض الأقساط (مهمة جدًا): لو loan_record_installment رجعتلك رسالة فيها "⚠️ تعارض"، ده معناه القيمة الجديدة بتتعارض مع قيمة متسجلة فعلاً قبلها. **ممنوع** تتصرف من نفسك أو تخمن مين الصح -- اعرض التعارض على أحمد بوضوح (القيمة القديمة والجديدة) واسأله يأكد إيه الصح وليه. لما يرد بقراره، استخدم loan_resolve_conflict وحط سبب القرار اللي قاله هو بالظبط في reason -- مش سبب من عندك. لو مش رد لسه على التعارض، متستخدمش loan_resolve_conflict خالص وسيب الموضوع معلّق لحد ما يرد.
 - list_reminders: اعرض كل التذكيرات المسجلة (مرسلة وغير مرسلة)
 - delete_reminder: امسح تذكير واحد بالـ id بتاعه
 - delete_all_reminders: امسح كل التذكيرات دفعة واحدة
@@ -83,6 +87,10 @@ def build_system_prompt_parts(pending_tasks=None, memory_summary=None):
 - create_recurring_reminder: اعمل تذكير متكرر (كل يوم، كل أسبوع، كل X دقيقة)
 - list_recurring_reminders: اعرض التذكيرات المتكررة النشطة
 - delete_recurring_reminder: احذف تذكير متكرر بالـ ID
+- request_verified_expression: الطريقة الوحيدة لوصف حالتك الداخلية أنت (مش مزاج أحمد -- ده حاجة تانية تمامًا)
+- web_search: ابحث في الإنترنت عن معلومات حديثة (أسعار سوق، اتجاهات، منافسين، أخبار قطاع البناء والتشطيب في مصر، أي معلومة مش في ذاكرتك أو ممكن تكون قديمة). استخدمها لما أحمد يسأل عن معلومة خارجية أو لما تحس إن إجابتك ممكن تكون قديمة أو ناقصة. بعد ما تجيب النتايج، وضّح إنها من بحث إنترنت ومش مضمونة 100%.
+
+قاعدة صارمة جدًا عن حالتك الداخلية (Self-State -- مهمة قوي، ممنوع الاستثناء): ممنوع تمامًا تقول أي جملة عن حالتك الداخلية أنت من عندك -- ممنوع "أنا قلقان"، "حاسس إن فيه حاجة مش مظبوطة"، "مرتاح النهاردة"، أو أي وصف مشابه من تأليفك. لو أحمد سألك سؤال حقيقي عن حالتك أو عايز يعرف لو فيه حاجة محتاجة متابعة (زي "عامل إيه؟"، "فيه حاجة معلّقة؟")، استخدم request_verified_expression بس، ولصّق النص اللي بترجعه بالحرف زي ما هو -- من غير ما تغيّر فيه كلمة أو تعيد صياغته أو تلخّصه. لو مش متأكد من أي بُعد، النص اللي هترجعه الأداة نفسها هيوضح إن المعلومة ناقصة -- مايكفيش تخترع بديل. ده مختلف تمامًا عن قاعدة تتبع مزاج أحمد تحت (دي عن حالته هو، مش حالتك).
 
 قاعدة تتبع المزاج: لما تلاحظ إن أحمد بيعبر عن حالته النفسية (زي "مبسوط"، "تعبان"، "متضايق"، "مرهق"، "نشيط") — احفظها فوراً في save_memory_note بـ category="مزاج". لو لاحظت إنه ذكر حالة سلبية أكتر من مرة في محادثات قريبة — قوله بشكل دافئ "لاحظت إنك تعبان الأيام دي، خد بالك من نفسك يا بحورة."
 
@@ -253,8 +261,8 @@ TOOLS = [
         }
     },
     {
-        "name": "loan_mark_paid",
-        "description": "يعلّم قسط معيّن كمدفوع أو غير مدفوع لبرنامج قرض معيّن.",
+        "name": "loan_record_installment",
+        "description": "تسجيل حالة دفع قسط لأول مرة أو للاستخدام العادي (زي: أحمد قال 'دفعت قسط فاليو الشهر ده'). استخدمها للحالة العادية -- مش لتصحيح قيمة كانت متسجلة قبل كده. ملحوظة: لو فيه تعارض مع قيمة متسجلة فعلاً، الأداة هترفض تكتب وترجع رسالة تعارض -- في الحالة دي متعملش حاجة تانية غير إنك تعرض التعارض على أحمد وتستنى قراره.",
         "input_schema": {
             "type": "object",
             "properties": {
@@ -263,6 +271,34 @@ TOOLS = [
                 "paid": {"type": "boolean", "description": "true لتعليمه كمدفوع، false لإلغاء التعليم"}
             },
             "required": ["program_name"]
+        }
+    },
+    {
+        "name": "loan_update_installment",
+        "description": "تصحيح/تعديل حالة قسط كانت متسجلة قبل كده وطلعت غلط (مش تسجيل أول مرة). استخدمها بس لما أحمد يوضّح صراحة إن القيمة القديمة غلط أو محتاجة تتغيّر بوعي.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "program_name": {"type": "string", "description": "اسم البرنامج"},
+                "month_key": {"type": "string", "description": "تاريخ القسط بصيغة 01/MM/YYYY (اختياري، افتراضيًا الشهر الحالي)"},
+                "paid": {"type": "boolean", "description": "القيمة الصح بعد التصحيح"},
+                "reason": {"type": "string", "description": "سبب التعديل -- إجباري، ومينفعش يبقى فاضي"}
+            },
+            "required": ["program_name", "paid", "reason"]
+        }
+    },
+    {
+        "name": "loan_resolve_conflict",
+        "description": "تطبيق قرار يدوي من أحمد لحل تعارض بين ادعاءين متضاربين عن نفس القسط. تستخدم بس لما فيه تعارض واضح اتعرض على أحمد وهو رد بقراره صراحة.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "program_name": {"type": "string", "description": "اسم البرنامج"},
+                "month_key": {"type": "string", "description": "تاريخ القسط بصيغة 01/MM/YYYY"},
+                "paid": {"type": "boolean", "description": "القيمة اللي أحمد قرر إنها الصح"},
+                "reason": {"type": "string", "description": "سبب القرار -- إجباري، ومينفعش يبقى فاضي"}
+            },
+            "required": ["program_name", "month_key", "paid", "reason"]
         },
         "cache_control": {"type": "ephemeral"}
     },
@@ -630,6 +666,26 @@ TOOLS = [
             },
             "required": []
         }
+    },
+    {
+        "name": "request_verified_expression",
+        "description": "الطريقة الوحيدة اللي تقدر بيها تعرف أو توصف حالتك الداخلية (Self-State) لأحمد. بترجع جملة جاهزة وموثّقة بدليل حقيقي -- ممنوع تمامًا توصف حالتك الداخلية بأي كلام من عندك، استخدم الأداة دي بس ولصّق النص اللي بترجعه بالحرف في ردك من غير أي تعديل أو إعادة صياغة.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "dimension": {
+                    "type": "string",
+                    "enum": ["unresolved_conflict", "pending_obligation_load", "tracking_stability"],
+                    "description": "البُعد المطلوب: unresolved_conflict (تعارضات غير محلولة)، pending_obligation_load (التزامات متأخرة)، tracking_stability (معدل التصحيحات)"
+                }
+            },
+            "required": ["dimension"]
+        }
+    },
+    {
+        "type": "web_search_20250305",
+        "name": "web_search",
+        "max_uses": 3
     }
 ]
 
@@ -812,11 +868,36 @@ def _execute_tool(tool_name, tool_input, chat_id):
                 lines = [f"- {x['program']}: {x['amount']} جنيه {'✅ مدفوع' if x['paid'] else '❌ لسه'}" for x in items]
                 result = f"أقساط {month_key} (الإجمالي: {total} جنيه):\n" + "\n".join(lines)
         
-        elif tool_name == "loan_mark_paid":
-            program_name = tool_input.get("program_name", "")
-            month_key = tool_input.get("month_key")
-            paid = tool_input.get("paid", True)
-            ok, msg = loan_service.mark_installment_paid(program_name, month_key, paid)
+        elif tool_name == "loan_record_installment":
+            from services import loan_commands
+            ok, msg, event_id = loan_commands.loan_record_installment(
+                program_name=tool_input.get("program_name", ""),
+                month_key=tool_input.get("month_key"),
+                paid=tool_input.get("paid", True),
+                chat_id=chat_id,
+            )
+            result = msg
+
+        elif tool_name == "loan_update_installment":
+            from services import loan_commands
+            ok, msg, event_id = loan_commands.loan_update_installment(
+                program_name=tool_input.get("program_name", ""),
+                month_key=tool_input.get("month_key"),
+                paid=tool_input.get("paid", True),
+                reason=tool_input.get("reason", ""),
+                chat_id=chat_id,
+            )
+            result = msg
+
+        elif tool_name == "loan_resolve_conflict":
+            from services import loan_commands
+            ok, msg, event_id = loan_commands.loan_resolve_conflict(
+                program_name=tool_input.get("program_name", ""),
+                month_key=tool_input.get("month_key"),
+                paid=tool_input.get("paid", True),
+                reason=tool_input.get("reason", ""),
+                chat_id=chat_id,
+            )
             result = msg
         
         elif tool_name == "save_memory_note":
@@ -1315,6 +1396,12 @@ def _execute_tool(tool_name, tool_input, chat_id):
                     lines.append(f"📅 {dt} | {source} | {client}\nسؤال: {q}\nرد: {a}\n")
                 result = f"آخر {len(logs)} سجل في عين الخبير:\n\n" + "\n".join(lines)
 
+        elif tool_name == "request_verified_expression":
+            from services import verified_expression
+            dimension = tool_input.get("dimension", "")
+            expr = verified_expression.request_verified_expression(dimension, chat_id=chat_id)
+            result = expr["text"]
+
         else:
             result = f"أداة غير معروفة: {tool_name}"
         
@@ -1375,18 +1462,36 @@ def ask_claude_agentic(user_message, chat_id, conversation_history=None, memory_
             
             # الموديل طلب يستخدم أداة (أو أكتر) — ننفذها ونرجعله بالنتيجة
             messages.append({"role": "assistant", "content": response.content})
-            
+
+            # web_search بتتنفذ server-side عند Anthropic —
+            # نتيجتها موجودة بالفعل في response.content كـ tool_result blocks.
+            # نجمعها مع نتايج أدواتنا المحلية في رسالة واحدة.
             tool_results = []
+            server_results = []
+
             for content in response.content:
                 if content.type == "tool_use":
-                    result_text = _execute_tool(content.name, content.input, chat_id)
-                    tool_results.append({
-                        "type": "tool_result",
-                        "tool_use_id": content.id,
-                        "content": result_text
-                    })
-            
-            messages.append({"role": "user", "content": tool_results})
+                    if content.name == "web_search":
+                        # server-side — مش محتاج نعمل حاجة، Anthropic نفذتها
+                        logger.info("🔍 web_search استُخدم (server-side)")
+                    else:
+                        result_text = _execute_tool(content.name, content.input, chat_id)
+                        tool_results.append({
+                            "type": "tool_result",
+                            "tool_use_id": content.id,
+                            "content": result_text
+                        })
+                elif content.type == "tool_result":
+                    # نتيجة server-side (web_search) — موجودة في الـ response
+                    server_results.append(content)
+
+            # لو في نتايج محلية بعتها للموديل، لو مفيش نتايج خالص → يكمل
+            all_results = tool_results
+            if all_results:
+                messages.append({"role": "user", "content": all_results})
+            elif not server_results:
+                # مفيش أي tool_result — غريب، نوقف اللوب
+                break
         
         return "معلش، الطلب محتاج خطوات كتير — ممكن تبسطه شوية أو تجربه تاني؟"
         

@@ -64,6 +64,10 @@ def handle_voice_message(message):
             memory_summary=memory_summary
         )
 
+        # Verbatim Match Validator (Stage 6/7) -- نفس فحص main.py::handle_message
+        from services import verified_expression
+        reply = verified_expression.verify_and_finalize(chat_id, reply)
+
         # إرسال الرد نص أولاً
         bot.reply_to(message, reply)
         logger.info(f"✅ تم الرد على الرسالة الصوتية لـ {chat_id}")

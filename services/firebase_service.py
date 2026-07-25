@@ -610,21 +610,10 @@ def get_loan_paid_map():
         logger.error(f"❌ خطأ في جلب حالة الأقساط: {e}")
         return {}
 
-def save_loan_paid_status(key, paid):
-    """تحديث حالة قسط واحد (key زي 'valu_0') في خريطة الدفع بدون التأثير على باقي الأقساط"""
-    if firestore_db is None:
-        return False
-    
-    try:
-        # استخدام dotted field path عشان نحدّث مفتاح واحد بس جوه الخريطة، من غير ما نمسح الباقي
-        firestore_db.collection(LOANS_COLLECTION).document(_LOANS_DOC_ID).set(
-            {f"paid.{key}": paid},
-            merge=True
-        )
-        return True
-    except Exception as e:
-        logger.error(f"❌ خطأ في تحديث حالة القسط: {e}")
-        return False
+# ملاحظة: الكتابة المباشرة لحالة الدفع (save_loan_paid_status) اتشالت في Stage 2
+# (ADAM Self-State & Observation System). الكتابة دلوقتي بتمر حصريًا من
+# services/loan_commands.py عبر event_store.record_event_with_write (كتابة
+# ذرية مع تسجيل الحدث). مفيش مسار كتابة تاني هنا عن قصد.
 
 # ============================================================
 # 👤 Human Model — نموذج أحمد
