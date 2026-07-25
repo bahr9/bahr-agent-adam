@@ -224,8 +224,8 @@ class ExecutiveBrain:
                 from services.memory_service import get_memory
                 from services.claude_service import format_history_for_claude
 
-                stored = get_conversation_history(event.chat_id, limit=50)
-                context["history"] = format_history_for_claude(stored, limit=15)
+                stored = get_conversation_history(event.chat_id, limit=20)
+                context["history"] = format_history_for_claude(stored, limit=8)
                 context["memory"] = get_memory(event.chat_id)
 
             return context
