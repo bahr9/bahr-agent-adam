@@ -340,19 +340,70 @@ class ExecutiveBrain:
     # Stage 6 -- Learning
     # ============================================================
 
+    # كلمات الموافقة القصيرة -- الطبقة الأولى (بدون API)
+    _ACK_WORDS = {
+        "ok", "okay", "تمام", "ماشي", "اوك", "اوكي", "آه", "اه", "ايوه",
+        "يلا", "فاهم", "عظيم", "برافو", "ممتاز", "شكرا", "شكراً", "thanks",
+        "thank", "كويس", "good", "great", "nice", "هيه", "يا سلام", "تمام."
+    }
+
+    def _fast_filter(self, event: BahrEvent, result: str) -> Optional[bool]:
+        """
+        الطبقة الأولى -- فلتر سريع بدون API.
+
+        بيرجع:
+        - False: مؤكد مش يستاهل (وقف هنا، مش محتاج Haiku)
+        - None:  مش واضح (روح للطبقة التانية)
+        """
+        msg = (event.text or "").strip()
+        reply = (result or "").strip()
+
+        # فاضي أو خطأ -- مؤكد لأ
+        if not msg or not reply:
+            return False
+        if reply.startswith("❌"):
+            return False
+
+        # كلمة موافقة قصيرة -- مؤكد لأ
+        words = msg.split()
+        if len(words) <= 2 and msg.lower() in self._ACK_WORDS:
+            return False
+
+        # رسالة جداً قصيرة وما فيهاش محتوى -- مؤكد لأ
+        if len(words) <= 3 and len(reply) < 50:
+            return False
+
+        # مش واضح -- روح للطبقة التانية
+        return None
+
+    def _decide_learning(self, event: BahrEvent, result: str) -> bool:
+        """
+        LearningDecision -- طبقتين:
+
+        الطبقة 1 (بدون API): فلتر سريع للحالات الواضحة
+        الطبقة 2 (Haiku):   قرار ذكي للحالات الغامضة
+
+        بيرجع True لو يستاهل يتحفظ، False لو لأ.
+        """
+        # الطبقة الأولى
+        fast_result = self._fast_filter(event, result)
+        if fast_result is not None:
+            return fast_result
+
+        # الطبقة الثانية -- Haiku بيقرر
+        try:
+            from services.claude_service import should_store_in_memory
+            return should_store_in_memory(event.text, result)
+        except Exception as e:
+            logger.warning("LearningDecision layer2 error: " + str(e))
+            return True  # افتراضي آمن -- أحسن تتحفظ من تتفوت
+
     def _stage_learn(self, event: BahrEvent, result: str) -> None:
         """
-        حفظ المحادثة وتحديث الذاكرة الدائمة.
+        حفظ المحادثة وتحديث الذاكرة الدائمة بقرار ذكي.
 
-        TEMPORARY COMPATIBILITY:
-        update_memory شغال دلوقتي عشان الذاكرة الدائمة جزء أساسي من تجربة ADAM.
-        لما LearningDecision يكتمل في v2، هيتشال الاستدعاء ده وتتنقل
-        المسؤولية لـ LearningDecision بالكامل.
-
-        TODO v2:
-            decision = self._decide_learning(event, result, intent)
-            if decision.should_store:
-                update_memory(chat_id, event.text, result)
+        save_conversation: دايماً (تاريخ المحادثة الكامل)
+        update_memory: بس لو LearningDecision قال آه
 
         Learning مش بتوقف الـ pipeline لو فشل.
         """
@@ -363,11 +414,16 @@ class ExecutiveBrain:
             from services.firebase_service import save_conversation
             from services.memory_service import update_memory
 
+            # تاريخ المحادثة -- دايماً
             save_conversation(event.chat_id, event.text, result)
 
-            # Temporary Compatibility -- بيتشال لما LearningDecision يكتمل
-            if len(event.text) > 15 or len(result) > 60:
+            # الذاكرة الدائمة -- بقرار ذكي
+            should_store = self._decide_learning(event, result)
+            if should_store:
                 update_memory(event.chat_id, event.text, result)
+                logger.info("Learning: memory updated for chat " + str(event.chat_id))
+            else:
+                logger.info("Learning: skipped by LearningDecision")
 
         except Exception as e:
             logger.warning("Learning stage warning: " + str(e))

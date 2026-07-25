@@ -88,7 +88,6 @@ def build_system_prompt_parts(pending_tasks=None, memory_summary=None):
 - list_recurring_reminders: اعرض التذكيرات المتكررة النشطة
 - delete_recurring_reminder: احذف تذكير متكرر بالـ ID
 - request_verified_expression: الطريقة الوحيدة لوصف حالتك الداخلية أنت (مش مزاج أحمد -- ده حاجة تانية تمامًا)
-- web_search: ابحث في الإنترنت عن معلومات حديثة (أسعار سوق، اتجاهات، منافسين، أخبار قطاع البناء والتشطيب في مصر، أي معلومة مش في ذاكرتك أو ممكن تكون قديمة). استخدمها لما أحمد يسأل عن معلومة خارجية أو لما تحس إن إجابتك ممكن تكون قديمة أو ناقصة. بعد ما تجيب النتايج، وضّح إنها من بحث إنترنت ومش مضمونة 100%.
 
 قاعدة صارمة جدًا عن حالتك الداخلية (Self-State -- مهمة قوي، ممنوع الاستثناء): ممنوع تمامًا تقول أي جملة عن حالتك الداخلية أنت من عندك -- ممنوع "أنا قلقان"، "حاسس إن فيه حاجة مش مظبوطة"، "مرتاح النهاردة"، أو أي وصف مشابه من تأليفك. لو أحمد سألك سؤال حقيقي عن حالتك أو عايز يعرف لو فيه حاجة محتاجة متابعة (زي "عامل إيه؟"، "فيه حاجة معلّقة؟")، استخدم request_verified_expression بس، ولصّق النص اللي بترجعه بالحرف زي ما هو -- من غير ما تغيّر فيه كلمة أو تعيد صياغته أو تلخّصه. لو مش متأكد من أي بُعد، النص اللي هترجعه الأداة نفسها هيوضح إن المعلومة ناقصة -- مايكفيش تخترع بديل. ده مختلف تمامًا عن قاعدة تتبع مزاج أحمد تحت (دي عن حالته هو، مش حالتك).
 
@@ -681,12 +680,6 @@ TOOLS = [
             },
             "required": ["dimension"]
         }
-    },
-    {
-        "type": "web_search_20250305",
-        "name": "web_search",
-        "max_uses": 3,
-        "cache_control": {"type": "ephemeral"}
     }
 ]
 
@@ -1463,36 +1456,18 @@ def ask_claude_agentic(user_message, chat_id, conversation_history=None, memory_
             
             # الموديل طلب يستخدم أداة (أو أكتر) — ننفذها ونرجعله بالنتيجة
             messages.append({"role": "assistant", "content": response.content})
-
-            # web_search بتتنفذ server-side عند Anthropic —
-            # نتيجتها موجودة بالفعل في response.content كـ tool_result blocks.
-            # نجمعها مع نتايج أدواتنا المحلية في رسالة واحدة.
+            
             tool_results = []
-            server_results = []
-
             for content in response.content:
                 if content.type == "tool_use":
-                    if content.name == "web_search":
-                        # server-side — مش محتاج نعمل حاجة، Anthropic نفذتها
-                        logger.info("🔍 web_search استُخدم (server-side)")
-                    else:
-                        result_text = _execute_tool(content.name, content.input, chat_id)
-                        tool_results.append({
-                            "type": "tool_result",
-                            "tool_use_id": content.id,
-                            "content": result_text
-                        })
-                elif content.type == "tool_result":
-                    # نتيجة server-side (web_search) — موجودة في الـ response
-                    server_results.append(content)
-
-            # لو في نتايج محلية بعتها للموديل، لو مفيش نتايج خالص → يكمل
-            all_results = tool_results
-            if all_results:
-                messages.append({"role": "user", "content": all_results})
-            elif not server_results:
-                # مفيش أي tool_result — غريب، نوقف اللوب
-                break
+                    result_text = _execute_tool(content.name, content.input, chat_id)
+                    tool_results.append({
+                        "type": "tool_result",
+                        "tool_use_id": content.id,
+                        "content": result_text
+                    })
+            
+            messages.append({"role": "user", "content": tool_results})
         
         return "معلش، الطلب محتاج خطوات كتير — ممكن تبسطه شوية أو تجربه تاني؟"
         
@@ -1620,6 +1595,74 @@ def format_history_for_claude(stored_messages, limit=20):
         if m.get("assistant"):
             history.append({"role": "assistant", "content": m["assistant"]})
     return history
+
+def should_store_in_memory(user_message, assistant_reply):
+    """
+    LearningDecision -- الطبقة الثانية.
+    Haiku بيقرر آه/لأ: هل التبادل ده يستاهل يتحفظ في الذاكرة الدائمة؟
+
+    بيرجع True أو False بس -- مش بيعدل الذاكرة.
+    Prompt صغير (~50 token input) عشان التكلفة تفضل زهيدة.
+    """
+    try:
+        prompt = (
+            "أحمد: " + user_message + "\n"
+            "البوت: " + assistant_reply[:300] + "\n\n"
+            "هل التبادل ده فيه معلومة تستاهل تتحفظ في الذاكرة الدائمة عن أحمد أو شغله؟\n"
+            "(زي: قرار، اتفاق، عميل جديد، مشروع، موعد، معلومة مهمة عن الشغل أو العيلة)\n"
+            "رجّع كلمة واحدة بس: نعم أو لا"
+        )
+
+        response = claude_client.messages.create(
+            model=CLAUDE_HAIKU_MODEL,
+            max_tokens=10,
+            thinking={"type": "disabled"},
+            messages=[{"role": "user", "content": prompt}]
+        )
+
+        text = ""
+        for content in response.content:
+            if content.type == "text":
+                text += content.text
+
+        # Parsing مرن -- نبحث عن أي إشارة إيجابية في الرد كله
+        answer = text.strip().lower()
+        positive = ("نعم", "yes", "true", "آه", "اه", "ايوه", "يستاهل", "مهم")
+        return any(p in answer for p in positive)
+
+    except Exception as e:
+        # Fallback = True (آمن -- أحسن تتحفظ من تتفوت)
+        # لكن نسجل الـ fallback عشان نراقب لو بيحصل كتير
+        logger.warning("LearningDecision Haiku fallback (error): " + str(e))
+        _increment_fallback_counter()
+        return True
+
+
+def _increment_fallback_counter():
+    """
+    يزوّد عداد الـ fallback في Firestore system_flags.
+    بيتسجل: عدد كلي + آخر timestamp.
+    لو فشل التسجيل -- صامت (مش يأثر على الـ pipeline).
+    """
+    try:
+        from services.firebase_service import firestore_db
+        from utils.time_utils import now_cairo
+
+        ref = firestore_db.collection("system_flags").document("learning_fallback")
+        doc = ref.get()
+
+        current = doc.to_dict().get("count", 0) if doc.exists else 0
+        ref.set({
+            "count": current + 1,
+            "last_at": now_cairo().isoformat(),
+            "description": "LearningDecision Haiku fallback counter"
+        }, merge=True)
+
+        logger.warning("LearningDecision fallback count: " + str(current + 1))
+
+    except Exception as fb_err:
+        logger.warning("LearningDecision fallback counter error: " + str(fb_err))
+
 
 def summarize_memory(old_summary, user_message, assistant_reply):
     """
