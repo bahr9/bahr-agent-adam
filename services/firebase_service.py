@@ -21,7 +21,8 @@ from config import (
     AIN_AL_KHABEER_COLLECTION,
     MEMORY_COLLECTION,
     EXPENSES_COLLECTION,
-    LOANS_COLLECTION
+    LOANS_COLLECTION,
+    DECISION_LEDGER_COLLECTION
 )
 import time
 
@@ -558,6 +559,72 @@ def delete_expense(expense_id: str):
         return True, "تم الحذف"
     except Exception as e:
         return False, str(e)
+
+# ============================================================
+# القرارات (Decision Ledger)
+# ============================================================
+
+def save_decision(decision_text, project=None, status="accepted", reason=None, source="conversation"):
+    """
+    حفظ قرار في Decision Ledger.
+
+    Args:
+        decision_text: نص القرار
+        project: المشروع المرتبط (اختياري)
+        status: accepted / rejected / pending
+        reason: سبب القرار (اختياري)
+        source: مصدر القرار (conversation / manual)
+    """
+    if firestore_db is None:
+        return False, "Firestore مش متصل"
+
+    try:
+        firestore_db.collection(DECISION_LEDGER_COLLECTION).document().set({
+            "decision": decision_text,
+            "project": project or "",
+            "status": status,
+            "reason": reason or "",
+            "source": source,
+            "date": now_timestamp_str(),
+            "created_at": int(time.time() * 1000)
+        })
+        logger.info("قرار جديد في Decision Ledger: " + decision_text[:50])
+        return True, "تم"
+    except Exception as e:
+        logger.error("خطأ في حفظ القرار: " + str(e))
+        return False, str(e)
+
+
+def get_decisions(project=None, status=None, limit=20):
+    """
+    جلب القرارات من Decision Ledger.
+
+    Args:
+        project: فلتر بالمشروع (اختياري)
+        status: فلتر بالحالة (اختياري)
+        limit: عدد القرارات
+    """
+    if firestore_db is None:
+        return []
+
+    try:
+        query = firestore_db.collection(DECISION_LEDGER_COLLECTION).order_by(
+            "created_at", direction=firestore.Query.DESCENDING
+        ).limit(limit)
+
+        docs = query.stream()
+        decisions = []
+        for doc in docs:
+            d = {"id": doc.id, **doc.to_dict()}
+            if project and d.get("project", "").lower() != project.lower():
+                continue
+            if status and d.get("status") != status:
+                continue
+            decisions.append(d)
+        return decisions
+    except Exception as e:
+        logger.error("خطأ في جلب القرارات: " + str(e))
+        return []
 
 def get_expense_summary(category=None, project=None):
     """

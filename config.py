@@ -40,6 +40,7 @@ AIN_AL_KHABEER_COLLECTION = "ain_al_khabeer_logs"
 MEMORY_COLLECTION = "user_memory"  # الذاكرة الدائمة (ملخص متراكم لكل مستخدم)
 EXPENSES_COLLECTION = "expenses"  # متابعة المصاريف
 LOANS_COLLECTION = "loans"  # متابعة الأقساط والقروض
+DECISION_LEDGER_COLLECTION = "decision_ledger"  # سجل القرارات المعتمدة
 HUMAN_MODEL_COLLECTION = "adam_human_model"  # Human Model لأحمد
 EVENTS_COLLECTION = "adam_events"  # Event Store -- سجل الأحداث الثابت (ADAM Self-State & Observation System)
 SELF_STATE_COLLECTION = "adam_self_state"  # State History محدودة -- آخر مستوى Active اتبلّغ بيه لكل بُعد (Stage 5)

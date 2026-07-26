@@ -90,6 +90,8 @@ def build_system_prompt_parts(pending_tasks=None, memory_summary=None):
 - delete_recurring_reminder: احذف تذكير متكرر بالـ ID
 - request_verified_expression: الطريقة الوحيدة لوصف حالتك الداخلية أنت (مش مزاج أحمد -- ده حاجة تانية تمامًا)
 - web_search: ابحث في الإنترنت عن معلومات حديثة (أسعار سوق، اتجاهات، منافسين، أخبار قطاع البناء والتشطيب في مصر، أي معلومة مش في ذاكرتك أو ممكن تكون قديمة). استخدمها لما أحمد يسأل عن معلومة خارجية أو لما تحس إن إجابتك ممكن تكون قديمة أو ناقصة. بعد ما تجيب النتايج، وضّح إنها من بحث إنترنت ومش مضمونة 100%.
+- save_decision: احفظ قرار في Decision Ledger. استخدمها في حالتين: (1) لما أحمد يقول صراحة 'سجل القرار' أو 'قرار رسمي'. (2) لما تكتشف تلقائياً قرار واضح ومؤكد في المحادثة — مش مجرد اقتراح أو نقاش. بعد الحفظ قول: 'سجلت قرار: [نص القرار] ✅'
+- list_decisions: اعرض القرارات المحفوظة. استخدمها لما أحمد يسأل عن القرارات المسجلة أو قرارات مشروع معين.
 
 قاعدة صارمة جدًا عن حالتك الداخلية (Self-State -- مهمة قوي، ممنوع الاستثناء): ممنوع تمامًا تقول أي جملة عن حالتك الداخلية أنت من عندك -- ممنوع "أنا قلقان"، "حاسس إن فيه حاجة مش مظبوطة"، "مرتاح النهاردة"، أو أي وصف مشابه من تأليفك. لو أحمد سألك سؤال حقيقي عن حالتك أو عايز يعرف لو فيه حاجة محتاجة متابعة (زي "عامل إيه؟"، "فيه حاجة معلّقة؟")، استخدم request_verified_expression بس، ولصّق النص اللي بترجعه بالحرف زي ما هو -- من غير ما تغيّر فيه كلمة أو تعيد صياغته أو تلخّصه. لو مش متأكد من أي بُعد، النص اللي هترجعه الأداة نفسها هيوضح إن المعلومة ناقصة -- مايكفيش تخترع بديل. ده مختلف تمامًا عن قاعدة تتبع مزاج أحمد تحت (دي عن حالته هو، مش حالتك).
 
@@ -688,6 +690,61 @@ TOOLS = [
         "name": "web_search",
         "max_uses": 3,
         "cache_control": {"type": "ephemeral"}
+    },
+    {
+        "name": "save_decision",
+        "description": "احفظ قرار مهم في Decision Ledger. استخدمها في حالتين: (1) لما أحمد يقول صراحة 'سجل القرار' أو 'قرار رسمي' أو 'اعتمدنا على'. (2) لما تكتشف تلقائياً في المحادثة قرار واضح ومؤكد (مش مجرد اقتراح). بعد الحفظ، قول لأحمد: 'سجلت قرار: [نص القرار] ✅'.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "decision_text": {
+                    "type": "string",
+                    "description": "نص القرار بوضوح ودقة"
+                },
+                "project": {
+                    "type": "string",
+                    "description": "اسم المشروع المرتبط (لو موجود)"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": ["accepted", "rejected", "pending"],
+                    "description": "حالة القرار: accepted (معتمد) / rejected (مرفوض) / pending (قيد الدراسة)"
+                },
+                "reason": {
+                    "type": "string",
+                    "description": "سبب القرار (لو اتذكر في المحادثة)"
+                },
+                "source": {
+                    "type": "string",
+                    "enum": ["conversation", "manual"],
+                    "description": "conversation = اكتشفته تلقائياً، manual = أحمد طلب صراحة"
+                }
+            },
+            "required": ["decision_text", "status"]
+        }
+    },
+    {
+        "name": "list_decisions",
+        "description": "اعرض القرارات المحفوظة في Decision Ledger. استخدمها لما أحمد يسأل 'إيه القرارات اللي اتسجلت؟' أو 'إيه قرارات مشروع X؟'",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "project": {
+                    "type": "string",
+                    "description": "فلتر بالمشروع (اختياري)"
+                },
+                "status": {
+                    "type": "string",
+                    "enum": ["accepted", "rejected", "pending"],
+                    "description": "فلتر بالحالة (اختياري)"
+                },
+                "limit": {
+                    "type": "integer",
+                    "description": "عدد القرارات (افتراضي 10)"
+                }
+            },
+            "required": []
+        }
     }
 ]
 
@@ -1313,6 +1370,48 @@ def _execute_tool(tool_name, tool_input, chat_id):
             else:
                 ok, msg = delete_expense(expense_id)
                 result = "تم حذف المصروف" if ok else "فشل الحذف: " + msg
+
+        elif tool_name == "save_decision":
+            from services.firebase_service import save_decision
+            decision_text = tool_input.get("decision_text", "").strip()
+            if not decision_text:
+                result = "محتاج نص القرار"
+            else:
+                ok, msg = save_decision(
+                    decision_text=decision_text,
+                    project=tool_input.get("project", ""),
+                    status=tool_input.get("status", "accepted"),
+                    reason=tool_input.get("reason", ""),
+                    source=tool_input.get("source", "conversation")
+                )
+                if ok:
+                    result = "تم حفظ القرار في Decision Ledger"
+                else:
+                    result = "فشل حفظ القرار: " + msg
+
+        elif tool_name == "list_decisions":
+            from services.firebase_service import get_decisions
+            decisions = get_decisions(
+                project=tool_input.get("project"),
+                status=tool_input.get("status"),
+                limit=tool_input.get("limit", 10)
+            )
+            if not decisions:
+                result = "مفيش قرارات مسجلة لحد دلوقتي"
+            else:
+                lines = []
+                for d in decisions:
+                    line = "[" + d.get("date", "") + "] " + d.get("decision", "")
+                    if d.get("project"):
+                        line += " (" + d["project"] + ")"
+                    if d.get("status") == "rejected":
+                        line += " — مرفوض"
+                    elif d.get("status") == "pending":
+                        line += " — قيد الدراسة"
+                    if d.get("reason"):
+                        line += " | السبب: " + d["reason"]
+                    lines.append(line)
+                result = "القرارات المسجلة:\n" + "\n".join(lines)
 
         elif tool_name == "update_project_status":
             from services.firebase_service import firestore_db
