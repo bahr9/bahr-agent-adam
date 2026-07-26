@@ -131,9 +131,7 @@ def build_system_prompt_parts(pending_tasks=None, memory_summary=None):
 
     memory_section = ""
     if memory_summary:
-        # حد أقصى 800 حرف -- لو الذاكرة كبرت تتقلص من الأقدم
-        memory_trimmed = memory_summary[-800:] if len(memory_summary) > 800 else memory_summary
-        memory_section = "\n" + "ذاكرتك الدائمة عن أحمد (متراكمة من كل المحادثات اللي فاتت):\n" + memory_trimmed + "\n"
+        memory_section = "\n" + "ذاكرتك الدائمة عن أحمد (متراكمة من كل المحادثات اللي فاتت):\n" + memory_summary + "\n"
 
     dynamic_part = f"""الوقت الحالي بالظبط (توقيت القاهرة): {now.strftime('%Y-%m-%d')} - يوم {day_name} - الساعة {now.strftime('%H:%M')}
 {context}{memory_section}"""
@@ -1683,7 +1681,7 @@ def summarize_memory(old_summary, user_message, assistant_reply):
 
 آخر تبادل حصل دلوقتي:
 أحمد: {user_message}
-البوت: {assistant_reply[:400]}
+البوت: {assistant_reply}
 
 حدّث الذاكرة لو فيه حاجة جديدة تستاهل تتحفظ للمستقبل (زي: مشروع جديد، تفضيل شخصي، قرار مهم، معلومة عن الشغل أو الفريق، حاجة عم يشتغل عليها بشكل مستمر).
 لو التبادل ده مجرد كلام عادي (سلام، سؤال بسيط، رد قصير) ومفيهوش حاجة تستاهل تتحفظ، رجّع نفس الذاكرة القديمة زي ما هي بالظبط من غير أي تغيير.

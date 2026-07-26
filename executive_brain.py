@@ -224,8 +224,8 @@ class ExecutiveBrain:
                 from services.memory_service import get_memory
                 from services.claude_service import format_history_for_claude
 
-                stored = get_conversation_history(event.chat_id, limit=20)
-                context["history"] = format_history_for_claude(stored, limit=8)
+                stored = get_conversation_history(event.chat_id, limit=50)
+                context["history"] = format_history_for_claude(stored, limit=15)
                 context["memory"] = get_memory(event.chat_id)
 
             return context
@@ -340,11 +340,20 @@ class ExecutiveBrain:
     # Stage 6 -- Learning
     # ============================================================
 
-    # كلمات الموافقة القصيرة -- الطبقة الأولى (بدون API)
+    # كلمات الموافقة القصيرة الصرفة -- مش قرارات
     _ACK_WORDS = {
         "ok", "okay", "تمام", "ماشي", "اوك", "اوكي", "آه", "اه", "ايوه",
-        "يلا", "فاهم", "عظيم", "برافو", "ممتاز", "شكرا", "شكراً", "thanks",
-        "thank", "كويس", "good", "great", "nice", "هيه", "يا سلام", "تمام."
+        "يلا", "فاهم", "عظيم", "برافو", "شكرا", "شكراً", "thanks",
+        "thank", "good", "great", "nice", "هيه", "يا سلام", "تمام."
+    }
+
+    # كلمات تدل على قرار أو تصحيح أو اعتماد -- حتى لو الرسالة قصيرة
+    _DECISION_SIGNALS = {
+        "اعتمد", "اعتمده", "اعتمدي", "موافق", "مرفوض", "مستقل", "مرتبط",
+        "صح", "غلط", "لأ", "لا", "نفذ", "شيل", "امسح", "حدّث", "عدّل",
+        "draft", "رسمي", "قرار", "اختار", "الخيار", "الثاني", "الأول",
+        "الاسم", "المشروع", "تصحيح", "هو ده", "ده الصح", "مش ده",
+        "confirm", "reject", "approved", "cancel"
     }
 
     def _fast_filter(self, event: BahrEvent, result: str) -> Optional[bool]:
@@ -352,8 +361,11 @@ class ExecutiveBrain:
         الطبقة الأولى -- فلتر سريع بدون API.
 
         بيرجع:
-        - False: مؤكد مش يستاهل (وقف هنا، مش محتاج Haiku)
-        - None:  مش واضح (روح للطبقة التانية)
+        - False: مؤكد مش يستاهل (وقف هنا)
+        - None:  مش واضح أو ممكن قرار (روح للطبقة التانية)
+
+        قاعدة أساسية: لو الرسالة قصيرة بس ممكن تكون اعتماد/رفض/تصحيح/قرار
+        → روح للطبقة التانية، ما تستبعدهاش.
         """
         msg = (event.text or "").strip()
         reply = (result or "").strip()
@@ -364,16 +376,27 @@ class ExecutiveBrain:
         if reply.startswith("❌"):
             return False
 
-        # كلمة موافقة قصيرة -- مؤكد لأ
         words = msg.split()
-        if len(words) <= 2 and msg.lower() in self._ACK_WORDS:
+        msg_lower = msg.lower()
+
+        # لو فيه إشارة قرار -- روح للطبقة التانية حتى لو الرسالة قصيرة
+        for signal in self._DECISION_SIGNALS:
+            if signal in msg_lower:
+                return None
+
+        # كلمة موافقة صرفة (مش فيها أي محتوى تاني) -- مؤكد لأ
+        if len(words) == 1 and msg_lower in self._ACK_WORDS:
             return False
 
-        # رسالة جداً قصيرة وما فيهاش محتوى -- مؤكد لأ
-        if len(words) <= 3 and len(reply) < 50:
+        # رسالتين كلمات كلهم موافقة -- مؤكد لأ
+        if len(words) <= 2 and all(w in self._ACK_WORDS for w in words):
             return False
 
-        # مش واضح -- روح للطبقة التانية
+        # رسالة قصيرة جداً والرد قصير -- مش واضح، روح للطبقة التانية
+        if len(words) <= 4 and len(reply) < 50:
+            return None
+
+        # باقي -- مش واضح، روح للطبقة التانية
         return None
 
     def _decide_learning(self, event: BahrEvent, result: str) -> bool:
