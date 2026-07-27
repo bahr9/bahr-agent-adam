@@ -57,8 +57,51 @@ runtime = AdamRuntime(executive_brain)
 logger.info("OK ADAM Runtime")
 
 # ============================================================
-# Capabilities
+# Capabilities -- Startup Diagnostics (تشخيص النسخة المُحمَّلة فعليًا)
+# =====================================================
+# ده اللي بيرد على حوادث "الأداة الجديدة مش ظاهرة في /app" -- بيوضح فورًا
+# وقت التشغيل: أي commit شغّال، مسار الملف الحقيقي المُحمَّل، وعدد وأسماء
+# أدوات Self-State/Tool-Health المسجّلة فعليًا. لو /app لسه على نسخة قديمة،
+# السطور دي هتوريها فورًا في اللوج بدل ما نكتشفها بالتخمين.
 # ============================================================
+
+def _detect_running_commit() -> str:
+    import os
+    commit = os.getenv("HEROKU_SLUG_COMMIT") or os.getenv("SOURCE_VERSION")
+    if commit:
+        return commit[:12]
+    try:
+        import subprocess
+        result = subprocess.run(
+            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, timeout=3,
+            cwd=os.path.dirname(os.path.abspath(__file__)),
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return result.stdout.strip()[:12]
+    except Exception:
+        pass
+    return "unknown (لا يوجد .git أو متغير بيئة نسخة في هذه البيئة)"
+
+
+import services.claude_service as claude_service_module
+
+_running_commit = _detect_running_commit()
+_registered_tool_names = [t["name"] for t in claude_service_module.TOOLS]
+_self_state_health_tools = [
+    name for name in ("request_verified_expression", "get_adam_self_state", "get_self_diagnosis_report", "get_tools_health_status")
+    if name in _registered_tool_names
+]
+
+logger.info("=" * 50)
+logger.info("🔍 Startup Diagnostics")
+logger.info("Commit/Version: " + _running_commit)
+logger.info("claude_service loaded from: " + claude_service_module.__file__)
+logger.info("Total registered tools: " + str(len(_registered_tool_names)))
+if _self_state_health_tools:
+    logger.info("Self-State/Tool-Health tools available: " + ", ".join(_self_state_health_tools))
+else:
+    logger.warning("⚠️ لا توجد أي أدوات Self-State/Tool-Health مسجّلة -- تأكد إن هذه النسخة محدّثة")
+logger.info("=" * 50)
 
 logger.info("OK Capabilities registered")
 
