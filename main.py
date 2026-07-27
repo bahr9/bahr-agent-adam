@@ -351,6 +351,27 @@ def self_state_active_check_job():
         logger.error("Self-State active check error: " + str(e))
 
 
+def tool_health_check_job():
+    """
+    فحص صحة الأدوات (Runtime Capabilities & Tool Health V1) -- كل ساعة، نفس
+    نمط self_state_active_check_job بالظبط. صفر LLM: heartbeat (safe probes
+    بس) -> تقييم حتمي -> تنبيه لو DEGRADED دخل/اتغيّر سببه/اتعافى.
+    """
+    try:
+        from services import tool_health_heartbeat, tool_health_engine, tool_health_alerts
+
+        chat_id = get_chat_id()
+        if not chat_id:
+            return
+
+        tool_health_heartbeat.run_heartbeat()
+        evaluations = tool_health_engine.evaluate_all_tools()
+        tool_health_alerts.maybe_alert(evaluations, lambda text: bot.send_message(chat_id, text))
+
+    except Exception as e:
+        logger.error("Tool health check error: " + str(e))
+
+
 def weekly_report_job():
     """تقرير أسبوعي كل جمعة الساعة 1 الظهر"""
     try:
@@ -565,6 +586,8 @@ if __name__ == "__main__":
                          id='loans_check', timezone='Africa/Cairo', misfire_grace_time=60)
         scheduler.add_job(self_state_active_check_job, 'interval', hours=1,
                          id='self_state_active_check', timezone='Africa/Cairo', misfire_grace_time=300)
+        scheduler.add_job(tool_health_check_job, 'interval', hours=1,
+                         id='tool_health_check', timezone='Africa/Cairo', misfire_grace_time=300)
         scheduler.add_job(morning_brief_job, 'cron', hour=8, minute=0,
                          id='morning', timezone='Africa/Cairo', misfire_grace_time=60)
         scheduler.add_job(weekly_report_job, 'cron', day_of_week='fri', hour=13, minute=0,

@@ -46,6 +46,9 @@ EVENTS_COLLECTION = "adam_events"  # Event Store -- سجل الأحداث الث
 SELF_STATE_COLLECTION = "adam_self_state"  # State History محدودة -- آخر مستوى Active اتبلّغ بيه لكل بُعد (Stage 5)
 STATE_SNAPSHOTS_COLLECTION = "adam_state_snapshots"  # لقطات Self-State وقت التعبير الفعلي بس (Stage 6/7 -- Evidence Trace)
 EXPRESSIONS_COLLECTION = "adam_expressions"  # سجل كل تعبير اتبعت لأحمد + رابطه بالـ state/evidence (Stage 6/7)
+TOOL_HEALTH_CHECKS_COLLECTION = "tool_health_checks"  # نتائج الـ heartbeat الآمن (Runtime Capabilities & Tool Health V1)
+TOOL_FAILURES_LOG_COLLECTION = "tool_failures_log"  # فشل حقيقي أثناء تنفيذ فعلي من مستخدم (نفس المرحلة)
+TOOL_HEALTH_ALERT_STATE_COLLECTION = "tool_health_alert_state"  # آخر حالة تنبيه لكل أداة -- لمنع التكرار (dedup/cooldown)
 
 # ============================================================
 # 📋 الثوابت العامة

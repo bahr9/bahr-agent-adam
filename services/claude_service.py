@@ -512,6 +512,11 @@ TOOLS = [
         "input_schema": {"type": "object", "properties": {}, "required": []}
     },
     {
+        "name": "get_tools_health_status",
+        "description": "يجيب تقرير حتمي (مش من الموديل) عن صحة أدوات آدم الحقيقية -- كام أداة سليمة/تحت المراقبة/متدهورة/غير معروفة/غير مُراقَبة في آخر 24 ساعة، بدليل حقيقي. استخدمها لما أحمد يسأل عن صحة الأدوات أو النظام التقني. النص اللي بترجعه لازم يتلصق بالحرف زي ما هو -- مش يتلخص أو يعاد صياغته.",
+        "input_schema": {"type": "object", "properties": {}, "required": []}
+    },
+    {
         "name": "add_client_followup",
         "description": "يضيف عميل جديد في نظام المتابعة. استخدمها لما أحمد يقول اضف عميل أو ابدأ متابعة عميل جديد.",
         "input_schema": {
@@ -810,7 +815,10 @@ def _execute_tool(tool_name, tool_input, chat_id):
     from datetime import timedelta
     
     logger.info(f"🔧 الموديل طلب أداة: {tool_name} | المدخلات: {tool_input}")
-    
+
+    import time
+    _tool_start_time = time.time()
+
     try:
         if tool_name == "list_graph_nodes":
             nodes = graph_list_nodes()
@@ -1260,6 +1268,17 @@ def _execute_tool(tool_name, tool_input, chat_id):
                 "dimension": "self_state_core",
             })
 
+        elif tool_name == "get_tools_health_status":
+            from services import tool_health_engine, verified_expression
+            evaluations = tool_health_engine.evaluate_all_tools()
+            result = tool_health_engine.render_health_report(evaluations)
+            verified_expression.register_pending_verification(chat_id, {
+                "text": result,
+                "verified": True,
+                "expression_id": None,
+                "dimension": "tool_health",
+            })
+
         elif tool_name == "add_client_followup":
             from services.firebase_service import firestore_db
             from utils.time_utils import now_cairo
@@ -1542,6 +1561,14 @@ def _execute_tool(tool_name, tool_input, chat_id):
             
     except Exception as e:
         logger.error(f"❌ خطأ في تنفيذ الأداة {tool_name}: {e}")
+
+        try:
+            from services.tool_failure_observer import record_tool_failure
+            _latency_ms = int((time.time() - _tool_start_time) * 1000)
+            record_tool_failure(tool_name, e, chat_id=chat_id, latency_ms=_latency_ms)
+        except Exception:
+            pass  # الملاحظة نفسها best-effort -- مايأثرش على رسالة الخطأ الأصلية تحت أبدًا
+
         return f"حصل خطأ أثناء التنفيذ: {str(e)}"
 
 def ask_claude_agentic(user_message, chat_id, conversation_history=None, memory_summary=None, max_tool_rounds=5):

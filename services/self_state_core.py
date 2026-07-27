@@ -31,10 +31,25 @@ evidence_event_ids ظاهرة على مستوى الحقل نفسه، مش بس 
 (2) كل عنصر في internal_warnings معاه "category" صريحة ("domain" أو "runtime")
 -- توضيح للفصل المعماري الموجود أصلًا (health_status لسه مايشوفش self_state
 خالص، زي ما هو من الأول)، صفر تغيير في العتبات أو في نص render_report.
+
+**تكامل Tool Health (معتمد -- Runtime Capabilities & Tool Health V1):**
+تحذيرات صحة الأدوات (services/tool_health_engine.py) بتتضاف لـ internal_warnings
+بس (category="runtime")، وبتأثر على current_mode بنفس القاعدة الموجودة أصلًا
+(أي warnings غير فاضية → attention_needed) -- **صفر تغيير في compute_current_mode
+نفسها**. القراءة دي best-effort بحتة ومعزولة تمامًا عن آلية computation_errors/
+confidence الحالية: فشلها (أو حتى غيابها) **لا** يُحتسب كخطأ في Self State
+Core نفسها، ولا يُغيّر قيمة confidence -- عشان توسيع تعريف "الثقة" ده كان
+هيعني إعادة تصميم لمعنى Confidence المعتمد بالفعل (ممنوع صراحة في نطاق
+هذه المرحلة). **قرار تأجيل مقصود وموثّق:** health_status نفسها **لا** تتأثر
+بـ Tool Health خالص -- تعريفها المعتمد يبقى مقصورًا على موثوقية خط أنابيب
+التعبير (fallback/rejection/mismatch) بس. توسيعها لتشمل صحة الأدوات
+العامة قرار حوكمة منفصل، غير مطروح هنا، ومُسجَّل صراحة في
+RUNTIME_TOOL_HEALTH_V1.md كقرار تأجيل مقصود -- مش نسيان.
 """
 
 from services import event_store, self_diagnosis, self_state_engine
 from utils.time_utils import now_cairo
+from utils.logger import logger
 
 # ============================================================
 # عتبات Version 1 -- مؤقتة، موثّقة صراحة (معتمدة 2026-07-27، مش حقيقة معمارية دائمة)
@@ -222,6 +237,15 @@ def compute_self_state_core() -> dict:
     confidence = compute_confidence(errors)
     health = compute_health_status(fallback, rejection, mismatch, diagnosis_ok)
     warnings = compute_internal_warnings(self_state, err4, fallback, rejection, mismatch, diagnosis_ok)
+
+    # تكامل Tool Health -- best-effort بحت، مش جزء من computation_errors/confidence
+    # (قرار موثّق في docstring الملف: توسيع Confidence لهذا مش مطروح في المرحلة دي)
+    try:
+        from services import tool_health_engine
+        warnings = warnings + tool_health_engine.get_tool_health_warnings()
+    except Exception as e:
+        logger.warning(f"⚠️ Self State Core: تعذّر قراءة Tool Health warnings (best-effort، مش هتأثر على confidence): {e}")
+
     current_mode = compute_current_mode(health["status"], warnings, confidence)
     diagnosis_summary = compute_diagnosis_summary(fallback, rejection, mismatch, diagnosis_ok)
 
