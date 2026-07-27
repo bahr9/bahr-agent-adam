@@ -26,11 +26,47 @@ Runtime Execution + Result Returned: services/tool_health_engine.py +
 صفر LLM هنا. صفر تخزين لبيانات حساسة -- بس أسماء أدوات وstop_reason.
 """
 
+import re
+
 from services import event_store, capabilities_registry, tool_health_engine
 from utils.logger import logger
 
 PAYLOAD_ENTITY_ID = "_payload"
 SELECTION_ENTITY_ID = "_selection"
+
+# ============================================================
+# Explicit Tool Execution Detection -- حادثة 2026-07-27 (تكملة)
+# =====================================================
+# دليل حقيقي (Railway logs): الأداة كانت مسجّلة، وفي الـpayload الفعلي،
+# لكن الموديل رد بكلام محادثة (stop_reason=end_turn, selected_tools=[])
+# بدل ما ينفّذ الأداة اللي أحمد طلبها صراحة بالاسم. الحل مش "نجبر كل حاجة"
+# -- ده تصنيف حتمي ضيق (صفر LLM) بيمسك بس الحالة الواضحة: اسم أداة حقيقي
+# اتكتب بالحرف + كلمة أمر ("استخدم"/"use"/"call"/...) في نفس رسالة المستخدم.
+# ============================================================
+
+EXPLICIT_TOOL_TRIGGER_WORDS = [
+    "استخدم", "استعمل", "شغّل", "شغل", "نفّذ", "نفذ",
+    "use", "call", "execute", "run",
+]
+
+
+def detect_explicit_tool_request(user_message: str, tool_names) -> str:
+    """
+    كشف حتمي (صفر LLM، صفر تخمين دلالي) لطلب صريح لتنفيذ أداة بعينها.
+    شرطين لازم الاتنين سوا: (1) اسم الأداة يظهر بالحرف (word boundary) في
+    رسالة المستخدم -- مش تشابه أو تخمين، (2) فيه كلمة أمر واضحة في نفس
+    الرسالة. لو الاسم مش من ضمن tool_names الحقيقية أصلًا، أو مفيش كلمة
+    أمر، بيرجع None -- مفيش فرض في الحالتين دول (نفس قاعدة "أداة غلط
+    الاسم مايتفرضش" و"سؤال عادي مايتفرضش").
+    """
+    if not user_message:
+        return None
+    for name in tool_names:
+        if re.search(rf"\b{re.escape(name)}\b", user_message) and any(
+            trigger in user_message for trigger in EXPLICIT_TOOL_TRIGGER_WORDS
+        ):
+            return name
+    return None
 
 
 def record_payload_snapshot(tool_names: list) -> None:

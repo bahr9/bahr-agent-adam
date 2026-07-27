@@ -1601,25 +1601,67 @@ def ask_claude_agentic(user_message, chat_id, conversation_history=None, memory_
             messages.extend(conversation_history)
         messages.append({"role": "user", "content": user_message})
         
+        from services.tool_lifecycle_diagnostics import (
+            record_payload_snapshot, record_model_selection, detect_explicit_tool_request,
+        )
+
+        # ============================================================
+        # Explicit Tool Execution Detection -- تصنيف حتمي، صفر LLM (حادثة
+        # 2026-07-27: الأداة كانت مسجّلة ومتاحة فعليًا، لكن الموديل رد
+        # بمحادثة بدل تنفيذها لما أحمد طلبها بالاسم صراحة). لو الأداة
+        # المطلوبة مالهاش باراميتر إجباري، نفرض tool_choice للجولة الأولى
+        # بس -- ضمان حتمي إن التنفيذ يحصل فعليًا، مش مجرد أمل إن الموديل
+        # يختاره. لو محتاجة باراميتر، مانفرضش (عشان مانخترعش قيمة)، لكن
+        # بنحقن تعليمة محددة تجبر الموديل يسأل عن الناقص بس -- مش يقول
+        # "مش متاحة".
+        # ============================================================
+        real_tool_names = {t["name"] for t in TOOLS}
+        explicit_tool_request = detect_explicit_tool_request(user_message, real_tool_names)
+
+        forced_tool_choice = None
+        extra_instruction = ""
+        if explicit_tool_request:
+            logger.info(f"🎯 Explicit tool request detected: {explicit_tool_request}")
+            tool_def = next(t for t in TOOLS if t["name"] == explicit_tool_request)
+            required_args = (tool_def.get("input_schema") or {}).get("required", [])
+
+            if not required_args:
+                forced_tool_choice = {"type": "tool", "name": explicit_tool_request}
+                extra_instruction = (
+                    f"\n\n[نظام]: أحمد طلب صراحة تنفيذ '{explicit_tool_request}' دلوقتي -- نفّذها "
+                    f"مباشرة، ممنوع ترد بكلام محادثة قبلها أو تقول إنها مش متاحة."
+                )
+                logger.info(f"🔒 Forced tool_choice applied -> {explicit_tool_request} (no required arguments)")
+            else:
+                extra_instruction = (
+                    f"\n\n[نظام]: أحمد طلب صراحة تنفيذ '{explicit_tool_request}'، وهي محتاجة "
+                    f"الباراميتر(ات) الإجبارية دي: {', '.join(required_args)}. لو مش موضحة في "
+                    f"رسالته، اسأله عنها بس بالظبط -- ممنوع تقول إن الأداة مش متاحة أو ترفض الطلب."
+                )
+                logger.info(f"❓ '{explicit_tool_request}' requires arguments {required_args} -- not forcing, model must ask for them")
+
         static_part, dynamic_part = build_system_prompt_parts(memory_summary=memory_summary)
+        dynamic_part += extra_instruction
         system_blocks = [
             {"type": "text", "text": static_part, "cache_control": {"type": "ephemeral"}},
             {"type": "text", "text": dynamic_part}
         ]
-        
-        from services.tool_lifecycle_diagnostics import record_payload_snapshot, record_model_selection
 
-        for _ in range(max_tool_rounds):
+        for round_index in range(max_tool_rounds):
             record_payload_snapshot([t["name"] for t in TOOLS])
 
-            response = claude_client.messages.create(
+            create_kwargs = dict(
                 model=CLAUDE_MODEL,
                 max_tokens=2048,
                 thinking={"type": "disabled"},
                 system=system_blocks,
                 tools=TOOLS,
-                messages=messages
+                messages=messages,
             )
+            if forced_tool_choice and round_index == 0:
+                create_kwargs["tool_choice"] = forced_tool_choice
+
+            response = claude_client.messages.create(**create_kwargs)
 
             logger.info(f"🧭 stop_reason: {response.stop_reason}")
 
