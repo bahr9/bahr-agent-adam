@@ -507,6 +507,11 @@ TOOLS = [
         "input_schema": {"type": "object", "properties": {}, "required": []}
     },
     {
+        "name": "get_adam_self_state",
+        "description": "يجيب تقرير شامل عن الحالة الداخلية الحالية لآدم -- الصحة (Health Status)، تحذيرات داخلية، مستوى الثقة في القراءة، الوضع الحالي، وملخص تشخيصي. استخدمها لما أحمد يسأل 'عامل إيه؟'، 'احنا تمام؟'، أو 'في حاجة تحتاج انتباه؟'. النص اللي بترجعه لازم يتلصق بالحرف زي ما هو -- مش يتلخص أو يعاد صياغته.",
+        "input_schema": {"type": "object", "properties": {}, "required": []}
+    },
+    {
         "name": "add_client_followup",
         "description": "يضيف عميل جديد في نظام المتابعة. استخدمها لما أحمد يقول اضف عميل أو ابدأ متابعة عميل جديد.",
         "input_schema": {
@@ -1243,6 +1248,17 @@ def _execute_tool(tool_name, tool_input, chat_id):
                 f"- {fallback['explanation']}\n"
                 f"- {rejection['explanation']}"
             )
+
+        elif tool_name == "get_adam_self_state":
+            from services import self_state_core, verified_expression
+            core = self_state_core.compute_self_state_core()
+            result = self_state_core.render_report(core)
+            verified_expression.register_pending_verification(chat_id, {
+                "text": result,
+                "verified": core["confidence"] != "unknown",
+                "expression_id": None,
+                "dimension": "self_state_core",
+            })
 
         elif tool_name == "add_client_followup":
             from services.firebase_service import firestore_db

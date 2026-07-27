@@ -95,6 +95,33 @@ def compute_fallback_count(window_days: int = FALLBACK_WINDOW_DAYS) -> dict:
     }
 
 
+def compute_verbatim_mismatch_diagnosis(window_days: int = FALLBACK_WINDOW_DAYS) -> dict:
+    """
+    عدد مرات اكتشاف الـVerbatim Match Validator (verify_and_finalize في
+    services/verified_expression.py) لعدم تطابق حرفي بين تعبير Self-State
+    معتمد والرد النهائي، في آخر N يوم، عبر كل المصادر (الأقساط وSelf State
+    Core سوا -- الحدث نفسه بمصدر واحد بغض النظر عن الـdimension). نفس شكل
+    compute_fallback_count بالظبط -- count + evidence_event_ids + تفسير
+    محايد. هذا يقفل الفجوة الموثّقة صراحة في docstring الملف ("مفيش استنتاج
+    تشخيصي منه لسه -- يُضاف لاحقًا لو ظهر احتياج فعلي") -- Self State Core
+    هو الاحتياج الفعلي ده، ولا كتابة جديدة اتضافت هنا -- الأحداث بتتسجل
+    فعلًا من قبل (verified_expression._record_verbatim_mismatch_diagnosis).
+    """
+    events = event_store.get_events_by_type_and_attribute(ENTITY_TYPE, "verbatim_mismatch")
+    cutoff = now_cairo() - timedelta(days=window_days)
+    recent = [e for e in events if datetime.fromisoformat(e["occurred_at"]) >= cutoff]
+
+    count = len(recent)
+    return {
+        "count": count,
+        "evidence_event_ids": [e["event_id"] for e in recent],
+        "explanation": (
+            f"{count} مرة اترصد فيها عدم تطابق حرفي بين تعبير معتمد والرد النهائي في آخر {window_days} يوم -- الـVerbatim Match Validator صححها فورًا"
+            if count else f"مفيش أي عدم تطابق حرفي في آخر {window_days} يوم"
+        ),
+    }
+
+
 def compute_validator_rejection_diagnosis(window_days: int = FALLBACK_WINDOW_DAYS) -> dict:
     """
     استنتاج تشخيصي عن رفض claim_validator لمحاولات توليد Companionship، عبر

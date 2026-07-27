@@ -76,6 +76,19 @@ def _shadow_run_pipeline(dimension: str, old_text: str) -> None:
 _pending_verifications = {}
 
 
+def register_pending_verification(chat_id, entry: dict) -> None:
+    """
+    نقطة تسجيل عامة واحدة لأي نص معتمد لازم يظهر بالحرف في الرد النهائي
+    (verify_and_finalize بيفحصها). request_verified_expression (الأقساط)
+    وself_state_core (Self State Core) بينادوا عليها بالظبط بنفس الطريقة --
+    نفس آلية القيد، صفر آلية موازية. `entry` لازم فيها `"text"` على الأقل؛
+    `"dimension"` بتتحط في اللوج وفي حدث self_diagnosis لو حصل عدم تطابق.
+    """
+    if chat_id is None:
+        return
+    _pending_verifications.setdefault(chat_id, []).append(entry)
+
+
 def _save_state_snapshot(self_state: dict) -> Optional[str]:
     """يسجّل لقطة Self-State وقت التعبير الفعلي بس (مش كل حساب). يرجع state_id."""
     from services.firebase_service import firestore_db
@@ -155,8 +168,7 @@ def request_verified_expression(dimension: str, chat_id=None) -> dict:
 
     _shadow_run_pipeline(dimension, result["text"])
 
-    if chat_id is not None:
-        _pending_verifications.setdefault(chat_id, []).append({**result, "dimension": dimension})
+    register_pending_verification(chat_id, {**result, "dimension": dimension})
 
     return result
 
