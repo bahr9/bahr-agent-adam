@@ -45,9 +45,6 @@ logger.info("OK Telegram Bot")
 # تهيئة ADAM Core
 # ============================================================
 
-from adam_human_model import human_model
-logger.info("OK Human Model")
-
 from adam_mind import adam_mind
 logger.info("OK ADAM Mind")
 
@@ -276,7 +273,8 @@ def handle_document(message):
 def handle_start(message):
     """أمر البداية"""
     set_chat_id(message.chat.id)
-    name = human_model.get_name()
+    from services.firebase_service import get_human_model_display_name
+    name = get_human_model_display_name()
     bot.reply_to(message, "\u0623\u0647\u0644\u0627\u064b \u064a\u0627 " + name + "! \u0623\u0646\u0627 ADAM -- \u062f\u0645\u0627\u063a\u0643 \u0627\u0644\u062a\u0627\u0646\u064a.")
 
 
@@ -552,7 +550,8 @@ if __name__ == "__main__":
         logger.info("ADAM v1")
         logger.info("Date: " + now_cairo().strftime('%Y-%m-%d %H:%M:%S'))
         logger.info("Firebase: " + ("OK" if firebase_ok else "FAIL"))
-        logger.info("Human: " + human_model.get_name())
+        from services.firebase_service import get_human_model_display_name
+        logger.info("Human: " + get_human_model_display_name())
         logger.info("=" * 50)
 
         load_config()

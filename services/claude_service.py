@@ -502,6 +502,11 @@ TOOLS = [
         "input_schema": {"type": "object", "properties": {}, "required": []}
     },
     {
+        "name": "get_self_diagnosis_report",
+        "description": "يجيب تقرير تشخيصي عن استقرار نظام التعبير عن الحالة الداخلية (Self-State) — عدد مرات اللجوء للـ fallback وعدد رفض الـ claim validator في آخر 30 يوم. استخدمها لما أحمد يسأل عن صحة/استقرار نظام التعبير عن حالتك الداخلية.",
+        "input_schema": {"type": "object", "properties": {}, "required": []}
+    },
+    {
         "name": "add_client_followup",
         "description": "يضيف عميل جديد في نظام المتابعة. استخدمها لما أحمد يقول اضف عميل أو ابدأ متابعة عميل جديد.",
         "input_schema": {
@@ -1228,6 +1233,16 @@ def _execute_tool(tool_name, tool_input, chat_id):
                     result = f"❌ مش قادر أوصل للـ repo: {r.status_code}"
             except Exception as ex:
                 result = f"❌ خطأ في جلب حالة الـ backup: {ex}"
+
+        elif tool_name == "get_self_diagnosis_report":
+            from services import self_diagnosis
+            fallback = self_diagnosis.compute_fallback_count()
+            rejection = self_diagnosis.compute_validator_rejection_diagnosis()
+            result = (
+                "🩺 تقرير تشخيص نظام التعبير عن الحالة الداخلية:\n\n"
+                f"- {fallback['explanation']}\n"
+                f"- {rejection['explanation']}"
+            )
 
         elif tool_name == "add_client_followup":
             from services.firebase_service import firestore_db

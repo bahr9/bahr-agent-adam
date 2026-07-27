@@ -701,6 +701,7 @@ def get_human_model():
             # إنشاء النموذج الأساسي لأول مرة
             default_model = {
                 "name": "أحمد",
+                "nickname": "بحورة",
                 "company": "Bahr Designs",
                 "industry": "Interior Architecture & Fit-Out",
                 "spouse": "إسراء",
@@ -733,6 +734,18 @@ def update_human_model(key: str, value: str):
     except Exception as e:
         logger.error(f"❌ خطأ في تحديث Human Model: {e}")
         return False
+
+def get_human_model_display_name() -> str:
+    """
+    الاسم اللي ADAM يستخدمه لمخاطبة أحمد (تحية /start، اللوج، إلخ) --
+    مصدر واحد للحقيقة (Firestore Human Model)، بدل نموذج adam_human_model.py
+    المحلي القديم (اتشال -- كان معزول تمامًا عن الـ context الحقيقي).
+    نفس منطق fallback القديم بالحرف: nickname لو موجود، وإلا name، وإلا "أحمد"
+    -- عشان مستند Firestore الحالي (سابق لإضافة nickname) يفضل شغال زي ما هو.
+    """
+    model = get_human_model()
+    return model.get("nickname") or model.get("name", "أحمد")
+
 
 def update_human_model_bulk(data: dict):
     """تحديث أكتر من حقل في Human Model دفعة واحدة"""

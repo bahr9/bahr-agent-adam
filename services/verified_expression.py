@@ -34,6 +34,41 @@ from config import STATE_SNAPSHOTS_COLLECTION, EXPRESSIONS_COLLECTION
 from utils.time_utils import now_cairo
 from utils.logger import logger
 
+
+def _shadow_run_pipeline(dimension: str, old_text: str) -> None:
+    """
+    Shadow Mode (TRUTH_MEANING_COMPANIONSHIP_ARCHITECTURE.md §8, مرحلة 5 من 7):
+    بتحسب ناتج الـ pipeline الجديد (Truth -> Meaning -> Companionship) وتقارنه
+    باللي فعلاً هيتبعت لأحمد (القاموس المقفول، القديم) -- **بدون** ما تأثر
+    على النص الراجع أو أي حاجة تانية. أي فشل هنا بيتسجل ويترفض بصمت، مفيش
+    استثناء بيتصعّد -- الغرض الوحيد جمع بيانات مقارنة حقيقية قبل أي قرار
+    مستقبلي بربط الـ pipeline ده فعليًا (Decision Gate،
+    EXPRESSIVE_VOICE_RECONSIDERATION_DRAFT.md §6.2).
+    """
+    try:
+        from services import truth_layer, inference_rules, meaning_layer, companionship_layer
+
+        truth_packet = truth_layer.build_truth_packet_for_loans()
+        errors = truth_layer.validate_truth_packet(truth_packet)
+        if errors:
+            logger.info(f"[shadow] {dimension}: skipped -- truth packet errors: {errors}")
+            return
+
+        if truth_layer.truth_packet_confidence(truth_packet) == "degraded":
+            logger.info(f"[shadow] {dimension}: skipped -- confidence degraded")
+            return
+
+        fired = inference_rules.evaluate_fired_rules(truth_packet)
+        meaning_packet = meaning_layer.compute_meaning_packet(truth_packet, dimension, fired)
+        result = companionship_layer.generate_message(meaning_packet)
+
+        logger.info(
+            f"[shadow] {dimension}: old={old_text!r} new={result['text']!r} "
+            f"source={result['source']} match={old_text == result['text']}"
+        )
+    except Exception as e:
+        logger.warning(f"[shadow] {dimension}: pipeline error (non-fatal, old path unaffected): {e}")
+
 # سجل مؤقت في الذاكرة: لكل chat_id، التعبيرات (passive) اللي اتطلبت في
 # الدورة الحالية ولسه محتاجة تتفحص وقت الإرسال الفعلي (verify_and_finalize).
 # بيتنضف أول ما يتفحص -- مش State دائم، مجرد ربط بين "طلب الأداة" و"الإرسال
@@ -117,6 +152,8 @@ def request_verified_expression(dimension: str, chat_id=None) -> dict:
             state_id, dimension, level, mode, f"{dimension}:{level}:{mode}", text, True, chat_id
         )
         result = {"verified": True, "text": text, "expression_id": expression_id}
+
+    _shadow_run_pipeline(dimension, result["text"])
 
     if chat_id is not None:
         _pending_verifications.setdefault(chat_id, []).append({**result, "dimension": dimension})
