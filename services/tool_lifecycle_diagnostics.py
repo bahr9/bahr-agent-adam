@@ -176,3 +176,74 @@ def render_lifecycle_report(tool_name: str) -> str:
         f"Model Selected: {_mark(status['model_selected'])}",
         f"Execution: {status['execution_status'] or '—'}",
     ])
+
+
+# ============================================================
+# Tool Result Provenance / Conversation Consistency -- حادثة 2026-07-27
+# (تكملة تانية): دليل حقيقي (إعادة إنتاج مباشرة) إن الموديل، في دورة لاحقة،
+# ممكن يدّعي إن أداة حقيقية *مسجّلة فعليًا ونفّذت بنجاح قبل كده في نفس
+# المحادثة* "مش موجودة" أو "كانت مُلفّقة" -- خصوصًا لما أحمد يلصق نتيجة
+# أداة سابقة كرسالة عادية. السبب البنيوي: format_history_for_claude بيحوّل
+# تاريخ المحادثة لنص عادي user/assistant بس -- بيرمي بنية tool_use/tool_result
+# الحقيقية اللي كانت موجودة وقت التنفيذ الفعلي (مش متخزنة في Firestore
+# أصلًا)، فالموديل في الدورة الجديدة معندوش أي إشارة بنيوية إن رد سابق كان
+# فعلًا ناتج استدعاء أداة حقيقي. حل جذري كامل (تخزين tool_use/tool_result
+# الكامل) خارج نطاق الإصلاح ده -- ده تعديل أوسع لسكيمة تخزين المحادثة. بدل
+# كده: شبكة أمان حتمية أخيرة (heuristic، مش ضمان كامل -- نفس تصنيف فحوصات
+# claim_validator.py) بتمسك الادّعاء الكاذب قبل ما يوصل لأحمد وتصححه.
+# ============================================================
+
+FALSE_UNAVAILABILITY_PATTERNS = [
+    r"مش موجود[ةه]?", r"مش متاح[ةه]?", r"غير موجود[ةه]?", r"غير متاح[ةه]?",
+    r"مالهاش وجود", r"لا يوجد", r"not available", r"doesn'?t exist",
+    r"does not exist", r"unavailable",
+]
+FABRICATION_CLAIM_PATTERNS = [
+    r"ملفّق[ةه]?", r"ملفق[ةه]?", r"مختلق[ةه]?", r"اخترعت", r"اخترعته",
+    r"مش حقيقي[ةه]?", r"fabricated", r"made up", r"wasn'?t real", r"was not real",
+]
+_AVAILABILITY_PROXIMITY_WINDOW = 60
+
+
+def guard_against_false_tool_unavailability_claims(reply_text: str, real_tool_names=None) -> str:
+    """
+    فحص حتمي أخير (heuristic -- مبني على قرب النص، مش تحليل دلالي كامل،
+    نفس تصنيف فحوصات claim_validator.py) على *كل* رد خارج، بصرف النظر عن
+    وجود pending verification من عدمه. بيدوّر على اسم أداة حقيقية (موجودة
+    فعليًا في claude_service.TOOLS دلوقتي) ظاهر قريب من عبارة "مش موجودة/
+    مش متاحة/مُلفّقة" -- تناقض مباشر مع الحقيقة (الأداة فعلًا مسجّلة). لو
+    اتلقط، بيسجّل تحذير واضح ("contradiction prevented") ويضيف ملاحظة
+    تصحيحية صريحة في الآخر -- بدون ما يمسح أو يعيد صياغة كلام الموديل
+    الأصلي (نفس فلسفة verify_and_finalize: إضافة، مش محو).
+    """
+    if not reply_text:
+        return reply_text
+
+    if real_tool_names is None:
+        from services.claude_service import TOOLS
+        real_tool_names = {t["name"] for t in TOOLS}
+
+    flagged = []
+    for name in real_tool_names:
+        for m in re.finditer(rf"\b{re.escape(name)}\b", reply_text):
+            start = max(0, m.start() - _AVAILABILITY_PROXIMITY_WINDOW)
+            end = min(len(reply_text), m.end() + _AVAILABILITY_PROXIMITY_WINDOW)
+            nearby = reply_text[start:end]
+            if any(re.search(p, nearby) for p in FALSE_UNAVAILABILITY_PATTERNS + FABRICATION_CLAIM_PATTERNS):
+                flagged.append(name)
+                break
+
+    if not flagged:
+        return reply_text
+
+    flagged = sorted(set(flagged))
+    logger.warning(
+        f"⚠️ Contradiction prevented: reply claimed real registered tool(s) {flagged} "
+        f"unavailable/fabricated -- these ARE registered right now"
+    )
+    label = "أداة حقيقية متاحة ومسجّلة فعليًا" if len(flagged) == 1 else "أدوات حقيقية متاحة ومسجّلة فعليًا"
+    note = (
+        "\n\n[ملاحظة دقة تلقائية]: " + "، ".join(f"'{n}'" for n in flagged) + " " + label +
+        " -- أي كلام فوق بيقول عكس كده مش دقيق ومايتبنيش."
+    )
+    return reply_text + note

@@ -196,10 +196,15 @@ def verify_and_finalize(chat_id, response_text: str) -> str:
     التصحيح الفعلي (final_text) من الوصول للـcaller. البديل (تصعيد الفشل)
     كان هيدّي على تسجيل تشخيصي ثانوي سلطة توقف تسليم رد مصحَّح لأحمد، وده
     عكس الأولوية المعتمدة من الأصل.
+
+    فحص إضافي مستقل (حادثة 2026-07-27 -- Tool Result Provenance): بعد
+    منطق الـVerbatim Match الأصلي أعلاه (بدون أي تعديل فيه)، بيتنادى فحص
+    تاني *دايمًا* (مش بس لما فيه pending) -- guard_against_false_tool_
+    unavailability_claims من services/tool_lifecycle_diagnostics.py --
+    عشان يمسك أي ادّعاء إن أداة حقيقية مسجّلة مش موجودة/مُلفّقة قبل ما
+    يوصل لأحمد.
     """
     pending = _pending_verifications.pop(chat_id, [])
-    if not pending:
-        return response_text
 
     final_text = response_text
     for expr in pending:
@@ -211,6 +216,12 @@ def verify_and_finalize(chat_id, response_text: str) -> str:
             )
             final_text = final_text.strip() + ("\n\n" if final_text.strip() else "") + exact
             _record_verbatim_mismatch_diagnosis(expr["dimension"], expr["expression_id"])
+
+    try:
+        from services.tool_lifecycle_diagnostics import guard_against_false_tool_unavailability_claims
+        final_text = guard_against_false_tool_unavailability_claims(final_text)
+    except Exception as e:
+        logger.error(f"❌ فشل فحص false-tool-unavailability-claims (مش حرج، الرد الأصلي كمّل زي ما هو): {e}")
 
     return final_text
 

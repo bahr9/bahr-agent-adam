@@ -274,6 +274,17 @@ def compute_self_state_core() -> dict:
     }
 
 
+# تصحيح مؤكَّد (2026-07-27، اكتُشف بإعادة إنتاج حقيقية للحادثة): الثلاثة
+# مصادر دول (fallback_activation/validator_rejection/verbatim_mismatch) بيغطّيهم
+# diagnosis_summary بالكامل بالفعل (compute_diagnosis_summary بيلصق تفسيرهم
+# التلاتة دايمًا، بصرف النظر عن العدد). لو سابناهم كمان في نشرة internal_warnings
+# لما count>0، نفس جملة التفسير بتتكرر حرفيًا مرتين في نفس التقرير -- ده اللي
+# حصل فعليًا (تأكد بإعادة إنتاج مباشرة). الاستبعاد هنا عرض بس -- الداتا
+# نفسها (compute_internal_warnings) لسه فيها الأدلة الثلاثة كاملة لأي مستهلك
+# تاني (current_mode evidence union، اختبارات Tool Health، إلخ).
+_DIAGNOSIS_SUMMARY_SOURCES = {"fallback_activation", "validator_rejection", "verbatim_mismatch"}
+
+
 def render_report(core: dict) -> str:
     """
     نص عربي واحد متماسك -- ده اللي بيترجع للموديل، وده نفسه اللي بيتسجل كـ
@@ -287,11 +298,15 @@ def render_report(core: dict) -> str:
         f"مستوى الثقة في القراءة دي: {CONFIDENCE_LABELS[core['confidence']]}",
     ]
 
-    if core["internal_warnings"]:
+    # صفر تكرار: نطبع بس تحذيرات مش مغطاة أصلًا بالحرف جوه diagnosis_summary تحت
+    renderable_warnings = [
+        w for w in core["internal_warnings"] if w.get("source") not in _DIAGNOSIS_SUMMARY_SOURCES
+    ]
+    if renderable_warnings:
         lines.append("تحذيرات داخلية:")
-        for w in core["internal_warnings"]:
+        for w in renderable_warnings:
             lines.append(f"- {w['explanation']}")
-    else:
+    elif not core["internal_warnings"]:
         lines.append("مفيش أي تحذيرات داخلية دلوقتي.")
 
     lines.append(core["diagnosis_summary"])

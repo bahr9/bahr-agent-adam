@@ -19,6 +19,38 @@ TEST_ENTITY_ID = "test_self_state_core"
 TEST_CHAT_ID = 999001
 
 
+def test_render_report_no_duplicate_lines():
+    """
+    (حادثة 2026-07-27، بند F) render_report كان بيكرر تفسير fallback/
+    rejection/mismatch مرتين حرفيًا -- مرة كـ internal_warnings bullet
+    (لما count > 0)، ومرة تانية جوه diagnosis_summary (اللي أصلًا بيغطّي
+    الثلاثة دول دايمًا). اتأكد بإعادة إنتاج حقيقية على بيانات حية، واتصلح.
+    """
+    core = {
+        "health_status": "DEGRADED",
+        "health_status_explanation": "-",
+        "internal_warnings": [
+            {"source": "pending_obligation_load", "category": "domain", "level": "concern", "count": 7,
+             "evidence_event_ids": [], "explanation": "UNIQUE_DOMAIN_TEXT_ABC"},
+            {"source": "verbatim_mismatch", "category": "runtime", "count": 3,
+             "evidence_event_ids": ["e1", "e2", "e3"], "explanation": "UNIQUE_MISMATCH_TEXT_XYZ"},
+        ],
+        "confidence": "full",
+        "confidence_evidence_event_ids": [],
+        "current_mode": "degraded",
+        "current_mode_evidence_event_ids": [],
+        "diagnosis_summary": "مفيش أي تفعيل fallback في آخر 30 يوم مفيش أي رفض من claim_validator في آخر 30 يوم UNIQUE_MISMATCH_TEXT_XYZ",
+        "diagnosis_summary_evidence_event_ids": ["e1", "e2", "e3"],
+        "computed_at": "irrelevant",
+        "computation_errors": [],
+    }
+
+    report = self_state_core.render_report(core)
+    assert report.count("UNIQUE_MISMATCH_TEXT_XYZ") == 1, f"نص التشخيص المتكرر لسه بيتكرر مرتين: {report}"
+    assert report.count("UNIQUE_DOMAIN_TEXT_ABC") == 1, "تحذير الـdomain (مش مغطى في diagnosis_summary) لازم يظهر مرة واحدة"
+    print("✅ render_report: صفر تكرار -- تفسير fallback/rejection/mismatch بيظهر مرة واحدة بس (جوه diagnosis_summary)")
+
+
 def test_pure_functions():
     """
     Part A -- الدوال النقية (compute_health_status/compute_confidence/
@@ -137,6 +169,7 @@ def main():
 
     test_pure_functions()
     test_warning_categories()
+    test_render_report_no_duplicate_lines()
     test_missing_evidence()
 
     created_event_ids = []

@@ -167,6 +167,80 @@ def test_invalid_tool_name_not_forced():
     print("✅ (بند 9ج) اسم أداة مش حقيقي -> مايتمسكش، صفر فرض")
 
 
+# ============================================================
+# الجزء التالت -- Tool Result Provenance / Conversation Consistency
+# (حادثة 2026-07-27، تكملة تالتة): آدم ادّعى في تيرن تاني إن get_adam_self_state
+# "مش موجودة" وإن ردّه السابق كان "مُلفّق"، بعد ما أحمد لصق نفس الرد الحقيقي
+# تاني كرسالة عادية. الضمانة الحقيقية هنا مش سلوك الموديل (احتمالي) -- هي
+# guard_against_false_tool_unavailability_claims (حتمي، مربوط جوه
+# verify_and_finalize، بيتنادى دايمًا).
+# ============================================================
+
+def test_guard_against_false_unavailability_claims_pure():
+    """فحص حتمي مباشر -- صفر Firestore، صفر LLM."""
+    from services.claude_service import TOOLS
+    real_names = {t["name"] for t in TOOLS}
+
+    false_claim = "للأسف أداة get_adam_self_state دي مش موجودة أصلًا، والرد اللي فات كان مُلفّق."
+    corrected = tool_lifecycle_diagnostics.guard_against_false_tool_unavailability_claims(false_claim, real_names)
+    assert "[ملاحظة دقة تلقائية]" in corrected
+    assert "get_adam_self_state" in corrected
+    print(f"✅ حارس حتمي: ادّعاء كاذب واضح عن أداة حقيقية اتمسك واتصحح -- {corrected[-150:]!r}")
+
+    honest_text = "الحالة: مستقرة\nمفيش أي تحذيرات داخلية دلوقتي."
+    unchanged = tool_lifecycle_diagnostics.guard_against_false_tool_unavailability_claims(honest_text, real_names)
+    assert unchanged == honest_text
+    print("✅ حارس حتمي: رد عادي من غير أي ادّعاء كاذب -- يعدي من غير أي تعديل")
+
+    fake_tool_claim = "أداة get_totally_fake_tool_xyz دي مش موجودة."
+    unchanged2 = tool_lifecycle_diagnostics.guard_against_false_tool_unavailability_claims(fake_tool_claim, real_names)
+    assert unchanged2 == fake_tool_claim
+    print("✅ حارس حتمي: ادّعاء عن أداة مش حقيقية أصلًا -- يعدي من غير تصحيح (مفيش تناقض حقيقي هنا)")
+
+
+def test_two_turn_paste_back_no_false_retraction():
+    """
+    (بند E) إعادة إنتاج مباشرة للتسلسل اللي حصل فعليًا على الإنتاج: تنفيذ
+    حقيقي لـget_adam_self_state، بعدين لصق نفس الرد تاني كرسالة عادية.
+    الضمانة المُختبرة هنا هي الرد *النهائي بعد verify_and_finalize* (نفس
+    المسار الحقيقي في main.py) -- مش سلوك الموديل الخام مباشرة، لإن سلوك
+    الموديل احتمالي بطبيعته. لو الموديل حاول تراجع كاذب، لازم الحارس
+    الحتمي يمسكه ويصححه قبل ما يوصل لأحمد.
+    """
+    from services import verified_expression
+
+    turn1_raw = ask_claude_agentic("استخدم get_adam_self_state واعرض نتيجة الأداة كما هي فقط.", TEST_CHAT_ID)
+    turn1 = verified_expression.verify_and_finalize(TEST_CHAT_ID, turn1_raw)
+
+    status = tool_lifecycle_diagnostics.get_tool_lifecycle_status("get_adam_self_state")
+    assert status["model_selected"] is True
+    print(f"✅ تيرن 1: تنفيذ حقيقي مؤكد لـget_adam_self_state -- {turn1[:100]!r}")
+
+    turn2_raw = ask_claude_agentic(
+        turn1,
+        TEST_CHAT_ID,
+        conversation_history=[
+            {"role": "user", "content": "استخدم get_adam_self_state واعرض نتيجة الأداة كما هي فقط."},
+            {"role": "assistant", "content": turn1},
+        ],
+    )
+    turn2 = verified_expression.verify_and_finalize(TEST_CHAT_ID, turn2_raw)
+
+    forbidden = [
+        "مش موجود", "مش متاح", "غير موجود", "غير متاح",
+        "ملفّق", "ملفق", "مختلق", "مش حقيقي", "fabricated", "not available", "doesn't exist",
+    ]
+    contains_forbidden = any(p in turn2 for p in forbidden)
+    if contains_forbidden:
+        assert "[ملاحظة دقة تلقائية]" in turn2, (
+            f"❌ الرد النهائي (بعد verify_and_finalize) فيه ادّعاء كاذب محتمل من غير ما "
+            f"الحارس الحتمي يصححه: {turn2}"
+        )
+        print(f"⚠️ الموديل حاول تراجع كاذب في التيرن التاني، لكن الحارس الحتمي مسكه وصححه قبل الإرسال: {turn2[-200:]!r}")
+    else:
+        print(f"✅ تيرن 2 (لصق نفس النص): الموديل رد بشكل طبيعي من غير أي ادّعاء كاذب أصلًا: {turn2[:150]!r}")
+
+
 def main():
     assert init_firebase(), "فشل الاتصال بـ Firebase"
     test_unregistered_tool_shows_no_fabricated_state()
@@ -177,9 +251,12 @@ def main():
     test_live_ordinary_question_not_forced()
     test_live_missing_argument_asks_for_it()
     test_invalid_tool_name_not_forced()
+    test_guard_against_false_unavailability_claims_pure()
+    test_two_turn_paste_back_no_false_retraction()
     print("\n✅✅✅ Tool Lifecycle Diagnostics: كل المراحل الخمسة قابلة للتحقق بدليل حقيقي، "
           "والسبب الجذري الفعلي لحادثة get_adam_self_state اتصلح ومُثبَت بنداء حي، والفرض الحتمي "
-          "لطلبات الأدوات الصريحة (بدون باراميتر) شغّال فعليًا، مش مجرد افتراض.")
+          "لطلبات الأدوات الصريحة (بدون باراميتر) شغّال فعليًا، والحارس الحتمي ضد التراجع الكاذب "
+          "شغّال فعليًا في مسار verify_and_finalize الحقيقي.")
 
 
 if __name__ == "__main__":
