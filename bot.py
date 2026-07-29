@@ -9,6 +9,7 @@ import telebot
 import os
 import json
 from utils.logger import logger
+from utils.atomic_io import atomic_write_json
 from config import TELEGRAM_TOKEN, DATA_FILE, CONFIG_FILE
 
 # إنشاء البوت
@@ -55,12 +56,8 @@ def load_config():
             pass
 
 def save_config():
-    """حفظ الإعدادات"""
-    try:
-        with open(CONFIG_FILE, "w", encoding="utf-8") as f:
-            json.dump(config, f, ensure_ascii=False, indent=2)
-    except Exception as e:
-        logger.error(f"❌ خطأ في حفظ الإعدادات: {e}")
+    """حفظ الإعدادات — كتابة atomic عشان مفيش thread يقرا الملف وهو فاضي"""
+    atomic_write_json(CONFIG_FILE, config)
 
 def get_chat_id():
     """جلب chat_id"""

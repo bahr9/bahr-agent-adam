@@ -79,8 +79,7 @@ def text_to_speech(text, output_file_path="/tmp/response.mp3", voice="nova"):
         response = openai_client.audio.speech.create(
             model="tts-1",
             voice=voice,
-            input=text,
-            language="ar"
+            input=text
         )
         
         # حفظ الملف

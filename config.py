@@ -49,6 +49,9 @@ EXPRESSIONS_COLLECTION = "adam_expressions"  # سجل كل تعبير اتبعت
 TOOL_HEALTH_CHECKS_COLLECTION = "tool_health_checks"  # نتائج الـ heartbeat الآمن (Runtime Capabilities & Tool Health V1)
 TOOL_FAILURES_LOG_COLLECTION = "tool_failures_log"  # فشل حقيقي أثناء تنفيذ فعلي من مستخدم (نفس المرحلة)
 TOOL_HEALTH_ALERT_STATE_COLLECTION = "tool_health_alert_state"  # آخر حالة تنبيه لكل أداة -- لمنع التكرار (dedup/cooldown)
+PERSONAL_TASKS_COLLECTION = "personal_tasks"  # مهام /save السريعة (مختلفة عن office_tasks)
+IDEAS_COLLECTION = "ideas"  # أفكار عابرة
+PROJECT_STATUS_ALERT_STATE_COLLECTION = "project_status_alert_state"  # آخر حالة اتبلّغ بيها لكل مشروع Bahr OS (dedup/cooldown)
 
 # ============================================================
 # 📋 الثوابت العامة

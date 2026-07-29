@@ -10,6 +10,7 @@ import os
 from datetime import datetime, timedelta
 from utils.logger import logger
 from utils.time_utils import now_cairo
+from utils.atomic_io import atomic_write_json
 from services.firebase_service import (
     save_reminder as firebase_save_reminder,
     get_pending_reminders as firebase_get_pending_reminders,
@@ -35,12 +36,8 @@ def load_local_reminders():
             second_brain = {"تذكيرات": []}
 
 def save_local_reminders():
-    """حفظ التذكيرات في الملف المحلي"""
-    try:
-        with open(DATA_FILE, "w", encoding="utf-8") as f:
-            json.dump(second_brain, f, ensure_ascii=False, indent=2)
-    except Exception as e:
-        logger.error(f"❌ خطأ في حفظ التذكيرات: {e}")
+    """حفظ التذكيرات في الملف المحلي — كتابة atomic"""
+    atomic_write_json(DATA_FILE, second_brain)
 
 # تحميل البيانات عند الاستيراد
 load_local_reminders()

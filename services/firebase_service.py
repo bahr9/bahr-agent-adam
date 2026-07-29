@@ -35,20 +35,21 @@ firestore_db = None
 def init_firebase():
     """تهيئة الاتصال بـ Firebase"""
     global firestore_db
-    
-    if FIREBASE_CREDENTIALS_JSON:
-        try:
+
+    if not FIREBASE_CREDENTIALS_JSON:
+        logger.warning("⚠️ FIREBASE_CREDENTIALS_JSON مش موجود")
+        return False
+
+    try:
+        if not firebase_admin._apps:
             cred_dict = json.loads(FIREBASE_CREDENTIALS_JSON)
             cred = credentials.Certificate(cred_dict)
             firebase_admin.initialize_app(cred)
-            firestore_db = firestore.client()
-            logger.info("✅ اتصلت بـ Firebase Firestore")
-            return True
-        except Exception as e:
-            logger.error(f"❌ خطأ في الاتصال بـ Firebase: {e}")
-            return False
-    else:
-        logger.warning("⚠️ FIREBASE_CREDENTIALS_JSON مش موجود")
+        firestore_db = firestore.client()
+        logger.info("✅ اتصلت بـ Firebase Firestore")
+        return True
+    except Exception as e:
+        logger.error(f"❌ خطأ في الاتصال بـ Firebase: {e}")
         return False
 
 # ============================================================
@@ -1252,23 +1253,27 @@ def search_memory_notes(user_id: str, keyword: str, limit: int = 10) -> list:
     if firestore_db is None:
         return []
     try:
+        # مفيش order_by هنا عمدًا -- .where + .order_by معًا على حقلين
+        # مختلفين محتاج composite index في Firestore. بنجيب دفعة أكبر
+        # ونرتبها في بايثون بدل كده.
         docs = firestore_db.collection(MEMORY_NOTES_COLLECTION)\
             .where("user_id", "==", str(user_id))\
-            .order_by("created_at", direction="DESCENDING")\
-            .limit(100)\
+            .limit(500)\
             .stream()
-        
+
+        candidates = [(doc.id, doc.to_dict()) for doc in docs]
+        candidates.sort(key=lambda item: item[1].get("created_at", 0), reverse=True)
+
         keyword_lower = keyword.lower()
         results = []
-        for doc in docs:
-            data = doc.to_dict()
+        for doc_id, data in candidates:
             text = data.get("text", "").lower()
             related = data.get("related_to", "").lower()
             category = data.get("category", "").lower()
-            
+
             if keyword_lower in text or keyword_lower in related or keyword_lower in category:
                 results.append({
-                    "id": doc.id,
+                    "id": doc_id,
                     "text": data.get("text", ""),
                     "category": data.get("category", ""),
                     "related_to": data.get("related_to", ""),
@@ -1276,7 +1281,7 @@ def search_memory_notes(user_id: str, keyword: str, limit: int = 10) -> list:
                 })
                 if len(results) >= limit:
                     break
-        
+
         return results
     except Exception as e:
         logger.error(f"❌ خطأ في البحث: {e}")
@@ -1287,19 +1292,24 @@ def list_memory_notes(user_id: str, limit: int = 50) -> list:
     if firestore_db is None:
         return []
     try:
+        # مفيش order_by هنا عمدًا -- نفس سبب search_memory_notes: تجنّب
+        # composite index. بنجيب دفعة أكبر من الـ limit المطلوب ونرتبها
+        # ونقصها في بايثون.
         docs = firestore_db.collection(MEMORY_NOTES_COLLECTION)\
             .where("user_id", "==", str(user_id))\
-            .order_by("created_at", direction="DESCENDING")\
-            .limit(limit)\
+            .limit(500)\
             .stream()
-        
+
+        notes = [(doc.id, doc.to_dict()) for doc in docs]
+        notes.sort(key=lambda item: item[1].get("created_at", 0), reverse=True)
+
         return [{
-            "id": doc.id,
-            "text": doc.to_dict().get("text", ""),
-            "category": doc.to_dict().get("category", ""),
-            "related_to": doc.to_dict().get("related_to", ""),
-            "timestamp": doc.to_dict().get("timestamp_str", "")
-        } for doc in docs]
+            "id": doc_id,
+            "text": data.get("text", ""),
+            "category": data.get("category", ""),
+            "related_to": data.get("related_to", ""),
+            "timestamp": data.get("timestamp_str", "")
+        } for doc_id, data in notes[:limit]]
     except Exception as e:
         logger.error(f"❌ خطأ في جلب الملاحظات: {e}")
         return []

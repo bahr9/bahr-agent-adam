@@ -41,6 +41,14 @@ logger.info(("OK " if openai_ok else "FAIL ") + "OpenAI")
 from bot import bot, load_config, get_chat_id, set_chat_id, send_error_message, safe_send_message, get_main_keyboard, get_expenses_keyboard, get_projects_keyboard, get_reminders_keyboard, get_memory_keyboard, get_eye_expert_keyboard
 logger.info("OK Telegram Bot")
 
+# Command Handlers -- استيراد بيسجل الـ @bot.message_handler decorators بتاعة
+# /save /tasks /done /clear /ideas /remind /remind_daily /remind_hourly
+# /remind_monthly /schedule_list /schedule_remove /graph_list /graph_add
+# /graph_edit /graph_delete. الاستيراد نفسه هو التسجيل -- من غيره الأوامر
+# دي مسجلة في /help بس مش شغالة فعليًا.
+import handlers.command_handler  # noqa: F401
+logger.info("OK Command Handlers")
+
 # ============================================================
 # تهيئة ADAM Core
 # ============================================================
@@ -415,6 +423,72 @@ def tool_health_check_job():
         logger.error("Tool health check error: " + str(e))
 
 
+def project_status_check_job():
+    """
+    فحص حالة مشاريع Bahr OS (delayed/suspended) كل ساعة -- نفس نمط
+    tool_health_check_job بالظبط. صفر LLM: قراءة مباشرة + مقارنة حالة سابقة
+    -> تنبيه بس عند انتقال حقيقي (دخول/خروج من حالة مقلقة).
+    """
+    try:
+        from services import project_status_alerts
+
+        chat_id = get_chat_id()
+        if not chat_id:
+            return
+
+        project_status_alerts.check_project_status_alerts(
+            lambda text: bot.send_message(chat_id, text)
+        )
+
+    except Exception as e:
+        logger.error("Project status check error: " + str(e))
+
+
+def urgent_deadlines_check_job():
+    """
+    تنبيه سريع (كل ساعة) للمواعيد اللي هتيجي خلال 3 أيام -- تكملة لـ Morning
+    Brief اليومي، مش بديل عنه.
+    """
+    try:
+        from services import deadline_alerts
+
+        chat_id = get_chat_id()
+        if not chat_id:
+            return
+
+        deadline_alerts.check_urgent_deadline_alerts(
+            str(chat_id), lambda text: bot.send_message(chat_id, text)
+        )
+
+    except Exception as e:
+        logger.error("Urgent deadlines check error: " + str(e))
+
+
+def stale_tasks_check_job():
+    """
+    تذكير يومي بالمهام (/save) اللي لسه معلقة من أكتر من أسبوع -- مبادرة
+    آدم من نفسه، من غير ما ينتظر يُسأل عنها.
+    """
+    try:
+        from services import task_service
+
+        chat_id = get_chat_id()
+        if not chat_id:
+            return
+
+        stale = task_service.get_stale_tasks(days=7)
+        if not stale:
+            return
+
+        lines = [f"- {t['نص']}" for t in stale[:10]]
+        message = f"📋 عندك {len(stale)} مهمة من /save لسه معلقة من فوق أسبوع:\n\n" + "\n".join(lines)
+        bot.send_message(chat_id, message)
+        logger.info(f"OK Stale tasks reminder sent: {len(stale)} tasks")
+
+    except Exception as e:
+        logger.error("Stale tasks check error: " + str(e))
+
+
 def weekly_report_job():
     """تقرير أسبوعي كل جمعة الساعة 1 الظهر"""
     try:
@@ -631,6 +705,12 @@ if __name__ == "__main__":
                          id='self_state_active_check', timezone='Africa/Cairo', misfire_grace_time=300)
         scheduler.add_job(tool_health_check_job, 'interval', hours=1,
                          id='tool_health_check', timezone='Africa/Cairo', misfire_grace_time=300)
+        scheduler.add_job(project_status_check_job, 'interval', hours=1,
+                         id='project_status_check', timezone='Africa/Cairo', misfire_grace_time=300)
+        scheduler.add_job(urgent_deadlines_check_job, 'interval', hours=1,
+                         id='urgent_deadlines_check', timezone='Africa/Cairo', misfire_grace_time=300)
+        scheduler.add_job(stale_tasks_check_job, 'cron', hour=20, minute=0,
+                         id='stale_tasks_check', timezone='Africa/Cairo', misfire_grace_time=300)
         scheduler.add_job(morning_brief_job, 'cron', hour=8, minute=0,
                          id='morning', timezone='Africa/Cairo', misfire_grace_time=60)
         scheduler.add_job(weekly_report_job, 'cron', day_of_week='fri', hour=13, minute=0,
