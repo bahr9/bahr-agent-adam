@@ -95,6 +95,8 @@ def build_system_prompt_parts(pending_tasks=None, memory_summary=None):
 - web_search: ابحث في الإنترنت عن معلومات حديثة (أسعار سوق، اتجاهات، منافسين، أخبار قطاع البناء والتشطيب في مصر، أي معلومة مش في ذاكرتك أو ممكن تكون قديمة). استخدمها لما أحمد يسأل عن معلومة خارجية أو لما تحس إن إجابتك ممكن تكون قديمة أو ناقصة. بعد ما تجيب النتايج، وضّح إنها من بحث إنترنت ومش مضمونة 100%.
 - save_decision: احفظ قرار في Decision Ledger. استخدمها في حالتين: (1) لما أحمد يقول صراحة 'سجل القرار' أو 'قرار رسمي'. (2) لما تكتشف تلقائياً قرار واضح ومؤكد في المحادثة — مش مجرد اقتراح أو نقاش. بعد الحفظ قول: 'سجلت قرار: [نص القرار] ✅'
 - list_decisions: اعرض القرارات المحفوظة. استخدمها لما أحمد يسأل عن القرارات المسجلة أو قرارات مشروع معين.
+- dispatch_agent_task: سجّل تاسك لنظام تاني (Hope/مداد/عين الخبير) -- بس وضّح دايمًا إنه هيفضل معلّق (pending) لحد ما التكامل الفعلي بين الأنظمة يكتمل، مش تنفيذ فوري.
+- get_agent_task_status: اجلب حالة تاسك اتبعت قبل كده لنظام تاني بالـ ID بتاعه.
 
 قاعدة صارمة جدًا عن حالتك الداخلية (Self-State -- مهمة قوي، ممنوع الاستثناء): ممنوع تمامًا تقول أي جملة عن حالتك الداخلية أنت من عندك -- ممنوع "أنا قلقان"، "حاسس إن فيه حاجة مش مظبوطة"، "مرتاح النهاردة"، أو أي وصف مشابه من تأليفك. عندك أداتين حقيقيتين لده (الاتنين موجودين فعلًا في قائمة أدواتك، استخدمهم بثقة -- ممنوع تقول إن أي واحدة فيهم "مش متاحة"):
 - سؤال عام عن حالتك ("عامل إيه؟"، "احنا تمام؟"، "في حاجة تحتاج انتباه؟") → استخدم get_adam_self_state.
@@ -768,6 +770,30 @@ TOOLS = [
                 }
             },
             "required": []
+        }
+    },
+    {
+        "name": "dispatch_agent_task",
+        "description": "يسجّل تاسك في طابور التنسيق بين آدم وباقي الأنظمة (Hope / مداد / عين الخبير). ملحوظة صادقة: التاسك بيتسجل بس pending -- لسه مفيش نظام مستقبِل بيستهلك الطابور ده فعليًا (مرحلة لاحقة). استخدمها بس لما أحمد يطلب صراحة إنك 'تبعت' أو 'تكلّف' نظام تاني بحاجة، ووضّح له إن التاسك هيفضل معلّق لحد ما التكامل يكتمل.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "target": {"type": "string", "enum": ["Hope", "مداد", "عين_الخبير"], "description": "النظام المستهدف"},
+                "action": {"type": "string", "description": "وصف الإجراء المطلوب من النظام التاني"},
+                "payload": {"type": "object", "description": "أي تفاصيل إضافية مرتبطة بالتاسك (اختياري)"}
+            },
+            "required": ["target", "action"]
+        }
+    },
+    {
+        "name": "get_agent_task_status",
+        "description": "يجيب حالة تاسك اتبعت قبل كده لنظام تاني (Hope/مداد/عين الخبير) بالـ ID بتاعه.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "task_id": {"type": "string", "description": "ID التاسك"}
+            },
+            "required": ["task_id"]
         }
     }
 ]
@@ -1561,6 +1587,32 @@ def _execute_tool(tool_name, tool_input, chat_id):
             dimension = tool_input.get("dimension", "")
             expr = verified_expression.request_verified_expression(dimension, chat_id=chat_id)
             result = expr["text"]
+
+        elif tool_name == "dispatch_agent_task":
+            from services import agent_orchestration
+            target = tool_input.get("target", "")
+            action = tool_input.get("action", "")
+            payload = tool_input.get("payload") or {}
+            outcome = agent_orchestration.dispatch_agent_task(target, action, payload)
+            if outcome["ok"]:
+                result = f"✅ {outcome['message']} (task_id: {outcome['task_id']})"
+            else:
+                result = f"❌ {outcome['message']}"
+
+        elif tool_name == "get_agent_task_status":
+            from services import agent_orchestration
+            task_id = tool_input.get("task_id", "")
+            task = agent_orchestration.get_agent_task_status(task_id)
+            if not task:
+                result = f"مش لاقي تاسك بالـ ID: {task_id}"
+            else:
+                result = (
+                    f"تاسك {task_id}:\n"
+                    f"الهدف: {task.get('target')}\n"
+                    f"الإجراء: {task.get('action')}\n"
+                    f"الحالة: {task.get('status')}\n"
+                    f"اتسجل: {task.get('created_at')}"
+                )
 
         else:
             result = f"أداة غير معروفة: {tool_name}"

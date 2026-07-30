@@ -52,6 +52,7 @@ TOOL_HEALTH_ALERT_STATE_COLLECTION = "tool_health_alert_state"  # آخر حال�
 PERSONAL_TASKS_COLLECTION = "personal_tasks"  # مهام /save السريعة (مختلفة عن office_tasks)
 IDEAS_COLLECTION = "ideas"  # أفكار عابرة
 PROJECT_STATUS_ALERT_STATE_COLLECTION = "project_status_alert_state"  # آخر حالة اتبلّغ بيها لكل مشروع Bahr OS (dedup/cooldown)
+AGENT_TASKS_COLLECTION = "agent_tasks"  # طابور مهام آدم -> Hope/مداد/عين الخبير (Orchestration Phase 1)
 
 # ============================================================
 # 📋 الثوابت العامة

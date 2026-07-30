@@ -179,6 +179,8 @@ _TOOL_METADATA = {
                                      "runtime_handler": "anthropic_native_tool", "source_owner": "Anthropic (server-side tool)"},
     "save_decision":                {"domain": "decisions", "operation_type": "write", "criticality": "medium", "source_owner": "services/firebase_service.py"},
     "list_decisions":               {"domain": "decisions", "operation_type": "read", "criticality": "low", "source_owner": "services/firebase_service.py"},
+    "dispatch_agent_task":          {"domain": "agent_orchestration", "operation_type": "write", "criticality": "medium", "source_owner": "services/agent_orchestration.py"},
+    "get_agent_task_status":        {"domain": "agent_orchestration", "operation_type": "read", "criticality": "low", "source_owner": "services/agent_orchestration.py"},
     # عمدًا صفر health_check_supported هنا -- منع أي حلقة مراقبة ذاتية
     # (تقرير صحة الأدوات مايراقبش نفسه عبر heartbeat).
     "get_tools_health_status":      {"domain": "system_health", "operation_type": "analysis", "criticality": "low",

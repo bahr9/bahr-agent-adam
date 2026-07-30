@@ -489,6 +489,32 @@ def stale_tasks_check_job():
         logger.error("Stale tasks check error: " + str(e))
 
 
+def stale_agent_tasks_check_job():
+    """
+    تنبيه يومي بالتاسكات اللي آدم بعتها لأنظمة تانية (Hope/مداد/عين الخبير)
+    ولسه معلّقة (pending/in_progress) من فوق 3 أيام -- المرحلة 1 من
+    الأوركسترا، "يبعت ويتابع" مش "يبعت وينسى".
+    """
+    try:
+        from services import agent_orchestration
+
+        chat_id = get_chat_id()
+        if not chat_id:
+            return
+
+        stale = agent_orchestration.list_stale_agent_tasks(days=3)
+        if not stale:
+            return
+
+        lines = [f"- [{t.get('target')}] {t.get('action')} (اتسجل: {t.get('created_at', '')[:10]})" for t in stale[:10]]
+        message = f"🕸️ عندك {len(stale)} تاسك معلّق لأنظمة تانية من فوق 3 أيام:\n\n" + "\n".join(lines)
+        bot.send_message(chat_id, message)
+        logger.info(f"OK Stale agent-tasks reminder sent: {len(stale)} tasks")
+
+    except Exception as e:
+        logger.error("Stale agent-tasks check error: " + str(e))
+
+
 def weekly_report_job():
     """تقرير أسبوعي كل جمعة الساعة 1 الظهر"""
     try:
@@ -711,6 +737,8 @@ if __name__ == "__main__":
                          id='urgent_deadlines_check', timezone='Africa/Cairo', misfire_grace_time=300)
         scheduler.add_job(stale_tasks_check_job, 'cron', hour=20, minute=0,
                          id='stale_tasks_check', timezone='Africa/Cairo', misfire_grace_time=300)
+        scheduler.add_job(stale_agent_tasks_check_job, 'cron', hour=20, minute=5,
+                         id='stale_agent_tasks_check', timezone='Africa/Cairo', misfire_grace_time=300)
         scheduler.add_job(morning_brief_job, 'cron', hour=8, minute=0,
                          id='morning', timezone='Africa/Cairo', misfire_grace_time=60)
         scheduler.add_job(weekly_report_job, 'cron', day_of_week='fri', hour=13, minute=0,
