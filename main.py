@@ -489,6 +489,46 @@ def stale_tasks_check_job():
         logger.error("Stale tasks check error: " + str(e))
 
 
+def agent_task_completion_check_job():
+    """
+    فحص دوري (كل 10 دقايق) للتاسكات اللي أنظمة تانية (مداد دلوقتي) خلّصتها
+    (done/failed) ولسه محدش بلّغ أحمد بيها. مهم: مش بيبلّغ 'تم' على كلام
+    النظام التاني بس -- بيتحقق فعليًا (verify_task_completion) من الدليل
+    قبل ما يقول لأحمد إن التنفيذ اتأكد.
+    """
+    try:
+        from services import agent_orchestration
+
+        chat_id = get_chat_id()
+        if not chat_id:
+            return
+
+        for task in agent_orchestration.get_unreported_completed_tasks():
+            status = task.get("status")
+            target = task.get("target", "")
+            action = task.get("action", "")
+
+            if status == "done":
+                check = agent_orchestration.verify_task_completion(task)
+                if check["verified"]:
+                    text = f"✅ {target} خلّص التاسك: {action}\n{check['reason']}"
+                else:
+                    text = (
+                        f"⚠️ {target} قال إنه خلّص التاسك ({action})، لكن التحقق المستقل فشل:\n"
+                        f"{check['reason']}\n-- محتاج مراجعة يدوية."
+                    )
+            else:
+                summary = (task.get("result") or {}).get("summary", "")
+                text = f"❌ {target} فشل في تنفيذ التاسك: {action}\n{summary}"
+
+            bot.send_message(chat_id, text)
+            agent_orchestration.mark_task_reported(task.get("task_id"))
+            logger.info(f"OK Agent task reported: {task.get('task_id')} ({status})")
+
+    except Exception as e:
+        logger.error("Agent task completion check error: " + str(e))
+
+
 def stale_agent_tasks_check_job():
     """
     تنبيه يومي بالتاسكات اللي آدم بعتها لأنظمة تانية (Hope/مداد/عين الخبير)
@@ -735,6 +775,8 @@ if __name__ == "__main__":
                          id='project_status_check', timezone='Africa/Cairo', misfire_grace_time=300)
         scheduler.add_job(urgent_deadlines_check_job, 'interval', hours=1,
                          id='urgent_deadlines_check', timezone='Africa/Cairo', misfire_grace_time=300)
+        scheduler.add_job(agent_task_completion_check_job, 'interval', minutes=10,
+                         id='agent_task_completion_check', timezone='Africa/Cairo', misfire_grace_time=120)
         scheduler.add_job(stale_tasks_check_job, 'cron', hour=20, minute=0,
                          id='stale_tasks_check', timezone='Africa/Cairo', misfire_grace_time=300)
         scheduler.add_job(stale_agent_tasks_check_job, 'cron', hour=20, minute=5,

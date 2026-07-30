@@ -105,6 +105,69 @@ def list_agent_tasks(target: str = None, status: str = None, limit: int = 50) ->
         return []
 
 
+def verify_task_completion(task: dict) -> dict:
+    """
+    تحقق حقيقي من نتيجة تاسك status='done' -- بيقرا الدليل الفعلي من نفس
+    مصدر البيانات المذكور في result.verification، مش بس يصدّق result.summary.
+    لسه بيدعم نوع واحد بس (firestore_document) لأنه ده اللي مبني فعليًا
+    (اختبار echo_test_marker). أي نوع تاني بيترجع verified=False صراحة.
+    """
+    result = task.get("result") or {}
+    verification = result.get("verification")
+    if not verification:
+        return {"verified": False, "reason": "مفيش دليل تحقق مرفق مع التاسك -- الادّعاء مش متأكد"}
+
+    v_type = verification.get("type")
+
+    if v_type == "firestore_document":
+        from services.firebase_service import firestore_db
+        collection = verification.get("collection")
+        expected_marker = verification.get("expected_marker")
+        if firestore_db is None:
+            return {"verified": False, "reason": "Firestore مش متصل -- مينفعش نتحقق"}
+        if not collection or not expected_marker:
+            return {"verified": False, "reason": "بيانات التحقق ناقصة (collection/expected_marker)"}
+        try:
+            docs = firestore_db.collection(collection).where("caption", "==", expected_marker).limit(1).stream()
+            if any(True for _ in docs):
+                return {"verified": True, "reason": f"اتأكد فعليًا -- المستند موجود في {collection}"}
+            return {"verified": False, "reason": f"مفيش مستند مطابق في {collection} -- الادّعاء مش مؤكد"}
+        except Exception as e:
+            return {"verified": False, "reason": f"خطأ أثناء التحقق: {e}"}
+
+    return {"verified": False, "reason": f"نوع تحقق غير مدعوم عند آدم لسه: {v_type}"}
+
+
+def get_unreported_completed_tasks() -> list:
+    """التاسكات اللي خلصت (done/failed) ولسه محدش بلّغ أحمد بيها."""
+    from services.firebase_service import firestore_db
+    if firestore_db is None:
+        return []
+    try:
+        docs = firestore_db.collection(AGENT_TASKS_COLLECTION).limit(500).stream()
+        tasks = [doc.to_dict() for doc in docs]
+        return [
+            t for t in tasks
+            if t.get("status") in ("done", "failed") and not t.get("reported_to_ahmed")
+        ]
+    except Exception as e:
+        logger.error(f"❌ خطأ في جلب التاسكات المكتملة: {e}")
+        return []
+
+
+def mark_task_reported(task_id: str) -> None:
+    """تعليم تاسك كمُبلّغ لأحمد -- منع تكرار التبليغ عنه تاني."""
+    from services.firebase_service import firestore_db
+    if firestore_db is None:
+        return
+    try:
+        firestore_db.collection(AGENT_TASKS_COLLECTION).document(task_id).set(
+            {"reported_to_ahmed": True}, merge=True
+        )
+    except Exception as e:
+        logger.error(f"❌ خطأ في تعليم التاسك كمُبلّغ {task_id}: {e}")
+
+
 def list_stale_agent_tasks(days: int = 3) -> list:
     """
     التاسكات اللي لسه pending/in_progress وعدّى عليها أكتر من `days` يوم من
