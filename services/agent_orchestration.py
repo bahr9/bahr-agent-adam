@@ -168,6 +168,32 @@ def mark_task_reported(task_id: str) -> None:
         logger.error(f"❌ خطأ في تعليم التاسك كمُبلّغ {task_id}: {e}")
 
 
+def update_agent_task_status(task_id: str, status: str, result: dict = None) -> bool:
+    """
+    تحديث حالة تاسك من طرف تنفيذ خارجي (زي بولينج Make بتاع عين الخبير عبر
+    /agent-tasks/<id>/status) -- بيتاخد بس لما status يكون 'done' أو 'failed'
+    فعليًا؛ حالة 'skip' (الأكشن مش معروف) متبعتش هنا خالص، التاسك يفضل pending.
+    """
+    from services.firebase_service import firestore_db
+    if firestore_db is None:
+        return False
+    try:
+        update_data = {
+            "status": status,
+            "updated_at": now_cairo().isoformat(),
+        }
+        if result is not None:
+            update_data["result"] = result
+        firestore_db.collection(AGENT_TASKS_COLLECTION).document(task_id).set(
+            update_data, merge=True
+        )
+        logger.info(f"🕸️ Agent task {task_id} -> {status} (عبر endpoint خارجي)")
+        return True
+    except Exception as e:
+        logger.error(f"❌ خطأ في تحديث حالة التاسك {task_id}: {e}")
+        return False
+
+
 def list_stale_agent_tasks(days: int = 3) -> list:
     """
     التاسكات اللي لسه pending/in_progress وعدّى عليها أكتر من `days` يوم من

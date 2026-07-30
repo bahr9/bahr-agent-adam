@@ -735,6 +735,65 @@ def log_eye_expert():
         logger.error("Eye Expert log error: " + str(e))
         return jsonify({"status": "error", "message": str(e)}), 500
 
+@flask_app.route("/agent-tasks/pending", methods=["GET"])
+def get_pending_agent_tasks_endpoint():
+    """
+    جلب التاسكات pending لهدف معيّن (target) -- تُستخدم من بولينج Make
+    (السيناريو المجدول بتاع عين الخبير) عشان يعرف إيه التاسكات المنتظرة.
+    محمي بنفس نمط X-Secret-Token المُختبر فعليًا مع /log-eye-expert.
+    """
+    try:
+        import os
+        secret = os.getenv("AGENT_TASKS_SECRET", "")
+        token = request.headers.get("X-Secret-Token", "") or request.args.get("token", "")
+        if secret and token != secret:
+            return jsonify({"status": "unauthorized"}), 401
+
+        target = request.args.get("target", "")
+        if not target:
+            return jsonify({"status": "error", "message": "target مطلوب"}), 400
+
+        from services.agent_orchestration import list_agent_tasks
+        tasks = list_agent_tasks(target=target, status="pending", limit=10)
+        return jsonify({"status": "ok", "tasks": tasks}), 200
+    except Exception as e:
+        logger.error("Get pending agent tasks error: " + str(e))
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@flask_app.route("/agent-tasks/<task_id>/status", methods=["POST"])
+def update_agent_task_status_endpoint(task_id):
+    """
+    تحديث حالة تاسك (done/failed) بعد تنفيذه فعليًا -- تُستخدم من بولينج Make.
+    قاعدة 'skip مش failed': لو الأكشن مش معروف عند المُنفِّذ، الـ endpoint ده
+    مبيتنادوش خالص، والتاسك يفضل pending زي ما هو.
+    """
+    try:
+        import os
+        secret = os.getenv("AGENT_TASKS_SECRET", "")
+        token = request.headers.get("X-Secret-Token", "") or request.args.get("token", "")
+        if secret and token != secret:
+            return jsonify({"status": "unauthorized"}), 401
+
+        data = request.get_json(force=True, silent=True) or {}
+        status = data.get("status", "")
+        result = data.get("result")
+
+        if status not in ("done", "failed"):
+            return jsonify({"status": "error", "message": "status لازم يكون done أو failed"}), 400
+
+        from services.agent_orchestration import update_agent_task_status
+        ok = update_agent_task_status(task_id, status, result)
+        if ok:
+            logger.info(f"Agent task status updated | task_id: {task_id} | status: {status}")
+            return jsonify({"status": "ok"}), 200
+        else:
+            return jsonify({"status": "error", "message": "فشل تحديث حالة التاسك"}), 500
+    except Exception as e:
+        logger.error("Update agent task status error: " + str(e))
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
 @flask_app.route("/health", methods=["GET"])
 def health():
     """Health check"""
