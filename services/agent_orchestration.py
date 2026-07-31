@@ -38,7 +38,7 @@ PENDING_STATUSES = ("pending", "in_progress")
 # نصحح للموديل لو هو قاصد أوتوميشن حقيقي واستخدم string غلط.
 AUTOMATED_ACTIONS_BY_TARGET = {
     "مداد": {"generate_marketing_post_from_eye_expert"},
-    "عين_الخبير": {"retry_failed_eye_expert_reply"},
+    "عين_الخبير": {"retry_failed_eye_expert_reply", "retry_failed_eye_expert_reply_test"},
     "Hope": set(),
 }
 
@@ -161,12 +161,13 @@ def verify_task_completion(task: dict) -> dict:
         from services.firebase_service import firestore_db
         collection = verification.get("collection")
         expected_marker = verification.get("expected_marker")
+        field = verification.get("field", "caption")
         if firestore_db is None:
             return {"verified": False, "reason": "Firestore مش متصل -- مينفعش نتحقق"}
         if not collection or not expected_marker:
             return {"verified": False, "reason": "بيانات التحقق ناقصة (collection/expected_marker)"}
         try:
-            docs = firestore_db.collection(collection).where("caption", "==", expected_marker).limit(1).stream()
+            docs = firestore_db.collection(collection).where(field, "==", expected_marker).limit(1).stream()
             if any(True for _ in docs):
                 return {"verified": True, "reason": f"اتأكد فعليًا -- المستند موجود في {collection}"}
             return {"verified": False, "reason": f"مفيش مستند مطابق في {collection} -- الادّعاء مش مؤكد"}
