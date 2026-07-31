@@ -67,6 +67,7 @@ THINKING_BUDGET_TOKENS = 5000
 DATA_FILE = "second_brain.json"
 CONFIG_FILE = "config.json"
 LOG_FILE = "bahr_agent.log"
+MEMORY_CACHE_FILE = "memory_cache.json"  # fallback محلي للمحادثات/الذاكرة الدائمة لو قراءة Firestore فشلت
 
 # ============================================================
 # ⏰ إعدادات الجدولة

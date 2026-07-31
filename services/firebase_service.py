@@ -195,18 +195,25 @@ def save_conversation(user_id, user_message, assistant_response):
 
 def get_conversation_history(user_id, limit=50):
     """جلب سجل المحادثات"""
+    from utils import local_memory_cache
+
     if firestore_db is None:
-        return []
-    
+        return local_memory_cache.get_cached_conversation(user_id)
+
     try:
         doc = firestore_db.collection(CONVERSATIONS_COLLECTION).document(str(user_id)).get()
         if doc.exists:
             messages = doc.to_dict().get("messages", [])
-            return messages[-limit:]
+            trimmed = messages[-limit:]
+            local_memory_cache.update_conversation_cache(user_id, trimmed)
+            return trimmed
         return []
     except Exception as e:
         logger.error(f"❌ خطأ في جلب المحادثات: {e}")
-        return []
+        cached = local_memory_cache.get_cached_conversation(user_id)
+        if cached:
+            logger.warning(f"⚠️ رجّعت آخر نسخة محلية محفوظة من المحادثات لـ {user_id} (fallback)")
+        return cached
 
 # ============================================================
 # ⏰ عمليات Reminders
@@ -469,17 +476,24 @@ def get_memory_summary(user_id):
     جلب ملخص الذاكرة الدائمة لمستخدم معيّن.
     الذاكرة دي بتتراكم عبر كل الجلسات، مش بس آخر شوية رسائل.
     """
+    from utils import local_memory_cache
+
     if firestore_db is None:
-        return ""
-    
+        return local_memory_cache.get_cached_memory_summary(user_id)
+
     try:
         doc = firestore_db.collection(MEMORY_COLLECTION).document(str(user_id)).get()
         if doc.exists:
-            return doc.to_dict().get("summary", "")
+            summary = doc.to_dict().get("summary", "")
+            local_memory_cache.update_memory_cache(user_id, summary)
+            return summary
         return ""
     except Exception as e:
         logger.error(f"❌ خطأ في جلب الذاكرة الدائمة: {e}")
-        return ""
+        cached = local_memory_cache.get_cached_memory_summary(user_id)
+        if cached:
+            logger.warning(f"⚠️ رجّعت آخر نسخة محلية محفوظة من الذاكرة الدائمة لـ {user_id} (fallback)")
+        return cached
 
 def save_memory_summary(user_id, summary_text):
     """حفظ/تحديث ملخص الذاكرة الدائمة لمستخدم معيّن"""

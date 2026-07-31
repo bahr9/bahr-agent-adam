@@ -822,8 +822,8 @@ if __name__ == "__main__":
         # Scheduler
         scheduler.add_job(check_reminders_job, 'interval', seconds=30,
                          id='reminders', misfire_grace_time=10)
-        scheduler.add_job(check_recurring_reminders_job, 'interval', minutes=1,
-                         id='recurring', misfire_grace_time=30)
+        scheduler.add_job(check_recurring_reminders_job, 'interval', minutes=15,
+                         id='recurring', misfire_grace_time=60)
         scheduler.add_job(check_loans_job, 'cron', hour=9, minute=0,
                          id='loans_check', timezone='Africa/Cairo', misfire_grace_time=60)
         scheduler.add_job(self_state_active_check_job, 'interval', hours=1,
