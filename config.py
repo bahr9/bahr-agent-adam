@@ -19,6 +19,8 @@ TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 FIREBASE_CREDENTIALS_JSON = os.getenv("FIREBASE_CREDENTIALS_JSON")
+SUPABASE_URL = os.getenv("SUPABASE_URL")  # Pilot: Firestore -> Supabase migration (recurring reminders)
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")  # service_role key
 
 # التحقق من المفاتيح الأساسية
 if not TELEGRAM_TOKEN:
@@ -53,6 +55,11 @@ PERSONAL_TASKS_COLLECTION = "personal_tasks"  # مهام /save السريعة (�
 IDEAS_COLLECTION = "ideas"  # أفكار عابرة
 PROJECT_STATUS_ALERT_STATE_COLLECTION = "project_status_alert_state"  # آخر حالة اتبلّغ بيها لكل مشروع Bahr OS (dedup/cooldown)
 AGENT_TASKS_COLLECTION = "agent_tasks"  # طابور مهام آدم -> Hope/مداد/عين الخبير (Orchestration Phase 1)
+
+# ============================================================
+# 🐘 Supabase (Pilot -- Firestore migration, recurring reminders only)
+# ============================================================
+RECURRING_REMINDERS_TABLE = "recurring_reminders"  # اسم الجدول في Supabase
 
 # ============================================================
 # 📋 الثوابت العامة

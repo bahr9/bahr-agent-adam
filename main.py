@@ -32,6 +32,11 @@ from services.firebase_service import init_firebase
 firebase_ok = init_firebase()
 logger.info(("OK " if firebase_ok else "FAIL ") + "Firebase")
 
+# Supabase (pilot: recurring reminders -- soft-optional, مبيوقفش تشغيل البوت لو مش موجود)
+from services.supabase_service import init_supabase
+supabase_ok = init_supabase()
+logger.info(("OK " if supabase_ok else "FAIL ") + "Supabase")
+
 # OpenAI
 from services.openai_service import init_openai
 openai_ok = init_openai()
@@ -631,7 +636,7 @@ def check_reminders_job():
 def check_recurring_reminders_job():
     """فحص التذكيرات المتكررة كل دقيقة"""
     try:
-        from services.firebase_service import (
+        from services.recurring_reminders_service import (
             get_active_recurring_reminders,
             update_recurring_reminder_last_sent
         )
@@ -672,7 +677,7 @@ def check_recurring_reminders_job():
 
             if should_send:
                 bot.send_message(chat_id, "\u0631\u0633\u0627\u0644\u0629: " + reminder['text'])
-                update_recurring_reminder_last_sent(reminder["id"])
+                update_recurring_reminder_last_sent(reminder)
 
     except Exception as e:
         logger.error("Recurring reminders error: " + str(e))

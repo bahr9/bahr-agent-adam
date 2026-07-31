@@ -8,6 +8,9 @@ openai>=1.0.0
 # Firebase
 firebase-admin>=6.0.0
 
+# Supabase (pilot: recurring reminders)
+supabase==2.31.0
+
 # Scheduling
 apscheduler==3.10.4
 schedule==1.2.2

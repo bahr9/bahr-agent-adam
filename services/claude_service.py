@@ -1214,7 +1214,7 @@ def _execute_tool(tool_name, tool_input, chat_id):
                 )
 
         elif tool_name == "create_recurring_reminder":
-            from services.firebase_service import save_recurring_reminder
+            from services.recurring_reminders_service import save_recurring_reminder
             text = tool_input.get("text", "")
             interval_type = tool_input.get("interval_type", "daily")
             interval_value = tool_input.get("interval_value", 1)
@@ -1230,7 +1230,7 @@ def _execute_tool(tool_name, tool_input, chat_id):
                 result = "❌ فشل إنشاء التذكير المتكرر"
 
         elif tool_name == "list_recurring_reminders":
-            from services.firebase_service import get_active_recurring_reminders
+            from services.recurring_reminders_service import get_active_recurring_reminders
             reminders = get_active_recurring_reminders()
             if not reminders:
                 result = "مفيش تذكيرات متكررة نشطة"
@@ -1243,7 +1243,7 @@ def _execute_tool(tool_name, tool_input, chat_id):
                 result = "التذكيرات المتكررة:" + chr(10) + chr(10).join(lines)
 
         elif tool_name == "delete_recurring_reminder":
-            from services.firebase_service import delete_recurring_reminder_db
+            from services.recurring_reminders_service import delete_recurring_reminder_db
             reminder_id = tool_input.get("reminder_id", "")
             ok = delete_recurring_reminder_db(reminder_id)
             result = "✅ تم حذف التذكير المتكرر" if ok else "❌ مش لاقي التذكير"

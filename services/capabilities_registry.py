@@ -78,7 +78,7 @@ def _probe_get_bahr_sites():
 
 
 def _probe_list_recurring_reminders():
-    from services.firebase_service import get_active_recurring_reminders
+    from services.recurring_reminders_service import get_active_recurring_reminders
     return get_active_recurring_reminders()
 
 
