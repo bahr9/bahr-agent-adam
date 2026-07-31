@@ -32,6 +32,23 @@ from config import AGENT_TASKS_COLLECTION
 VALID_TARGETS = ["Hope", "مداد", "عين_الخبير"]
 PENDING_STATUSES = ("pending", "in_progress")
 
+# الأكشنز اللي فعليًا عندها تنفيذ آلي حقيقي شغال دلوقتي، لكل target.
+# ملحوظة: مش allowlist صارم بيرفض حاجة تانية -- action حر لسه مسموح
+# (تاسك عام يقعد pending لحد ما حد يراجعه يدويًا). ده بس مرجع نعرف بيه
+# نصحح للموديل لو هو قاصد أوتوميشن حقيقي واستخدم string غلط.
+AUTOMATED_ACTIONS_BY_TARGET = {
+    "مداد": {"generate_marketing_post_from_eye_expert"},
+    "عين_الخبير": {"retry_failed_eye_expert_reply"},
+    "Hope": set(),
+}
+
+# دورة الـ poll الفعلية لكل نظام -- مداد بايثون بوت بيعمل poll كل دقيقتين،
+# عين الخبير بقى Make.com scenario بيعمل poll كل 20 دقيقة.
+POLL_INTERVAL_DESCRIPTION_BY_TARGET = {
+    "مداد": "كل دقيقتين",
+    "عين_الخبير": "كل 20 دقيقة",
+}
+
 
 def dispatch_agent_task(target: str, action: str, payload: dict = None) -> dict:
     """
@@ -63,10 +80,31 @@ def dispatch_agent_task(target: str, action: str, payload: dict = None) -> dict:
             "updated_at": now,
         })
         logger.info(f"🕸️ Agent task dispatched: {target} <- {action} (id={doc_ref.id})")
+
+        known_actions = AUTOMATED_ACTIONS_BY_TARGET.get(target, set())
+        if action in known_actions:
+            poll_desc = POLL_INTERVAL_DESCRIPTION_BY_TARGET.get(target, "بشكل دوري")
+            message = (
+                f"اتسجل التاسك لـ {target} (action='{action}') وهيتنفذ آليًا فعلاً -- "
+                f"{target} بيعمل poll {poll_desc}، فمتوقع ينفّذ ويتحدّث حالته قريب."
+            )
+        elif known_actions:
+            message = (
+                f"اتسجل التاسك لـ {target} بس بـ action='{action}' اللي مش من أكشنز الأوتوميشن "
+                f"المعروفة لـ {target} ({', '.join(sorted(known_actions))}). هيفضل pending لحد ما "
+                f"حد يراجعه يدويًا. لو قصدك تشغيل التنفيذ الآلي الحقيقي، ابعت تاني بالظبط بـ "
+                f"action='{sorted(known_actions)[0]}'."
+            )
+        else:
+            message = (
+                f"اتسجل التاسك لـ {target} وهو معلّق (pending) -- مفيش تنفيذ آلي مبني لـ {target} لسه، "
+                f"فهيفضل قاعد لحد ما حد يراجعه يدويًا."
+            )
+
         return {
             "ok": True,
             "task_id": doc_ref.id,
-            "message": f"اتسجل التاسك لـ {target} وهو معلّق (pending) -- مفيش نظام مستقبِل بيستهلكه لسه.",
+            "message": message,
         }
     except Exception as e:
         logger.error(f"❌ خطأ في تسجيل agent task: {e}")
