@@ -921,7 +921,6 @@ def _execute_tool(tool_name, tool_input, chat_id):
 
                         # تنبيه 2: إجمالي الشهر > 40000
                         from datetime import datetime
-                        from utils.time_utils import now_cairo
                         current_month = now_cairo().strftime("%Y-%m")
                         all_expenses  = get_expenses(limit=1000)
                         monthly_total = sum(
@@ -1316,7 +1315,6 @@ def _execute_tool(tool_name, tool_input, chat_id):
 
         elif tool_name == "add_client_followup":
             from services.firebase_service import firestore_db
-            from utils.time_utils import now_cairo
             import uuid
             try:
                 client_id = "CLT-" + str(uuid.uuid4())[:8].upper()
@@ -1341,7 +1339,6 @@ def _execute_tool(tool_name, tool_input, chat_id):
 
         elif tool_name == "update_client_followup":
             from services.firebase_service import firestore_db
-            from utils.time_utils import now_cairo
             client_id = tool_input.get("client_id", "")
             if not client_id:
                 result = "❌ محتاج client_id"
@@ -1383,7 +1380,6 @@ def _execute_tool(tool_name, tool_input, chat_id):
 
         elif tool_name == "get_upcoming_followups":
             from services.firebase_service import firestore_db
-            from utils.time_utils import now_cairo
             from datetime import timedelta
             try:
                 days = int(tool_input.get("days", 3))
@@ -1500,7 +1496,6 @@ def _execute_tool(tool_name, tool_input, chat_id):
 
         elif tool_name == "update_project_status":
             from services.firebase_service import firestore_db
-            from utils.time_utils import now_cairo
 
             project_id = tool_input.get("project_id", "").strip()
             if not project_id:
@@ -1538,7 +1533,6 @@ def _execute_tool(tool_name, tool_input, chat_id):
 
         elif tool_name == "update_eye_expert_prompt":
             from services.firebase_service import firestore_db
-            from utils.time_utils import now_cairo
             new_prompt = tool_input.get("new_prompt", "").strip()
             if not new_prompt:
                 result = "❌ الـ prompt فاضي"
