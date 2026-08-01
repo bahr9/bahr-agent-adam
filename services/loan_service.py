@@ -113,6 +113,16 @@ def get_next_month_key():
     return f"01/{next_month:02d}/{year}"
 
 
+def get_previous_month_key():
+    now = now_cairo()
+    prev_month = now.month - 1
+    year = now.year
+    if prev_month < 1:
+        prev_month = 12
+        year -= 1
+    return f"01/{prev_month:02d}/{year}"
+
+
 # ============================================================
 # 💾 حالة الدفع (مخزّنة في Firestore)
 # ============================================================
@@ -187,3 +197,12 @@ def get_month_installments(month_key):
 
     total = sum(x["amount"] for x in items)
     return items, total
+
+
+def get_overdue_installments():
+    """أقساط الشهر إلي فات اللي لسه مدفوعتش -- عشان تفضل ظاهرة حتى بعد ما الشهر يتغير"""
+    month_key = get_previous_month_key()
+    items, total = get_month_installments(month_key)
+    unpaid = [x for x in items if not x["paid"]]
+    unpaid_total = sum(x["amount"] for x in unpaid)
+    return unpaid, unpaid_total, month_key

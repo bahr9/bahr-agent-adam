@@ -34,7 +34,7 @@ def build_morning_context(chat_id: str) -> dict:
 
     # 2. Upcoming Loans
     try:
-        from services.loan_service import get_month_installments, get_current_month_key
+        from services.loan_service import get_month_installments, get_current_month_key, get_overdue_installments
         month_key = get_current_month_key()
         installments, total = get_month_installments(month_key)
         pending = [i for i in installments if not i.get("paid")]
@@ -42,6 +42,17 @@ def build_morning_context(chat_id: str) -> dict:
     except Exception as e:
         logger.error(f"❌ Loans error: {e}")
         context["pending_loans"] = []
+
+    # 2b. Overdue Loans (من الشهر إلي فات، لسه مدفوعتش)
+    try:
+        from services.loan_service import get_overdue_installments
+        overdue, overdue_total, overdue_month_key = get_overdue_installments()
+        context["overdue_loans"] = overdue[:3]
+        context["overdue_month_key"] = overdue_month_key
+    except Exception as e:
+        logger.error(f"❌ Overdue loans error: {e}")
+        context["overdue_loans"] = []
+        context["overdue_month_key"] = ""
 
     # 3. Recent Memory Notes
     try:
@@ -113,6 +124,11 @@ def generate_morning_brief(chat_id: str) -> str:
             lines = [f"  - {l.get('program', '')}: {l.get('amount', '')} جنيه" for l in ctx["pending_loans"]]
             loans_text = "أقساط مستحقة:\n" + "\n".join(lines)
 
+        overdue_text = ""
+        if ctx.get("overdue_loans"):
+            lines = [f"  - {l.get('program', '')}: {l.get('amount', '')} جنيه" for l in ctx["overdue_loans"]]
+            overdue_text = f"⚠️ أقساط متأخرة من {ctx.get('overdue_month_key', 'الشهر إلي فات')} لسه مدفوعتش:\n" + "\n".join(lines)
+
         conflicts_text = ""
         if ctx["conflicts"]:
             conflicts_text = f"⚠️ تعارض مواعيد: {len(ctx['conflicts'])} حالة"
@@ -136,6 +152,7 @@ def generate_morning_brief(chat_id: str) -> str:
 السياق الحقيقي دلوقتي:
 {weather_text}
 {deadlines_text}
+{overdue_text}
 {loans_text}
 {conflicts_text}
 {notes_text}

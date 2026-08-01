@@ -359,7 +359,7 @@ scheduler = BackgroundScheduler(timezone="Africa/Cairo")
 def check_loans_job():
     """فحص الأقساط القريبة -- كل يوم الساعة 9 صباحاً"""
     try:
-        from services.loan_service import get_month_installments, get_current_month_key
+        from services.loan_service import get_month_installments, get_current_month_key, get_overdue_installments
         from utils.time_utils import now_cairo
 
         chat_id = get_chat_id()
@@ -368,16 +368,31 @@ def check_loans_job():
 
         month_key = get_current_month_key()
         installments, total = get_month_installments(month_key)
-
         urgent = [i for i in installments if not i.get("paid")]
 
+        overdue, overdue_total, overdue_month_key = get_overdue_installments()
+
+        message_parts = []
+
+        if overdue:
+            lines = ["- " + i.get("program", "") + ": " + str(i.get("amount", "")) + " جنيه"
+                     for i in overdue]
+            part = ("⚠️ أقساط متأخرة من " + overdue_month_key
+                    + " لسه متسجلة مش مدفوعة:"
+                    + chr(10) + chr(10).join(lines))
+            part += chr(10) + "الإجمالي: " + str(overdue_total) + " جنيه"
+            message_parts.append(part)
+
         if urgent:
-            lines = ["- " + i.get("program", "") + ": " + str(i.get("amount", "")) + " \u062c\u0646\u064a\u0647"
+            lines = ["- " + i.get("program", "") + ": " + str(i.get("amount", "")) + " جنيه"
                      for i in urgent]
-            message = "\u062a\u0646\u0628\u064a\u0647 \u0627\u0642\u0633\u0627\u0637 \u0627\u0644\u0634\u0647\u0631 \u062f\u0647:" + chr(10) + chr(10).join(lines)
-            message += chr(10) + "\u0627\u0644\u0627\u062c\u0645\u0627\u0644\u064a: " + str(total) + " \u062c\u0646\u064a\u0647"
-            bot.send_message(chat_id, message)
-            logger.info("OK Loan alert sent: " + str(len(urgent)) + " installments")
+            part = "تنبيه اقساط الشهر ده:" + chr(10) + chr(10).join(lines)
+            part += chr(10) + "الاجمالي: " + str(total) + " جنيه"
+            message_parts.append(part)
+
+        if message_parts:
+            bot.send_message(chat_id, (chr(10) + chr(10)).join(message_parts))
+            logger.info("OK Loan alert sent: " + str(len(urgent)) + " current + " + str(len(overdue)) + " overdue")
         else:
             logger.info("OK Loans check: all paid")
 

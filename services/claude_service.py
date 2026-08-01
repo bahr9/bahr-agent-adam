@@ -66,7 +66,7 @@ def build_system_prompt_parts(pending_tasks=None, memory_summary=None):
 - delete_expense: تحذف مصروف بالـ ID بتاعه (استخدم list_expenses الأول عشان تجيب الـ ID)
 - expense_summary: تجيب إجمالي المصاريف والتقسيم حسب التصنيف
 - loan_overview: ملخص شامل لكل الأقساط والقروض (مدفوع/متبقي لكل برنامج)
-- loan_month_installments: أقساط شهر معيّن (الحالي أو القادم) من كل البرامج
+- loan_month_installments: أقساط شهر معيّن (إلي فات، الحالي، أو القادم) من كل البرامج -- استخدم "إلي فات" لو أحمد بيسأل عن أقساط متأخرة أو مستحقة من شهر سابق
 - loan_record_installment: تسجيل حالة دفع قسط -- الاستخدام العادي (أول مرة تتسجل الحالة دي، زي "دفعت قسط فاليو الشهر ده")
 - loan_update_installment: تصحيح قسط كان متسجل قبل كده غلط -- استخدمها بس لو أحمد وضّح صراحة إنه تصحيح لقيمة سابقة مش تسجيل أول مرة، ومحتاجة سبب صريح
 - loan_resolve_conflict: تطبيق قرار أحمد لحل تعارض بين قيمتين متضاربتين عن نفس القسط -- محتاجة سبب صريح كمان
@@ -261,14 +261,14 @@ TOOLS = [
     },
     {
         "name": "loan_month_installments",
-        "description": "يجيب أقساط شهر معيّن (الحالي أو القادم) من كل البرامج، مع حالة كل قسط (مدفوع ولا لأ) والإجمالي.",
+        "description": "يجيب أقساط شهر معيّن (اللي فات، الحالي، أو القادم) من كل البرامج، مع حالة كل قسط (مدفوع ولا لأ) والإجمالي.",
         "input_schema": {
             "type": "object",
             "properties": {
                 "which_month": {
                     "type": "string",
-                    "enum": ["current", "next"],
-                    "description": "الشهر الحالي ولا القادم"
+                    "enum": ["previous", "current", "next"],
+                    "description": "الشهر إلي فات، الحالي، ولا القادم"
                 }
             },
             "required": ["which_month"]
@@ -971,7 +971,12 @@ def _execute_tool(tool_name, tool_input, chat_id):
         
         elif tool_name == "loan_month_installments":
             which = tool_input.get("which_month", "current")
-            month_key = loan_service.get_current_month_key() if which == "current" else loan_service.get_next_month_key()
+            month_key_fn = {
+                "previous": loan_service.get_previous_month_key,
+                "current": loan_service.get_current_month_key,
+                "next": loan_service.get_next_month_key,
+            }.get(which, loan_service.get_current_month_key)
+            month_key = month_key_fn()
             items, total = loan_service.get_month_installments(month_key)
             if not items:
                 result = f"مفيش أقساط مستحقة في {month_key}."
