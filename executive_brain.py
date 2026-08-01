@@ -223,9 +223,10 @@ class ExecutiveBrain:
                 from services.firebase_service import get_conversation_history
                 from services.memory_service import get_memory
                 from services.claude_service import format_history_for_claude
+                from config import MAX_CONVERSATION_HISTORY, CONVERSATION_CONTEXT_WINDOW
 
-                stored = get_conversation_history(event.chat_id, limit=50)
-                context["history"] = format_history_for_claude(stored, limit=15)
+                stored = get_conversation_history(event.chat_id, limit=MAX_CONVERSATION_HISTORY)
+                context["history"] = format_history_for_claude(stored, limit=CONVERSATION_CONTEXT_WINDOW)
                 context["memory"] = get_memory(event.chat_id)
 
             return context

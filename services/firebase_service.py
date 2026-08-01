@@ -165,9 +165,19 @@ def graph_get_node(node_id):
 
 def save_conversation(user_id, user_message, assistant_response):
     """حفظ محادثة"""
+    from utils import local_memory_cache
+
+    # كتابة محلية أولاً -- عشان التبادل ده متضيعش حتى لو كتابة Firestore فشلت تحت
+    try:
+        entry = {"user": user_message, "assistant": assistant_response, "timestamp": int(time.time() * 1000)}
+        cached = local_memory_cache.get_cached_conversation(user_id)
+        local_memory_cache.update_conversation_cache(user_id, (cached + [entry])[-100:])
+    except Exception as cache_err:
+        logger.warning(f"⚠️ فشل تحديث الكاش المحلي للمحادثة: {cache_err}")
+
     if firestore_db is None:
         return False
-    
+
     try:
         doc_ref = firestore_db.collection(CONVERSATIONS_COLLECTION).document(str(user_id))
         # فحص الحجم — لو اقترب من الـ 200 رسالة امسح القديم
@@ -497,9 +507,17 @@ def get_memory_summary(user_id):
 
 def save_memory_summary(user_id, summary_text):
     """حفظ/تحديث ملخص الذاكرة الدائمة لمستخدم معيّن"""
+    from utils import local_memory_cache
+
+    # كتابة محلية أولاً -- عشان التحديث ده متضيعش حتى لو كتابة Firestore فشلت تحت
+    try:
+        local_memory_cache.update_memory_cache(user_id, summary_text)
+    except Exception as cache_err:
+        logger.warning(f"⚠️ فشل تحديث الكاش المحلي للذاكرة الدائمة: {cache_err}")
+
     if firestore_db is None:
         return False
-    
+
     try:
         firestore_db.collection(MEMORY_COLLECTION).document(str(user_id)).set({
             "summary": summary_text,

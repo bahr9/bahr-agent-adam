@@ -166,8 +166,9 @@ def handle_document_message(message):
     full_prompt = "\n".join(prompt_parts)
 
     # ===== جيب السياق والذاكرة =====
-    stored_history = get_conversation_history(chat_id, limit=15)
-    recent_history = format_history_for_claude(stored_history, limit=8)
+    from config import MAX_CONVERSATION_HISTORY, CONVERSATION_CONTEXT_WINDOW
+    stored_history = get_conversation_history(chat_id, limit=MAX_CONVERSATION_HISTORY)
+    recent_history = format_history_for_claude(stored_history, limit=CONVERSATION_CONTEXT_WINDOW)
     memory_summary = get_memory(chat_id)
 
     # ===== ارسل لـ Claude =====
@@ -193,4 +194,10 @@ def handle_document_message(message):
     if user_caption:
         conversation_text += " - " + user_caption
     save_conversation(chat_id, conversation_text, reply)
-    update_memory(chat_id, conversation_text, reply)
+    try:
+        from services.claude_service import should_store_in_memory
+        if should_store_in_memory(conversation_text, reply):
+            update_memory(chat_id, conversation_text, reply)
+    except Exception as e:
+        logger.warning("LearningDecision (document) error: " + str(e))
+        update_memory(chat_id, conversation_text, reply)  # افتراضي آمن -- أحسن تتحفظ من تتفوت

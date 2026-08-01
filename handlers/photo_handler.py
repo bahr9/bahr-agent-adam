@@ -53,7 +53,13 @@ def handle_photo_message(message):
         # حفظ التبادل في الذاكرة (نستخدم caption كنص "الرسالة" بما إن الصورة نفسها مش نص)
         conversation_text = f"[صورة] {message.caption or ''}".strip()
         save_conversation(chat_id, conversation_text, reply)
-        update_memory(chat_id, conversation_text, reply)
+        try:
+            from services.claude_service import should_store_in_memory
+            if should_store_in_memory(conversation_text, reply):
+                update_memory(chat_id, conversation_text, reply)
+        except Exception as e:
+            logger.warning(f"LearningDecision (photo) error: {e}")
+            update_memory(chat_id, conversation_text, reply)  # افتراضي آمن -- أحسن تتحفظ من تتفوت
 
     except Exception as e:
         logger.error(f"❌ خطأ في معالجة الصورة: {e}")

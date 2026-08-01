@@ -65,7 +65,8 @@ RECURRING_REMINDERS_TABLE = "recurring_reminders"  # اسم الجدول في Su
 # 📋 الثوابت العامة
 # ============================================================
 VALID_CATEGORIES = ["project", "team", "task", "issue", "topic", "hub", "client", "site", "office"]
-MAX_CONVERSATION_HISTORY = 50
+MAX_CONVERSATION_HISTORY = 50  # كام تبادل نجيب من Firestore
+CONVERSATION_CONTEXT_WINDOW = 30  # كام تبادل فعليًا يتبعت لكلود كـ context (كان 15/8 قيم متفرقة)
 CLAUDE_MODEL = "claude-sonnet-5"
 CLAUDE_HAIKU_MODEL = "claude-haiku-4-5-20251001"  # للمهام السريعة: استخراج النوايا وتلخيص الذاكرة
 THINKING_BUDGET_TOKENS = 5000
