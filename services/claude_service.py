@@ -1297,26 +1297,24 @@ def _execute_tool(tool_name, tool_input, chat_id):
             )
 
         elif tool_name == "get_adam_self_state":
-            from services import self_state_core, verified_expression
+            # ملحوظة (قرار أحمد 1/8): استُثنيت من verify_and_finalize الصارم --
+            # ده تقرير طويل متعدد الأسطر، مش عبارة قصيرة من قاموس مقفول زي
+            # اللي الـVerbatim Match Validator اتصمم أصلاً عشانها (services/
+            # verified_expression.py). فرض تطابق حرفي كامل على تقرير طويل كان
+            # بيترفض شبه دايمًا لما الموديل يلخّص/يصيغه بطريقته الطبيعية --
+            # 8 من 23 حالة عدم تطابق في آخر 30 يوم كانت من هنا بالظبط (تحقيق
+            # 1/8). صفر خطر فعلي من الاستثناء ده: مفيش رقم/مستوى خام بيوصل
+            # للموديل مباشرة برضه (compute_self_state_core لسه الباب الوحيد).
+            from services import self_state_core
             core = self_state_core.compute_self_state_core()
             result = self_state_core.render_report(core)
-            verified_expression.register_pending_verification(chat_id, {
-                "text": result,
-                "verified": core["confidence"] != "unknown",
-                "expression_id": None,
-                "dimension": "self_state_core",
-            })
 
         elif tool_name == "get_tools_health_status":
-            from services import tool_health_engine, verified_expression
+            # نفس ملحوظة get_adam_self_state فوق بالظبط -- تقرير طويل، مش
+            # عبارة قصيرة من قاموس مقفول. 8 من 23 حالة عدم تطابق كانت من هنا.
+            from services import tool_health_engine
             evaluations = tool_health_engine.evaluate_all_tools()
             result = tool_health_engine.render_health_report(evaluations)
-            verified_expression.register_pending_verification(chat_id, {
-                "text": result,
-                "verified": True,
-                "expression_id": None,
-                "dimension": "tool_health",
-            })
 
         elif tool_name == "add_client_followup":
             from services.firebase_service import firestore_db
