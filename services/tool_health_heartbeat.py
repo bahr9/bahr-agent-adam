@@ -92,11 +92,23 @@ def _record_check(tool_name: str, outcome: str, latency_ms: int, error_type, sum
         logger.error(f"❌ فشل تسجيل tool_health_checks لـ {tool_name} (مش حرج): {e}")
 
 
+PROBE_SPACING_SECONDS = 0.5  # فاصل بين كل probe والتاني (اعتماد 2/8 -- انظر التعليق تحت)
+
+
 def run_heartbeat() -> dict:
     """
     نقطة الدخول الوحيدة -- بتتنادى من main.py مرة كل ساعة (نفس نمط
     self_state_active_check_job). بترجع {tool_name: {"result":..., "latency_ms":...}}
     -- بس للأدوات اللي عندها safe_probe فعلي، صفر استدعاء لأي أداة تانية.
+
+    فاصل زمني صغير بين كل probe والتاني (اعتماد 2/8، بعد حادثة إنتاجية حقيقية):
+    get_adam_self_state بيعمل دفعة قراءات Firestore داخلية تقيلة (لاحظنا ~3.3
+    ثانية، أكتر من 20x أي probe تاني) عشان compute_self_state_core() بيجمّع
+    من كذا مصدر سوا. الـ3 probes اللي بيجوا بعده مباشرة في نفس اللفة (بدون
+    فاصل) كانوا بيترفضوا بـResourceExhausted (429) -- مش عجز حصة يومي كامل،
+    لكن نافذة تهدئة قصيرة بعد دفعة قراءات مركّزة. الفاصل ده صفر تكلفة إضافية
+    حقيقية (الـjob كله كل ساعة، مش وقت-حرج)، وبيدي أي rate-limit مؤقت وقت
+    يرجع لطبيعته قبل الـprobe اللي بعده.
     """
     registry = capabilities_registry.get_registry()
     results = {}
@@ -113,5 +125,6 @@ def run_heartbeat() -> dict:
         results[tool_name] = {"result": outcome, "latency_ms": latency_ms, "error_type": error_type}
 
         logger.info(f"💓 heartbeat[{tool_name}]: {outcome} ({latency_ms}ms)")
+        time.sleep(PROBE_SPACING_SECONDS)
 
     return results
