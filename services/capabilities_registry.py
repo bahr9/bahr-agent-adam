@@ -95,73 +95,15 @@ def _probe_get_adam_self_state():
     from services import self_state_core
     return self_state_core.compute_self_state_core()
 
-
-def _probe_loan_month_installments():
-    from services import loan_service
-    return loan_service.get_month_installments(loan_service.get_current_month_key())
-
-
-def _probe_get_graph_node_details():
-    from services.firebase_service import graph_get_node
-    return graph_get_node("health_probe_nonexistent_id")
-
-
-def _probe_get_weather():
-    from weather_service import get_all_weather
-    return get_all_weather()
-
-
-def _probe_get_upcoming_deadlines():
-    from services.firebase_service import get_upcoming_deadlines
-    from bot import get_chat_id
-    return get_upcoming_deadlines(get_chat_id(), 30)
-
-
-def _probe_search_memory_notes():
-    from services.firebase_service import search_memory_notes
-    from bot import get_chat_id
-    return search_memory_notes(get_chat_id(), "", limit=3)
-
-
-def _probe_list_memory_notes():
-    from services.firebase_service import list_memory_notes
-    from bot import get_chat_id
-    return list_memory_notes(get_chat_id(), limit=3)
-
-
-def _probe_get_project_details():
-    from services.firebase_service import get_project_details
-    return get_project_details("health_probe_nonexistent_id")
-
-
-def _probe_get_client_followups():
-    from services.firebase_service import firestore_db
-    return list(firestore_db.collection("client_followups").limit(3).stream())
-
-
-def _probe_get_upcoming_followups():
-    from services.firebase_service import firestore_db
-    return list(firestore_db.collection("client_followups").limit(3).stream())
-
-
-def _probe_get_eye_expert_prompt():
-    from services.firebase_service import firestore_db
-    return firestore_db.collection("eye_expert_config").document("system_prompt").get()
-
-
-def _probe_get_eye_expert_logs():
-    from services.firebase_service import get_ain_al_khabeer_logs
-    return get_ain_al_khabeer_logs(limit=3)
-
-
-def _probe_list_decisions():
-    from services.firebase_service import get_decisions
-    return get_decisions(limit=3)
-
-
-def _probe_get_agent_task_status():
-    from services import agent_orchestration
-    return agent_orchestration.get_agent_task_status("health_probe_nonexistent_id")
+# ملحوظة (قرار أحمد 2/8): 13 probe كانوا هنا لتغطية أدوات قراءة كانت
+# NOT_MONITORED (loan_month_installments, get_graph_node_details, get_weather,
+# get_upcoming_deadlines, search_memory_notes, list_memory_notes,
+# get_project_details, get_client_followups, get_upcoming_followups,
+# get_eye_expert_prompt, get_eye_expert_logs, list_decisions,
+# get_agent_task_status) -- اتشالوا بعد ما ضاعفوا حمل قراءات heartbeat
+# الساعي (11->24) وساهموا في أزمة حصة Firestore حقيقية (ResourceExhausted
+# متكرر) في مشروع لسه على الخطة المجانية (ترقية Blaze واقفة). التغطية دي
+# قرار مؤجَّل لحد ما تتحل مشكلة الحصة -- مش خطأ، رجوع متعمَّد لتقليل الحمل.
 
 
 # ============================================================
@@ -188,31 +130,19 @@ _TOOL_METADATA = {
     "loan_overview":                {"domain": "loans", "operation_type": "read", "criticality": "low",
                                      "health_check_supported": True, "safe_probe": _probe_loan_overview,
                                      "source_owner": "services/loan_service.py"},
-    "loan_month_installments":      {"domain": "loans", "operation_type": "read", "criticality": "low",
-                                     "health_check_supported": True, "safe_probe": _probe_loan_month_installments,
-                                     "source_owner": "services/loan_service.py"},
+    "loan_month_installments":      {"domain": "loans", "operation_type": "read", "criticality": "low", "source_owner": "services/loan_service.py"},
     "loan_record_installment":     {"domain": "loans", "operation_type": "write", "criticality": "high", "source_owner": "services/loan_commands.py"},
     "loan_update_installment":     {"domain": "loans", "operation_type": "write", "criticality": "high", "source_owner": "services/loan_commands.py"},
     "loan_resolve_conflict":       {"domain": "loans", "operation_type": "write", "criticality": "high", "source_owner": "services/loan_commands.py"},
     "save_memory_note":            {"domain": "memory", "operation_type": "write", "criticality": "low", "source_owner": "services/firebase_service.py"},
-    "get_graph_node_details":      {"domain": "graph", "operation_type": "read", "criticality": "low",
-                                     "health_check_supported": True, "safe_probe": _probe_get_graph_node_details,
-                                     "source_owner": "services/firebase_service.py"},
-    "get_weather":                  {"domain": "external", "operation_type": "read", "criticality": "low",
-                                     "health_check_supported": True, "safe_probe": _probe_get_weather,
-                                     "source_owner": "weather_service.py"},
+    "get_graph_node_details":      {"domain": "graph", "operation_type": "read", "criticality": "low", "source_owner": "services/firebase_service.py"},
+    "get_weather":                  {"domain": "external", "operation_type": "read", "criticality": "low", "source_owner": "weather_service.py"},
     "update_memory_note":          {"domain": "memory", "operation_type": "write", "criticality": "low", "source_owner": "services/firebase_service.py"},
-    "get_upcoming_deadlines":       {"domain": "memory", "operation_type": "read", "criticality": "low",
-                                     "health_check_supported": True, "safe_probe": _probe_get_upcoming_deadlines,
-                                     "source_owner": "services/firebase_service.py"},
+    "get_upcoming_deadlines":       {"domain": "memory", "operation_type": "read", "criticality": "low", "source_owner": "services/firebase_service.py"},
     "save_memory_note_with_deadline": {"domain": "memory", "operation_type": "write", "criticality": "low", "source_owner": "services/firebase_service.py"},
     "delete_memory_note":          {"domain": "memory", "operation_type": "delete", "criticality": "medium", "source_owner": "services/firebase_service.py"},
-    "search_memory_notes":          {"domain": "memory", "operation_type": "read", "criticality": "low",
-                                     "health_check_supported": True, "safe_probe": _probe_search_memory_notes,
-                                     "source_owner": "services/firebase_service.py"},
-    "list_memory_notes":            {"domain": "memory", "operation_type": "read", "criticality": "low",
-                                     "health_check_supported": True, "safe_probe": _probe_list_memory_notes,
-                                     "source_owner": "services/firebase_service.py"},
+    "search_memory_notes":          {"domain": "memory", "operation_type": "read", "criticality": "low", "source_owner": "services/firebase_service.py"},
+    "list_memory_notes":            {"domain": "memory", "operation_type": "read", "criticality": "low", "source_owner": "services/firebase_service.py"},
     "list_reminders":               {"domain": "reminders", "operation_type": "read", "criticality": "low",
                                      "health_check_supported": True, "safe_probe": _probe_list_reminders,
                                      "source_owner": "services/firebase_service.py"},
@@ -228,9 +158,7 @@ _TOOL_METADATA = {
     "get_bahr_sites":                {"domain": "projects", "operation_type": "read", "criticality": "low",
                                      "health_check_supported": True, "safe_probe": _probe_get_bahr_sites,
                                      "source_owner": "services/firebase_service.py"},
-    "get_project_details":          {"domain": "projects", "operation_type": "read", "criticality": "low",
-                                     "health_check_supported": True, "safe_probe": _probe_get_project_details,
-                                     "source_owner": "services/firebase_service.py"},
+    "get_project_details":          {"domain": "projects", "operation_type": "read", "criticality": "low", "source_owner": "services/firebase_service.py"},
     "create_recurring_reminder":   {"domain": "reminders", "operation_type": "write", "criticality": "low", "source_owner": "services/firebase_service.py"},
     "list_recurring_reminders":     {"domain": "reminders", "operation_type": "read", "criticality": "low",
                                      "health_check_supported": True, "safe_probe": _probe_list_recurring_reminders,
@@ -245,36 +173,24 @@ _TOOL_METADATA = {
                                      "source_owner": "services/self_state_core.py"},
     "add_client_followup":         {"domain": "clients", "operation_type": "write", "criticality": "medium", "source_owner": "services/claude_service.py (raw Firestore)"},
     "update_client_followup":      {"domain": "clients", "operation_type": "write", "criticality": "medium", "source_owner": "services/claude_service.py (raw Firestore)"},
-    "get_client_followups":         {"domain": "clients", "operation_type": "read", "criticality": "low",
-                                     "health_check_supported": True, "safe_probe": _probe_get_client_followups,
-                                     "source_owner": "services/claude_service.py (raw Firestore)"},
-    "get_upcoming_followups":       {"domain": "clients", "operation_type": "read", "criticality": "low",
-                                     "health_check_supported": True, "safe_probe": _probe_get_upcoming_followups,
-                                     "source_owner": "services/claude_service.py (raw Firestore)"},
+    "get_client_followups":         {"domain": "clients", "operation_type": "read", "criticality": "low", "source_owner": "services/claude_service.py (raw Firestore)"},
+    "get_upcoming_followups":       {"domain": "clients", "operation_type": "read", "criticality": "low", "source_owner": "services/claude_service.py (raw Firestore)"},
     "create_project":               {"domain": "projects", "operation_type": "write", "criticality": "medium", "source_owner": "services/firebase_service.py"},
     "update_project_details":      {"domain": "projects", "operation_type": "write", "criticality": "medium", "source_owner": "services/firebase_service.py"},
     "delete_project":               {"domain": "projects", "operation_type": "delete", "criticality": "high", "source_owner": "services/firebase_service.py"},
     "add_site":                     {"domain": "projects", "operation_type": "write", "criticality": "medium", "source_owner": "services/firebase_service.py"},
     "delete_expense":               {"domain": "expenses", "operation_type": "delete", "criticality": "medium", "source_owner": "services/firebase_service.py"},
     "update_project_status":       {"domain": "projects", "operation_type": "write", "criticality": "medium", "source_owner": "services/claude_service.py (raw Firestore)"},
-    "get_eye_expert_prompt":        {"domain": "eye_expert", "operation_type": "read", "criticality": "low",
-                                     "health_check_supported": True, "safe_probe": _probe_get_eye_expert_prompt,
-                                     "source_owner": "services/firebase_service.py"},
+    "get_eye_expert_prompt":        {"domain": "eye_expert", "operation_type": "read", "criticality": "low", "source_owner": "services/firebase_service.py"},
     "update_eye_expert_prompt":    {"domain": "eye_expert", "operation_type": "write", "criticality": "medium", "source_owner": "services/firebase_service.py"},
-    "get_eye_expert_logs":          {"domain": "eye_expert", "operation_type": "read", "criticality": "low",
-                                     "health_check_supported": True, "safe_probe": _probe_get_eye_expert_logs,
-                                     "source_owner": "services/firebase_service.py"},
+    "get_eye_expert_logs":          {"domain": "eye_expert", "operation_type": "read", "criticality": "low", "source_owner": "services/firebase_service.py"},
     "request_verified_expression": {"domain": "system_health", "operation_type": "analysis", "criticality": "high", "source_owner": "services/verified_expression.py"},
     "web_search":                   {"domain": "external", "operation_type": "analysis", "criticality": "low",
                                      "runtime_handler": "anthropic_native_tool", "source_owner": "Anthropic (server-side tool)"},
     "save_decision":                {"domain": "decisions", "operation_type": "write", "criticality": "medium", "source_owner": "services/firebase_service.py"},
-    "list_decisions":               {"domain": "decisions", "operation_type": "read", "criticality": "low",
-                                     "health_check_supported": True, "safe_probe": _probe_list_decisions,
-                                     "source_owner": "services/firebase_service.py"},
+    "list_decisions":               {"domain": "decisions", "operation_type": "read", "criticality": "low", "source_owner": "services/firebase_service.py"},
     "dispatch_agent_task":          {"domain": "agent_orchestration", "operation_type": "write", "criticality": "medium", "source_owner": "services/agent_orchestration.py"},
-    "get_agent_task_status":        {"domain": "agent_orchestration", "operation_type": "read", "criticality": "low",
-                                     "health_check_supported": True, "safe_probe": _probe_get_agent_task_status,
-                                     "source_owner": "services/agent_orchestration.py"},
+    "get_agent_task_status":        {"domain": "agent_orchestration", "operation_type": "read", "criticality": "low", "source_owner": "services/agent_orchestration.py"},
     # عمدًا صفر health_check_supported هنا -- منع أي حلقة مراقبة ذاتية
     # (تقرير صحة الأدوات مايراقبش نفسه عبر heartbeat).
     "get_tools_health_status":      {"domain": "system_health", "operation_type": "analysis", "criticality": "low",

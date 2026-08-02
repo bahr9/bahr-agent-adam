@@ -424,9 +424,10 @@ def self_state_active_check_job():
 
 def tool_health_check_job():
     """
-    فحص صحة الأدوات (Runtime Capabilities & Tool Health V1) -- كل ساعة، نفس
-    نمط self_state_active_check_job بالظبط. صفر LLM: heartbeat (safe probes
-    بس) -> تقييم حتمي -> تنبيه لو DEGRADED دخل/اتغيّر سببه/اتعافى.
+    فحص صحة الأدوات (Runtime Capabilities & Tool Health V1) -- كل 6 ساعات
+    (قرار أحمد 2/8، بعد أزمة حصة Firestore حقيقية -- كان كل ساعة). صفر LLM:
+    heartbeat (safe probes بس) -> تقييم حتمي -> تنبيه لو DEGRADED دخل/اتغيّر
+    سببه/اتعافى.
     """
     try:
         from services import tool_health_heartbeat, tool_health_engine, tool_health_alerts
@@ -848,7 +849,7 @@ if __name__ == "__main__":
                          id='loans_check', timezone='Africa/Cairo', misfire_grace_time=60)
         scheduler.add_job(self_state_active_check_job, 'interval', hours=1,
                          id='self_state_active_check', timezone='Africa/Cairo', misfire_grace_time=300)
-        scheduler.add_job(tool_health_check_job, 'interval', hours=1,
+        scheduler.add_job(tool_health_check_job, 'interval', hours=6,
                          id='tool_health_check', timezone='Africa/Cairo', misfire_grace_time=300)
         scheduler.add_job(project_status_check_job, 'interval', hours=1,
                          id='project_status_check', timezone='Africa/Cairo', misfire_grace_time=300)
