@@ -61,6 +61,7 @@ def build_system_prompt_parts(pending_tasks=None, memory_summary=None):
 - edit_graph_node: تضيف معلومة لعنصر موجود (محتاج الـ node_id)
 - delete_graph_node: تمسح عنصر (محتاج الـ node_id)
 - create_reminder: تعمل تذكير لأحمد بعد مدة معينة
+- generate_mood_board: تولّد mood board احترافية (خامات + palette ألوان مُسمّاة + ستايل واضح) وتبعتها صورة على تليجرام -- لمشاريع التصميم
 - add_expense: تسجل مصروف جديد (مبلغ + تصنيف + وصف اختياري + مشروع اختياري)
 - list_expenses: تجيب آخر المصاريف المسجلة (فيها الـ ID لكل مصروف)
 - delete_expense: تحذف مصروف بالـ ID بتاعه (استخدم list_expenses الأول عشان تجيب الـ ID)
@@ -224,6 +225,27 @@ TOOLS = [
                 "text": {"type": "string", "description": "نص التذكير اللي هيتبعت لأحمد"}
             },
             "required": ["minutes_from_now", "text"]
+        }
+    },
+    {
+        "name": "generate_mood_board",
+        "description": (
+            "يولّد صورة mood board احترافية لمشروع تصميم داخلي ويبعتها لأحمد "
+            "على تليجرام. استخدمها لما أحمد يطلب mood board أو لوحة إلهام أو "
+            "كولاج خامات/ألوان لمشروع. لو المشروع محفوظ في ذاكرتك، استخدم "
+            "ستايله وألوانه وخاماته المحفوظة من غير ما تسأل تاني -- ولو مش "
+            "محفوظ، اسأل أحمد عن الستايل والألوان والخامات الأول. الصورة "
+            "بتاخد حوالي نص دقيقة وبتكلف حوالي ربع دولار."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "style": {"type": "string", "description": "الستايل التصميمي (مثال: Scandinavian-Bohemian، Modern، Neoclassic)"},
+                "colors": {"type": "string", "description": "الألوان بأساميها مفصولة بفواصل (مثال: warm greige, soft mint, muted mango) -- هتظهر كـ swatches مُسمّاة"},
+                "materials": {"type": "string", "description": "الخامات مفصولة بفواصل (مثال: light oak wood, rattan, linen, matte ceramic, brushed brass) -- دي بطلة اللوحة"},
+                "notes": {"type": "string", "description": "توجيهات إضافية اختيارية (مثال: ركز على خامات الأرضيات)"}
+            },
+            "required": ["style", "colors", "materials"]
         }
     },
     {
@@ -900,6 +922,25 @@ def _execute_tool(tool_name, tool_input, chat_id):
             send_at = now_cairo() + timedelta(minutes=minutes)
             add_reminder(text, send_at, chat_id)
             result = f"تم عمل التذكير بنجاح، هيتبعت الساعة {send_at.strftime('%H:%M')}."
+
+        elif tool_name == "generate_mood_board":
+            try:
+                from services.moodboard_service import generate_mood_board
+                image_bytes = generate_mood_board(
+                    tool_input.get("style", ""),
+                    tool_input.get("colors", ""),
+                    tool_input.get("materials", ""),
+                    tool_input.get("notes", ""),
+                )
+                from bot import bot as _bot
+                _bot.send_photo(chat_id, image_bytes)
+                result = (
+                    "اتبعتت الـ mood board لأحمد كصورة. اوصفله باختصار "
+                    "إيه اللي فيها (الستايل والألوان والخامات) واسأله رأيه."
+                )
+            except Exception as e:
+                logger.error("❌ خطأ في توليد الـ mood board: " + str(e))
+                result = "فشل توليد الـ mood board: " + str(e)
         
         elif tool_name == "add_expense":
             amount      = float(tool_input.get("amount", 0))
