@@ -1754,10 +1754,89 @@ def ask_claude_agentic(user_message, chat_id, conversation_history=None, memory_
         logger.error(f"❌ خطأ في ask_claude_agentic: {e}")
         return f"❌ حصلت مشكلة: {str(e)}"
 
+# ============================================================
+# قراءة البلانات (2b -- دمج دور HOPE، ADR 0006 في Archiducer)
+# ============================================================
+# الـprompt مبني على تجربة حية (2026-08-04، بلان عصام فرج): الموديل قرا
+# الأسماء والأبعاد صح وقال "مش واضح" بدل التخمين -- وغلط غلطة إسناد
+# واحدة: حط تاريخ اللوحة (21 oct) في اسم المشروع كأنه مدينة. عشان كده
+# خانات الـtitle block مفصولة صراحة وفيه قاعدة "التاريخ مش مكان".
+
+PLAN_EXTRACTION_PROMPT = (
+    "دي لوحة معمارية (بلان) من AutoCAD أو سكان. استخرج منها بدقة وبالترتيب ده:\n\n"
+    "أولًا -- بيانات اللوحة (Title Block)، كل خانة لوحدها ومتخلطش بينهم:\n"
+    "- اسم المشروع\n"
+    "- المدينة/الموقع (خد بالك: التاريخ مش مكان -- '21 oct' دي تاريخ لوحة، "
+    "لكن '6 أكتوبر' في مصر غالبًا اسم مدينة. لو مش متأكد الخانة دي تاريخ "
+    "ولا مكان، قول 'مش واضح' واذكر النص زي ما هو)\n"
+    "- تاريخ اللوحة\n"
+    "- رقم اللوحة\n"
+    "- الرسّام/المُعِد\n\n"
+    "ثانيًا -- الفراغات: قايمة بأسماء الغرف زي ما مكتوبة حرفيًا في اللوحة. "
+    "لو فراغ ملوش اسم مكتوب، وصّفه من محتواه وقول صراحة إن التسمية استنتاجية.\n\n"
+    "ثالثًا -- الأبعاد: لكل فراغ، الأرقام المكتوبة على خطوط القياس. فرّق بين "
+    "بُعد كامل (طول أو عرض كلي) وأبعاد جزئية لأضلاع أو فتحات. لو المساحة مش "
+    "محسوبة ومكتوبة في اللوحة متحسبهاش بنفسك -- قول 'مش واضح'.\n\n"
+    "رابعًا -- ملاحظات مهمة (مناسيب، فتحات، اتجاه الشمال، قطاعات).\n\n"
+    "القاعدة الحاكمة: دقة الأرقام أهم من اكتمال الجدول -- أي حاجة مش مقروءة "
+    "أو مش موجودة قول عنها 'مش واضح' بدل ما تخمّن. متخمنش رقم أبدًا."
+)
+
+
+def build_plan_prompt(caption):
+    """يبني prompt القراءة، حايكًا تعليق أحمد لو موجود."""
+    if caption and caption.strip():
+        return PLAN_EXTRACTION_PROMPT + "\n\nتعليق أحمد على البلان: " + caption.strip()
+    return PLAN_EXTRACTION_PROMPT
+
+
+def analyze_plan_pdf(pdf_base64, caption, memory_summary=None):
+    """
+    قراءة بلان PDF مباشرة بـ Claude (native PDF document support --
+    الرسم بيتحوّل صور داخليًا عند Anthropic، فمفيش حاجة لـ OCR محلي).
+
+    Args:
+        pdf_base64: ملف الـ PDF كامل بصيغة base64
+        caption: تعليق أحمد المرافق (اختياري)
+        memory_summary: الذاكرة الدائمة (اختياري -- بتتحط قبل الـ prompt)
+    """
+    content = [
+        {
+            "type": "document",
+            "source": {
+                "type": "base64",
+                "media_type": "application/pdf",
+                "data": pdf_base64,
+            },
+        },
+        {"type": "text", "text": build_plan_prompt(caption)},
+    ]
+    system_text = None
+    if memory_summary:
+        system_text = "ذاكرتك الدائمة عن أحمد ومشاريعه:\n" + memory_summary
+
+    kwargs = {
+        "model": CLAUDE_MODEL,
+        # جداول استخراج البلانات طويلة -- 1500 قطعت النص في نصه في أول
+        # تشغيلة حقيقية (stop_reason=max_tokens). والـ thinking متقفل عمدًا:
+        # الموديلات الحديثة بتصرف من نفس السقف على التفكير الداخلي وممكن
+        # ترجع من غير نص خالص -- استخراج منظم مش محتاج تفكير حر.
+        "max_tokens": 2500,
+        "thinking": {"type": "disabled"},
+        "messages": [{"role": "user", "content": content}],
+    }
+    if system_text:
+        kwargs["system"] = system_text
+
+    response = claude_client.messages.create(**kwargs)
+    parts = [block.text for block in response.content if block.type == "text"]
+    return "\n".join(parts).strip()
+
+
 def analyze_with_vision(image_base64, caption, media_type="image/jpeg", memory_summary=None):
     """
     تحليل الصور باستخدام Claude Vision
-    
+
     Args:
         image_base64: الصورة بصيغة base64
         caption: النص المرافق للصورة (أو نص افتراضي لو مفيش caption)

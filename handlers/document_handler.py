@@ -64,6 +64,29 @@ def _extract_text_from_txt(file_path):
         return f.read()
 
 
+# ============================================================
+# قراءة البلانات (2b -- دمج دور HOPE، ADR 0006)
+# ============================================================
+
+# كلمات في اسم الملف أو التعليق بتقول "ده بلان مش مستند نصي".
+_PLAN_KEYWORDS = (
+    "plan", "model", "layout", "arch", "furniture", "asbuilt", "as built",
+    "as bulit",  # الغلطة الإملائية دي موجودة فعلًا في ملفات تصدير حقيقية
+    "بلان", "مخطط", "لوحة", "فرش", "مسقط", "اسبيلت",
+)
+# بلان CAD متصدّر نصه الخطي شحيح جدًا (أرقام أبعاد متناثرة) --
+# مستند حقيقي بيبقى فيه فقرات. الحد محسوب بهامش واسع بين الحالتين.
+_SPARSE_TEXT_CHARS = 400
+
+
+def looks_like_plan(file_name, caption, extracted_text):
+    """هل الـ PDF ده بلان معماري يستاهل مسار الـ vision بدل مسار النص؟"""
+    haystack = (file_name + " " + (caption or "")).lower()
+    if any(keyword in haystack for keyword in _PLAN_KEYWORDS):
+        return True
+    return len((extracted_text or "").strip()) < _SPARSE_TEXT_CHARS
+
+
 def extract_text(file_path, file_name):
     """
     يحدد نوع الملف ويستخرج النص منه.
@@ -138,13 +161,50 @@ def handle_document_message(message):
             except Exception:
                 pass
 
-    # ===== فحص إن فيه نص فعلاً =====
+    # ===== تحديد الـ caption (لو بعت رسالة مع الملف) =====
+    user_caption = message.caption or ""
+
+    # ===== مسار البلانات (2b): PDF شكله بلان يروح للـ vision مش للنص =====
+    # ده بيشمل تلقائيًا حالة الـ PDF اللي مفيهوش نص خالص (CAD/سكان) --
+    # اللي كانت زمان بتترد بـ "مقدرتش أستخرج نص".
+    if file_type == "PDF" and looks_like_plan(file_name, user_caption, text):
+        try:
+            import base64
+
+            from services.claude_service import analyze_plan_pdf
+
+            logger.info("📐 بلان PDF متعرف عليه -- رايح لمسار القراءة البصرية: " + file_name)
+            pdf_b64 = base64.standard_b64encode(downloaded).decode()
+            reply = analyze_plan_pdf(pdf_b64, user_caption, memory_summary=get_memory(chat_id))
+        except Exception as e:
+            logger.error("❌ خطأ في قراءة البلان: " + str(e))
+            bot.reply_to(message, "حصلت مشكلة وأنا بقرا البلان — جرب تبعته تاني أو ابعته كصورة.")
+            return
+
+        try:
+            from services import verified_expression
+            reply = verified_expression.verify_and_finalize(chat_id, reply)
+        except Exception:
+            pass
+
+        bot.reply_to(message, reply)
+        logger.info("✅ تم قراءة البلان والرد على " + str(chat_id))
+
+        conversation_text = "[بلان PDF] " + file_name
+        if user_caption:
+            conversation_text += " - " + user_caption
+        save_conversation(chat_id, conversation_text, reply)
+        # خلاصة البلان معلومة مشروع تستاهل الذاكرة الدائمة دايمًا.
+        try:
+            update_memory(chat_id, conversation_text, reply)
+        except Exception as e:
+            logger.warning("Memory (plan) error: " + str(e))
+        return
+
+    # ===== فحص إن فيه نص فعلاً (للمستندات غير البلانات) =====
     if not text or not text.strip():
         bot.reply_to(message, "مقدرتش أستخرج نص من الملف ده — ممكن يكون ملف صور (scanned) أو فاضي.")
         return
-
-    # ===== تحديد الـ caption (لو بعت رسالة مع الملف) =====
-    user_caption = message.caption or ""
 
     # ===== بناء الرسالة اللي هتروح لـ Claude =====
     MAX_CHARS = 12000  # حد معقول عشان ما نتخطاش الـ context
