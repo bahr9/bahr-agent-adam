@@ -39,6 +39,7 @@ CLIENTS_COLLECTION = "clients"
 OFFICE_TASKS_COLLECTION = "office_tasks"
 SITE_PROJECTS_COLLECTION = "site_projects"
 AIN_AL_KHABEER_COLLECTION = "ain_al_khabeer_logs"
+PROJECT_FILES_COLLECTION = "project_files"  # ملفات مشاريع التصميم (الفجوة 1، 2026-08-04)
 MEMORY_COLLECTION = "user_memory"  # الذاكرة الدائمة (ملخص متراكم لكل مستخدم)
 EXPENSES_COLLECTION = "expenses"  # متابعة المصاريف
 LOANS_COLLECTION = "loans"  # متابعة الأقساط والقروض

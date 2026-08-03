@@ -62,6 +62,9 @@ def build_system_prompt_parts(pending_tasks=None, memory_summary=None):
 - delete_graph_node: تمسح عنصر (محتاج الـ node_id)
 - create_reminder: تعمل تذكير لأحمد بعد مدة معينة
 - generate_mood_board: تولّد mood board احترافية (خامات + palette ألوان مُسمّاة + ستايل واضح) وتبعتها صورة على تليجرام -- لمشاريع التصميم
+- save_project_fact / get_project_file: ملف مشروع منظم لكل عميل تصميم (فراغات/أبعاد/قرارات/ميزانية)
+
+قاعدة ملفات المشاريع (مهمة جدًا): أول ما اسم مشروع أو عميل تصميم يتقال -- حتى عابرًا -- استخدم get_project_file فورًا عشان ترد وأنت فاكر تفاصيله المتسجلة، وأي معلومة مشروع جديدة تتقال سجلها فورًا بـ save_project_fact في فئتها الصح من غير ما تستنى طلب. معلومات المشاريع بتتسجل هناك مش في save_memory_note.
 - add_expense: تسجل مصروف جديد (مبلغ + تصنيف + وصف اختياري + مشروع اختياري)
 - list_expenses: تجيب آخر المصاريف المسجلة (فيها الـ ID لكل مصروف)
 - delete_expense: تحذف مصروف بالـ ID بتاعه (استخدم list_expenses الأول عشان تجيب الـ ID)
@@ -225,6 +228,46 @@ TOOLS = [
                 "text": {"type": "string", "description": "نص التذكير اللي هيتبعت لأحمد"}
             },
             "required": ["minutes_from_now", "text"]
+        }
+    },
+    {
+        "name": "save_project_fact",
+        "description": (
+            "يسجل حقيقة في ملف مشروع تصميم (وينشئ الملف تلقائيًا أول مرة). "
+            "استخدمها فورًا لأي معلومة مشروع تتقال: فراغ، بُعد، ستايل، لون، "
+            "خامة، ميزانية، اسم عميل، قرار اتفق عليه -- كل حقيقة في فئتها. "
+            "دي أدق من save_memory_note لمعلومات المشاريع لأنها بتتخزن بحقول "
+            "منظمة وبترجع تلقائيًا لما اسم المشروع يتقال تاني."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "project_name": {"type": "string", "description": "اسم المشروع (مثال: Rock Eden - essam farag)"},
+                "category": {
+                    "type": "string",
+                    "enum": ["فراغات", "أبعاد", "قرارات", "ميزانية", "عميل", "ملاحظات"],
+                    "description": "فئة الحقيقة"
+                },
+                "key": {"type": "string", "description": "اسم الحقيقة (مثال: الريسبشن، الستايل، المساحة الكلية)"},
+                "value": {"type": "string", "description": "القيمة (مثال: 7.70×5.99 م، Scandinavian-Bohemian)"}
+            },
+            "required": ["project_name", "category", "key", "value"]
+        }
+    },
+    {
+        "name": "get_project_file",
+        "description": (
+            "يجيب ملف مشروع تصميم كامل بالاسم (بيقبل جزء من الاسم). "
+            "استخدمها تلقائيًا وفورًا أول ما أحمد يذكر اسم مشروع أو عميل في "
+            "سياق تصميمي -- حتى من غير ما يطلب -- عشان ترد وأنت فاكر "
+            "الفراغات والأبعاد والقرارات المتسجلة، مش من الصفر."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "project_name": {"type": "string", "description": "اسم المشروع أو جزء منه (مثال: Rock Eden أو essam)"}
+            },
+            "required": ["project_name"]
         }
     },
     {
@@ -922,6 +965,19 @@ def _execute_tool(tool_name, tool_input, chat_id):
             send_at = now_cairo() + timedelta(minutes=minutes)
             add_reminder(text, send_at, chat_id)
             result = f"تم عمل التذكير بنجاح، هيتبعت الساعة {send_at.strftime('%H:%M')}."
+
+        elif tool_name == "save_project_fact":
+            from services.project_file_service import save_project_fact
+            result = save_project_fact(
+                tool_input.get("project_name", ""),
+                tool_input.get("category", ""),
+                tool_input.get("key", ""),
+                tool_input.get("value", ""),
+            )
+
+        elif tool_name == "get_project_file":
+            from services.project_file_service import get_project_file
+            result = get_project_file(tool_input.get("project_name", ""))
 
         elif tool_name == "generate_mood_board":
             try:
