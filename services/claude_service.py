@@ -65,6 +65,9 @@ def build_system_prompt_parts(pending_tasks=None, memory_summary=None):
 - save_project_fact / get_project_file: ملف مشروع منظم لكل عميل تصميم (فراغات/أبعاد/قرارات/ميزانية)
 
 قاعدة ملفات المشاريع (مهمة جدًا): أول ما اسم مشروع أو عميل تصميم يتقال -- حتى عابرًا -- استخدم get_project_file فورًا عشان ترد وأنت فاكر تفاصيله المتسجلة، وأي معلومة مشروع جديدة تتقال سجلها فورًا بـ save_project_fact في فئتها الصح من غير ما تستنى طلب. معلومات المشاريع بتتسجل هناك مش في save_memory_note.
+- save_price / get_prices: قاعدة أسعار بحر (خامات/تشطيبات/مصنعيات) -- أسعار أحمد الحقيقية من السوق
+
+قاعدة الأسعار (خط أحمر): قبل ما تقول أي سعر في استشارة أو تسعير، استخدم get_prices الأول -- سعر أحمد المسجل هو المرجع الوحيد. لو البند مش في القاعدة قول بصراحة "السعر ده مش في قاعدة أسعارك" واعرض عليه يسجله، وممنوع تخترع رقم من عندك. وأول ما أحمد يذكر سعر من السوق -- حتى عابرًا -- سجله فورًا بـ save_price.
 - add_expense: تسجل مصروف جديد (مبلغ + تصنيف + وصف اختياري + مشروع اختياري)
 - list_expenses: تجيب آخر المصاريف المسجلة (فيها الـ ID لكل مصروف)
 - delete_expense: تحذف مصروف بالـ ID بتاعه (استخدم list_expenses الأول عشان تجيب الـ ID)
@@ -268,6 +271,42 @@ TOOLS = [
                 "project_name": {"type": "string", "description": "اسم المشروع أو جزء منه (مثال: Rock Eden أو essam)"}
             },
             "required": ["project_name"]
+        }
+    },
+    {
+        "name": "save_price",
+        "description": (
+            "يسجل أو يحدّث سعر بند في قاعدة أسعار بحر (خامات، تشطيبات، "
+            "مصنعيات، يوميات). استخدمها فورًا أول ما أحمد يقول سعر من "
+            "السوق -- حتى عابرًا -- عشان يبقى مرجع دائم للاستشارات. "
+            "التحديث بيحفظ السعر القديم في التاريخ تلقائيًا."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "item": {"type": "string", "description": "اسم البند (مثال: متر رخام جلالة، يومية نقاش، متر جبس بورد)"},
+                "price": {"type": "string", "description": "السعر بالجنيه (مثال: 450 أو 1200-1500)"},
+                "unit": {"type": "string", "description": "وحدة القياس (مثال: متر مسطح، متر طولي، يومية، قطعة)"},
+                "note": {"type": "string", "description": "ملاحظة اختيارية (مثال: شامل التركيب، سعر مورد فلان)"}
+            },
+            "required": ["item", "price"]
+        }
+    },
+    {
+        "name": "get_prices",
+        "description": (
+            "يجيب أسعار من قاعدة أسعار بحر. استخدمها قبل ما تقول أي سعر "
+            "في استشارة تصميم أو تسعير -- سعر أحمد المسجل هو المرجع، مش "
+            "تقديرك. من غير query بترجع القاعدة كلها. لو البند مش موجود "
+            "بتقولك -- ساعتها صارح أحمد إن السعر مش في قاعدته بدل ما "
+            "تخمن رقم."
+        ),
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "query": {"type": "string", "description": "اسم البند أو جزء منه -- سيبه فاضي لعرض القاعدة كلها"}
+            },
+            "required": []
         }
     },
     {
@@ -978,6 +1017,19 @@ def _execute_tool(tool_name, tool_input, chat_id):
         elif tool_name == "get_project_file":
             from services.project_file_service import get_project_file
             result = get_project_file(tool_input.get("project_name", ""))
+
+        elif tool_name == "save_price":
+            from services.price_base_service import save_price
+            result = save_price(
+                tool_input.get("item", ""),
+                tool_input.get("price", ""),
+                tool_input.get("unit", ""),
+                tool_input.get("note", ""),
+            )
+
+        elif tool_name == "get_prices":
+            from services.price_base_service import get_prices
+            result = get_prices(tool_input.get("query", ""))
 
         elif tool_name == "generate_mood_board":
             try:
