@@ -1516,8 +1516,18 @@ def _execute_tool(tool_name, tool_input, chat_id):
                     for field in ["status","last_contact_date","last_contact_method","last_reply","next_followup_date","notes"]:
                         if field in tool_input:
                             update_data[field] = tool_input[field]
-                    firestore_db.collection("client_followups").document(client_id).set(update_data, merge=True)
-                    result = f"✅ تم تحديث العميل {client_id}"
+                    from services.update_guard import (
+                        document_exists, list_document_ids, missing_document_message,
+                    )
+
+                    if not document_exists("client_followups", client_id):
+                        # حارس الوجود: الشبح 'محمد علي' اتولد من هنا بالظبط
+                        result = missing_document_message(
+                            "عميل", client_id, list_document_ids("client_followups")
+                        )
+                    else:
+                        firestore_db.collection("client_followups").document(client_id).set(update_data, merge=True)
+                        result = f"✅ تم تحديث العميل {client_id}"
                 except Exception as ex:
                     result = f"❌ خطأ: {ex}"
 
@@ -1678,12 +1688,23 @@ def _execute_tool(tool_name, tool_input, chat_id):
                     if "last_report" in tool_input: update_data["last_report"] = tool_input["last_report"]
                     if "notes"       in tool_input: update_data["notes"]       = tool_input["notes"]
 
-                    firestore_db.collection("projects").document(project_id).set(
-                        update_data, merge=True
+                    from services.update_guard import (
+                        document_exists, list_document_ids, missing_document_message,
                     )
 
-                    lines = [f"  • {k}: {v}" for k, v in update_data.items()]
-                    result = f"✅ تم تحديث {project_id}:\n" + "\n".join(lines)
+                    if not document_exists("projects", project_id):
+                        # حارس الوجود: merge=True بينشئ المستند لو مش موجود --
+                        # معرّف غلط كان بيولّد مشروع وهمي بصمت
+                        result = missing_document_message(
+                            "مشروع", project_id, list_document_ids("projects")
+                        )
+                    else:
+                        firestore_db.collection("projects").document(project_id).set(
+                            update_data, merge=True
+                        )
+
+                        lines = [f"  • {k}: {v}" for k, v in update_data.items()]
+                        result = f"✅ تم تحديث {project_id}:\n" + "\n".join(lines)
                 except Exception as ex:
                     result = f"❌ خطأ في التحديث: {ex}"
 

@@ -837,6 +837,17 @@ def update_bahr_project(project_id, **kwargs):
         if "area"        in kwargs: update_data["area"]               = float(kwargs["area"])
         if "supervisors" in kwargs: update_data["allowedSupervisors"] = kwargs["supervisors"]
         if "status"      in kwargs: update_data["status"]             = kwargs["status"]
+
+        # حارس الوجود (أوديت 2026-08-04): set(merge=True) بينشئ المستند لو
+        # مش موجود -- فمعرّف غلط من الموديل كان بيولّد مشروع وهمي بصمت
+        from services.update_guard import (
+            document_exists, list_document_ids, missing_document_message,
+        )
+        if not document_exists("projects", project_id):
+            return False, missing_document_message(
+                "مشروع", project_id, list_document_ids("projects")
+            )
+
         firestore_db.collection("projects").document(project_id).set(update_data, merge=True)
         return True, "تم التعديل"
     except Exception as e:
