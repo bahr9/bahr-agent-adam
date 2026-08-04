@@ -74,6 +74,13 @@ def main():
         assert "قاعدة الأسعار" in static_part
         assert "get_prices" in static_part
 
+    def prompt_requires_partial_cost_warning():
+        # قرار أحمد 2026-08-04 بعد التجربة الحية: الرقم الجزئي بيتقري
+        # أسرع من السياق -- التحذير لازم يسبق الأرقام مش يلحقها.
+        static_part, _ = build_system_prompt_parts()
+        assert "تكلفة جزئية" in static_part
+        assert "قبل أي رقم" in static_part
+
     for name, fn in [
         ("نفس البند = نفس السجل", same_item_same_id),
         ("البحث بيلاقي البند جوه السؤال", search_finds_item_inside_question),
@@ -83,6 +90,7 @@ def main():
         ("القاعدة الفاضية بتقول كده", empty_base_says_so),
         ("الأداتين متسجلين", both_tools_registered),
         ("الـ prompt بيعلّم أمانة الأسعار", prompt_teaches_price_honesty),
+        ("تحذير التكلفة الجزئية قبل الأرقام", prompt_requires_partial_cost_warning),
     ]:
         results.append(run_test(name, fn))
 
