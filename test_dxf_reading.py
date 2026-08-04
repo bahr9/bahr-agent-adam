@@ -200,6 +200,15 @@ def main():
     def dxf_is_a_supported_document_type():
         assert ".dxf" in SUPPORTED_EXTENSIONS
 
+    def prompt_defines_identity_as_whole_system():
+        # قرار أحمد 2026-08-04: آدم = النظام كله -- ممنوع فلسفة
+        # "أنا مقابل النظام المبني حواليا" في الرد على أسئلة القدرات
+        from services.claude_service import build_system_prompt_parts
+        static_part, _ = build_system_prompt_parts()
+        assert "قاعدة الهوية" in static_part
+        assert "النظام كله" in static_part
+        assert "قدراتك إنت" in static_part
+
     for name, fn in [
         ("أرقام الملف المسجلة بتتقري صح", recorded_dims_parse_values),
         ("التطابق التام والانحراف المليمتري", exact_and_deviation_both_match),
@@ -217,6 +226,7 @@ def main():
         ("التقرير بيعرض الاتساق وبيسأل عند الجهل", report_shows_consistency_and_asks_on_unknown),
         ("قشرة ezdxf بتقرا نصوص وطبقات", ezdxf_extraction_reads_texts_and_layers),
         ("dxf نوع ملف مدعوم في المسار", dxf_is_a_supported_document_type),
+        ("قاعدة الهوية: آدم = النظام كله", prompt_defines_identity_as_whole_system),
     ]:
         results.append(run_test(name, fn))
 
