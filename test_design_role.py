@@ -55,6 +55,15 @@ def main():
             "الدور لازم يوجّه لأداة الذاكرة الموجودة أصلًا"
         )
 
+    def reasoned_objection_rule_present():
+        # قرار أحمد 2026-08-04 (نقطة 5): اعتراض مُسبَّب في الحكم
+        # المهني -- يعترض بقوة وبأسباب، يصرّح بحدود معرفته، والقرار
+        # النهائي لأحمد. وخطوط الأمانة الصلبة بتفضل رفض كامل.
+        assert "الاعتراض المُسبَّب" in static_part
+        assert "القرار النهائي قرار أحمد دايمًا" in static_part
+        assert "مش شايف الموقع فعليًا" in static_part
+        assert "بتفضل رفض كامل زي ما هي مهما أصر أحمد" in static_part
+
     def honesty_rules_untouched():
         assert "قواعد الأمانة (مهمة جداً):" in static_part
         assert "فرّق دايماً بين \"أنا متأكد\" و\"أنا بفتكر\" و\"مش عارف\"." in static_part
@@ -75,6 +84,7 @@ def main():
         ("الدور بيبني على الحقائق", role_builds_on_facts),
         ("فصل الرأي الحر عن أرقام الأكواد", role_separates_judgment_from_codes),
         ("الحفظ عبر أداة الذاكرة الموجودة", role_uses_existing_memory_tool),
+        ("الاعتراض المُسبَّب موجود ومفصول عن خطوط الأمانة", reasoned_objection_rule_present),
         ("قواعد الأمانة زي ما هي", honesty_rules_untouched),
         ("الدور قبل قواعد الأمانة", role_sits_before_honesty_rules),
         ("فصل static/dynamic سليم", static_dynamic_split_intact),
