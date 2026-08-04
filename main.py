@@ -718,15 +718,35 @@ from threading import Thread
 
 flask_app = Flask(__name__)
 
+
+def _check_secret(env_var):
+    """تحقق fail-closed من توكن الـ endpoint.
+
+    بيرجع None لو التحقق نجح، أو (response, status) لو فشل.
+    القاعدة (أوديت 2026-08-04): لو متغير السر مش متظبط في البيئة،
+    الـ endpoint **يرفض** بـ 503 -- مش يفتح للكل. الشكل القديم
+    (`if secret and token != secret`) كان بيتخطى التحقق بالكامل لو
+    المتغير غايب، يعني انجراف بيئة واحد = باب مفتوح على الإنترنت.
+    """
+    import os
+
+    secret = os.getenv(env_var, "")
+    if not secret:
+        logger.error("🔒 " + env_var + " مش متظبط -- الـ endpoint مرفوض (fail-closed)")
+        return jsonify({"status": "unavailable", "message": "server secret not configured"}), 503
+
+    token = request.headers.get("X-Secret-Token", "") or request.args.get("token", "")
+    if token != secret:
+        return jsonify({"status": "unauthorized"}), 401
+    return None
+
 @flask_app.route("/log-eye-expert", methods=["POST"])
 def log_eye_expert():
     """استقبال logs من Make.com وحفظها في Firestore"""
     try:
-        import os
-        secret = os.getenv("EYE_EXPERT_SECRET", "")
-        token  = request.headers.get("X-Secret-Token", "") or request.args.get("token", "")
-        if secret and token != secret:
-            return jsonify({"status": "unauthorized"}), 401
+        denied = _check_secret("EYE_EXPERT_SECRET")
+        if denied:
+            return denied
 
         data = request.get_json(force=True, silent=True) or {}
 
@@ -764,11 +784,9 @@ def get_pending_agent_tasks_endpoint():
     محمي بنفس نمط X-Secret-Token المُختبر فعليًا مع /log-eye-expert.
     """
     try:
-        import os
-        secret = os.getenv("AGENT_TASKS_SECRET", "")
-        token = request.headers.get("X-Secret-Token", "") or request.args.get("token", "")
-        if secret and token != secret:
-            return jsonify({"status": "unauthorized"}), 401
+        denied = _check_secret("AGENT_TASKS_SECRET")
+        if denied:
+            return denied
 
         target = request.args.get("target", "")
         if not target:
@@ -790,11 +808,9 @@ def update_agent_task_status_endpoint(task_id):
     مبيتنادوش خالص، والتاسك يفضل pending زي ما هو.
     """
     try:
-        import os
-        secret = os.getenv("AGENT_TASKS_SECRET", "")
-        token = request.headers.get("X-Secret-Token", "") or request.args.get("token", "")
-        if secret and token != secret:
-            return jsonify({"status": "unauthorized"}), 401
+        denied = _check_secret("AGENT_TASKS_SECRET")
+        if denied:
+            return denied
 
         data = request.get_json(force=True, silent=True) or {}
         status = data.get("status", "")
