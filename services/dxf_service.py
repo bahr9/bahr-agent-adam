@@ -54,6 +54,12 @@ _ANCHOR_LABELS = (
 _NON_ANCHOR_LAYERS = ("DOOR", "WIN", "GLASS", "FRAMES")
 _NON_ANCHOR_NAMES = ("door", "window", "w60", "frame")
 
+# شرط أحمد الصريح (2026-08-04): ترشيحات الشبابيك متظهرش في التقرير
+# غير بكلمة صريحة منه بعد اطلاعه على تحقيق w60 -- فصل هيكلي مش تحذير.
+# (التحقيق خلص: الملف سليم، الخلل كان قراءة نقطة الإدخال بدل الرسم
+# الفعلي، واتصلح بمركز الـ bbox -- بس التفعيل قراره هو.)
+INCLUDE_WINDOW_CANDIDATES = False
+
 
 # ============================================================
 # منطق pure (بدون ezdxf) -- قابل للاختبار مباشرة
@@ -154,6 +160,28 @@ def associate_dims_to_anchors(positioned_dims, anchors, radius=ANCHOR_RADIUS_M):
     return {k: sorted(v) for k, v in sorted(groups.items())}, sorted(unassigned)
 
 
+def associate_openings_to_anchors(openings, anchors, radius=ANCHOR_RADIUS_M):
+    """يرشح مكان كل فتحة (باب) بأقرب مرساة مسماة -- زي القياسات بالظبط.
+
+    openings: [(x, y, rotation_degrees)] بمواقع الرسم الفعلية (مركز
+    الـ bbox -- درس تحقيق w60: نقطة الإدخال بتكدب لو جيومتري البلوك
+    مزحزح عن نقطة أساسه).
+    بيرجع [(label_or_None, x, y, rotation)].
+    """
+    rows = []
+    for x, y, rotation in openings:
+        best_name, best_dist = None, None
+        for name, ax, ay in anchors:
+            dist = ((x - ax) ** 2 + (y - ay) ** 2) ** 0.5
+            if dist <= radius and (best_dist is None or dist < best_dist):
+                best_name, best_dist = name, dist
+        label = None
+        if best_name is not None:
+            label = label_for_anchor(best_name) or ("جنب كتلة " + str(best_name))
+        rows.append((label, x, y, rotation))
+    return rows
+
+
 def infer_project_from_texts(texts, existing_names):
     """يتعرف على المشروع من نصوص اللوحة (owner / compound / اسم الوحدة).
 
@@ -241,6 +269,24 @@ def format_dxf_report(data, project_name=None, rows=None, unmatched=None):
             if groups or unassigned:
                 lines.append("(الترشيحات مش تأكيد -- لو صح قول مثلًا \"سجل التصريحة 2.83×1.17\" وأثبتها في ملف المشروع)")
 
+    # الدرجة 1 من الفتحات: الأبواب بس (شرط أحمد الصريح -- الشبابيك
+    # غايبة هيكليًا لحد كلمته، مش مخفية بتحذير)
+    doors = data.get("doors", [])
+    if doors and anchor_list:
+        door_rows = associate_openings_to_anchors(doors, anchor_list)
+        lines.append("")
+        lines.append("ترشيح مواقع الأبواب (" + str(len(door_rows)) + " -- بالموقع المرسوم الفعلي):")
+        for label, x, y, rotation in door_rows:
+            where = label if label else f"بعيد عن أي عنصر مسمى عند ({x:.1f}, {y:.1f})"
+            lines.append(f"  ~ باب {where} -- زاوية {rotation:.0f}°")
+        lines.append("(الزاوية زاوية دوران البلوك في الرسم -- بتدي اتجاه الباب مش جهة الفتح الدقيقة)")
+    if INCLUDE_WINDOW_CANDIDATES and data.get("windows") and anchor_list:
+        window_rows = associate_openings_to_anchors(data["windows"], anchor_list)
+        lines.append("ترشيح مواقع الشبابيك (" + str(len(window_rows)) + "):")
+        for label, x, y, rotation in window_rows:
+            where = label if label else f"بعيد عن أي عنصر مسمى عند ({x:.1f}, {y:.1f})"
+            lines.append(f"  ~ شباك {where} -- زاوية {rotation:.0f}°")
+
     if project_name:
         lines.append("")
         lines.append("🎯 اتعرفت على المشروع من اللوحة: " + project_name)
@@ -313,12 +359,38 @@ def extract_plan_geometry(file_path):
             p = e.dxf.insert
             anchors.append((e.dxf.text, float(p[0]), float(p[1])))
 
+    # مواقع الفتحات بمكان الرسم الفعلي (مركز bbox) -- مش نقطة الإدخال.
+    # تحقيق w60 (2026-08-04): نقطة الإدخال ممكن تبعد مئات الأمتار عن
+    # الرسم الفعلي لو جيومتري البلوك مزحزح عن نقطة أساسه جوه التعريف.
+    from ezdxf import bbox as _bbox
+
+    def _true_center(entity):
+        try:
+            box = _bbox.extents([entity], fast=True)
+            if box.has_data:
+                return (
+                    (box.extmin[0] + box.extmax[0]) / 2.0,
+                    (box.extmin[1] + box.extmax[1]) / 2.0,
+                )
+        except Exception:
+            pass
+        p = entity.dxf.insert
+        return (float(p[0]), float(p[1]))
+
+    doors = []
+    windows = []
+    for e in msp.query("INSERT"):
+        layer_u = e.dxf.layer.upper()
+        name_l = str(e.dxf.name or "").casefold()
+        rotation = float(e.dxf.rotation) % 360.0
+        if "DOOR" in layer_u or "door" in name_l:
+            x, y = _true_center(e)
+            doors.append((x, y, rotation))
+        elif "WIN" in layer_u or "GLASS" in layer_u or "window" in name_l or "w60" in name_l:
+            x, y = _true_center(e)
+            windows.append((x, y, rotation))
+
     layer_census = Counter(e.dxf.layer for e in msp)
-    door_count = sum(1 for e in msp.query("INSERT") if "DOOR" in e.dxf.layer.upper())
-    window_count = sum(
-        1 for e in msp.query("INSERT")
-        if "WIN" in e.dxf.layer.upper() or "GLASS" in e.dxf.layer.upper()
-    )
 
     return {
         "unit_factor": unit_factor,
@@ -326,9 +398,11 @@ def extract_plan_geometry(file_path):
         "dim_values": dim_values,
         "positioned_dims": positioned_dims,
         "anchors": anchors,
+        "doors": doors,
+        "windows": windows,
         "layer_census": dict(layer_census),
-        "door_count": door_count,
-        "window_count": window_count,
+        "door_count": len(doors),
+        "window_count": len(windows),
     }
 
 

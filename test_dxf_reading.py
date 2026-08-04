@@ -145,6 +145,31 @@ def main():
         assert label_for_anchor("Magic Corner") == "المطبخ"
         assert label_for_anchor("مجهول تمامًا") is None
 
+    def doors_get_location_candidates_with_rotation():
+        from services.dxf_service import associate_openings_to_anchors
+        # الموقع الفعلي لباب المطبخ من اللوحة (مركز bbox مش نقطة الإدخال)
+        rows = associate_openings_to_anchors(
+            [(21.36, 6.34, 270.0), (99.0, 99.0, 0.0)],
+            [("dish washer", 21.0, 9.0)],
+        )
+        assert rows[0][0] == "المطبخ" and rows[0][3] == 270.0, rows
+        assert rows[1][0] is None, "الباب البعيد ملوش ترشيح مش بيتزنق"
+
+    def windows_are_structurally_absent_from_report():
+        # شرط أحمد: مش تحذير -- غياب كامل لحد كلمته الصريحة
+        from services.dxf_service import INCLUDE_WINDOW_CANDIDATES
+        assert INCLUDE_WINDOW_CANDIDATES is False
+        data = {
+            "unit_factor": 1.0, "texts": [], "dim_values": [],
+            "positioned_dims": [], "anchors": [("dish washer", 21.0, 9.0)],
+            "doors": [(21.36, 6.34, 270.0)],
+            "windows": [(25.4, 9.99, 0.0), (21.49, 9.99, 0.0)],
+            "layer_census": {}, "door_count": 1, "window_count": 2,
+        }
+        report = format_dxf_report(data, None)
+        assert "ترشيح مواقع الأبواب" in report and "باب المطبخ" in report, report
+        assert "شباك" not in report and "w60" not in report, report
+
     def confirmed_room_beats_spatial_guess():
         # لوحة Rock Eden الحقيقية: الـ 3.79 بتاعة المطبخ (كلمة أحمد،
         # متسجلة في الملف) لكن كتلة toilet أقرب ليها مكانيًا --
@@ -223,6 +248,8 @@ def main():
         ("المرساة المجهولة بتتعرض خام", unknown_anchor_shown_raw_not_hidden),
         ("الأبواب والشبابيك مش مراسي", doors_and_windows_are_not_anchors),
         ("المثبت من الملف بيكسب ترشيح القرب", confirmed_room_beats_spatial_guess),
+        ("الأبواب بترشيح موقع وزاوية", doors_get_location_candidates_with_rotation),
+        ("الشبابيك غايبة هيكليًا من التقرير", windows_are_structurally_absent_from_report),
         ("التقرير بيعرض الاتساق وبيسأل عند الجهل", report_shows_consistency_and_asks_on_unknown),
         ("قشرة ezdxf بتقرا نصوص وطبقات", ezdxf_extraction_reads_texts_and_layers),
         ("dxf نوع ملف مدعوم في المسار", dxf_is_a_supported_document_type),
