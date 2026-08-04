@@ -27,11 +27,14 @@ def run_test(name, fn):
 def main():
     from handlers.document_handler import SUPPORTED_EXTENSIONS
     from services.dxf_service import (
+        associate_dims_to_anchors,
         consistency_check,
         extract_plan_geometry,
         extract_recorded_dims,
         format_dxf_report,
         infer_project_from_texts,
+        is_usable_anchor,
+        label_for_anchor,
     )
 
     results = []
@@ -100,6 +103,65 @@ def main():
         texts = ["التجمع الخامس"]
         assert infer_project_from_texts(texts, names) is None
 
+    # ---------- ربط القياسات بالفراغات (الشريحة التانية) ----------
+
+    # الحالة الحقيقية من لوحة Rock Eden: قياسات التصريحة جنب كتلة
+    # tasri7a1، وقياسات المطبخ جنب نصوص الأجهزة
+    real_dims = [
+        (2.83, 31.90, 10.51), (1.17, 31.05, 10.63),
+        (2.20, 21.86, 7.13), (2.24, 23.97, 7.09), (1.33, 23.06, 7.93),
+    ]
+    real_anchors = [
+        ("tasri7a1", 31.15, 9.35),
+        ("dish washer", 21.0, 9.0), ("washing machine", 24.0, 9.0),
+        ("toilet", 27.61, 11.23),
+    ]
+
+    def real_plan_dims_group_correctly():
+        groups, unassigned = associate_dims_to_anchors(real_dims, real_anchors)
+        assert groups["التصريحة (الدريسنج)"] == [1.17, 2.83], groups
+        assert groups["المطبخ"] == [1.33, 2.20, 2.24], groups
+        assert unassigned == []
+        assert "الحمام" not in groups, "الحمام مفيش قياسات جنبه"
+
+    def far_dims_stay_unassigned_not_forced():
+        groups, unassigned = associate_dims_to_anchors(
+            [(7.70, 0.0, 0.0)], [("toilet", 50.0, 50.0)]
+        )
+        assert groups == {} and unassigned == [7.70]
+
+    def unknown_anchor_shown_raw_not_hidden():
+        groups, _ = associate_dims_to_anchors(
+            [(3.85, 27.71, 1.56)], [("A$C3E6C3488", 27.87, 1.65)]
+        )
+        assert groups == {"جنب كتلة A$C3E6C3488": [3.85]}, groups
+
+    def doors_and_windows_are_not_anchors():
+        # الباب قاعد على الحيطة بين فراغين -- الربط بيه بيضلل
+        assert not is_usable_anchor("single door 11", "DOOR-AR")
+        assert not is_usable_anchor("w60", "GLASS-AR")
+        assert not is_usable_anchor("*U32", "DOOR-AR")
+        assert is_usable_anchor("tasri7a1", "FRN-AR")
+        assert label_for_anchor("Magic Corner") == "المطبخ"
+        assert label_for_anchor("مجهول تمامًا") is None
+
+    def confirmed_room_beats_spatial_guess():
+        # لوحة Rock Eden الحقيقية: الـ 3.79 بتاعة المطبخ (كلمة أحمد،
+        # متسجلة في الملف) لكن كتلة toilet أقرب ليها مكانيًا --
+        # المعرفة المثبتة لازم تكسب ترشيح القرب
+        data = {
+            "unit_factor": 1.0, "texts": [], "dim_values": [3.79],
+            "positioned_dims": [(3.79, 24.86, 9.20)],
+            "anchors": [("toilet", 26.62, 8.56)],
+            "layer_census": {}, "door_count": 0, "window_count": 0,
+        }
+        report = format_dxf_report(
+            data, "Rock Eden - essam farag",
+            [("المطبخ", 3.79, "match", 3.79)], [],
+        )
+        assert "✓ المطبخ: 3.79 -- مثبت من ملف المشروع" in report, report
+        assert "الحمام" not in report, "ترشيح القرب المضلل لازم يختفي"
+
     # ---------- التقرير ----------
 
     def report_shows_consistency_and_asks_on_unknown():
@@ -147,6 +209,11 @@ def main():
         ("الـ title block بيحدد المشروع", title_block_identifies_project),
         ("نصوص غريبة = مفيش تعرف", unrelated_texts_identify_nothing),
         ("التعادل بين مشروعين مبيتخمنش", tie_between_projects_is_never_guessed),
+        ("قياسات اللوحة الحقيقية بتتجمع صح", real_plan_dims_group_correctly),
+        ("البعيد بيفضل غير مرتبط مش بيتزنق", far_dims_stay_unassigned_not_forced),
+        ("المرساة المجهولة بتتعرض خام", unknown_anchor_shown_raw_not_hidden),
+        ("الأبواب والشبابيك مش مراسي", doors_and_windows_are_not_anchors),
+        ("المثبت من الملف بيكسب ترشيح القرب", confirmed_room_beats_spatial_guess),
         ("التقرير بيعرض الاتساق وبيسأل عند الجهل", report_shows_consistency_and_asks_on_unknown),
         ("قشرة ezdxf بتقرا نصوص وطبقات", ezdxf_extraction_reads_texts_and_layers),
         ("dxf نوع ملف مدعوم في المسار", dxf_is_a_supported_document_type),
