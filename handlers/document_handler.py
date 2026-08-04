@@ -8,7 +8,7 @@
 
 import os
 import tempfile
-from bot import bot, set_chat_id, send_error_message
+from bot import bot, set_chat_id, send_error_message, safe_typing
 from utils.logger import logger
 from services.claude_service import ask_claude_agentic, format_history_for_claude
 from services.firebase_service import get_conversation_history, save_conversation
@@ -117,7 +117,7 @@ def handle_document_message(message):
     """معالجة الملفات المرسلة على تليجرام"""
     chat_id = message.chat.id
     set_chat_id(chat_id)
-    bot.send_chat_action(chat_id, 'typing')
+    safe_typing(chat_id)
 
     doc = message.document
     file_name = doc.file_name or "document"

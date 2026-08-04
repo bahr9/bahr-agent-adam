@@ -43,7 +43,7 @@ openai_ok = init_openai()
 logger.info(("OK " if openai_ok else "FAIL ") + "OpenAI")
 
 # Bot
-from bot import bot, load_config, get_chat_id, set_chat_id, send_error_message, safe_send_message, get_main_keyboard, get_expenses_keyboard, get_projects_keyboard, get_reminders_keyboard, get_memory_keyboard, get_eye_expert_keyboard
+from bot import bot, load_config, get_chat_id, set_chat_id, send_error_message, safe_send_message, safe_typing, safe_reply, get_main_keyboard, get_expenses_keyboard, get_projects_keyboard, get_reminders_keyboard, get_memory_keyboard, get_eye_expert_keyboard
 logger.info("OK Telegram Bot")
 
 # Command Handlers -- استيراد بيسجل الـ @bot.message_handler decorators بتاعة
@@ -269,7 +269,7 @@ def handle_message(message):
     """معالجة الرسائل النصية"""
     try:
         set_chat_id(message.chat.id)
-        bot.send_chat_action(message.chat.id, 'typing')
+        safe_typing(message.chat.id)
 
         # ADAM Runtime -> Executive Brain
         response = runtime.run(message)
@@ -277,7 +277,7 @@ def handle_message(message):
         if response:
             from services import verified_expression
             response = verified_expression.verify_and_finalize(message.chat.id, response)
-            bot.reply_to(message, response, reply_markup=get_main_keyboard())
+            safe_reply(message, response, reply_markup=get_main_keyboard())
             logger.info("OK ADAM responded")
         else:
             bot.reply_to(message, "\u274c \u0645\u0634 \u0642\u0627\u062f\u0631 \u0623\u0631\u062f \u062f\u0644\u0648\u0642\u062a\u064a.")
@@ -292,7 +292,7 @@ def handle_voice(message):
     """معالجة الرسائل الصوتية"""
     try:
         set_chat_id(message.chat.id)
-        bot.send_chat_action(message.chat.id, 'typing')
+        safe_typing(message.chat.id)
 
         from handlers.voice_handler import handle_voice_message
         handle_voice_message(message)

@@ -7,7 +7,7 @@
 """
 
 import os
-from bot import bot, set_chat_id, send_error_message
+from bot import bot, set_chat_id, send_error_message, safe_typing
 from utils.logger import logger
 from services.openai_service import transcribe_audio, text_to_speech, is_openai_available
 from services.claude_service import ask_claude_agentic, format_history_for_claude
@@ -25,7 +25,7 @@ def handle_voice_message(message):
             bot.reply_to(message, "❌ ميزة الرسائل الصوتية مش مفعّلة دلوقتي (مفتاح OpenAI مش موجود).")
             return
 
-        bot.send_chat_action(chat_id, 'typing')
+        safe_typing(chat_id)
         logger.info(f"🎤 رسالة صوتية من {chat_id}")
 
         # نزّل ملف الصوت من تليجرام

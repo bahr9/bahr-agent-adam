@@ -8,13 +8,54 @@
 import telebot
 import os
 import json
+from telebot import apihelper
 from utils.logger import logger
 from utils.atomic_io import atomic_write_json
 from config import TELEGRAM_TOKEN, DATA_FILE, CONFIG_FILE
 
+# مهلات شبكة تليجرام (إصلاح 2026-08-04 بعد لوج الإنتاج):
+# الافتراضي 30 ثانية على اتصال مُعاد استخدامه من الـ pool كان بيعلّق
+# نداءات صغيرة (زي مؤشر "بيكتب") لحد ما يعمل timeout. الحل: مهلة أوسع
+# + عمر أقصر للجلسة عشان الاتصالات البايتة تتقفل قبل ما تُستعمل تاني.
+apihelper.READ_TIMEOUT = 60
+apihelper.CONNECT_TIMEOUT = 20
+apihelper.SESSION_TIME_TO_LIVE = 120
+
 # إنشاء البوت
 bot = telebot.TeleBot(TELEGRAM_TOKEN, threaded=True)
 logger.info(f"✅ تم تهيئة البوت")
+
+# ============================================================
+# 🌐 صمود شبكي (إصلاح 2026-08-04)
+# ============================================================
+
+_NETWORK_ERROR_MARKS = (
+    "read timed out", "connection aborted", "connection reset",
+    "connectionpool", "max retries exceeded", "temporarily unavailable",
+    "timed out",
+)
+
+NETWORK_ERROR_REPLY = (
+    "🌐 الشبكة زنقت لحظة بيني وبين تليجرام — رسالتك وصلتني بس الرد اتعطل. "
+    "ابعتها تاني لو مجاش."
+)
+
+
+def is_network_error(error):
+    """هل ده عطل شبكة عابر (مش خطأ حقيقي في آدم)؟"""
+    return any(mark in str(error).lower() for mark in _NETWORK_ERROR_MARKS)
+
+
+def safe_typing(chat_id):
+    """مؤشر 'بيكتب' — تجميلي بحت، وممنوع يوقّع الرسالة.
+
+    اللوج (2026-08-04): نداء الـ typing عمل timeout فطيّر المعالج كله
+    قبل ما يوصل لكلود -- يعني رسالة أحمد ضاعت بسبب مؤشر شكلي.
+    """
+    try:
+        bot.send_chat_action(chat_id, "typing")
+    except Exception as e:
+        logger.warning("مؤشر الكتابة فشل (متجاهَل): " + str(e))
 
 def safe_send_message(chat_id, text, max_retries=3, **kwargs):
     """يبعت رسالة مع retry تلقائي"""
@@ -30,6 +71,29 @@ def safe_send_message(chat_id, text, max_retries=3, **kwargs):
             else:
                 logger.error("send_message فشل نهائياً: " + str(e))
     return None
+
+
+def safe_reply(message, text, max_retries=2, **kwargs):
+    """رد مع إعادة محاولة على أعطال الشبكة العابرة.
+
+    بيرجع True لو الرد وصل. مهم: لو الإرسال عمل timeout، الرسالة ممكن
+    تكون وصلت فعلًا لتليجرام والرد هو اللي اتأخر -- فالمحاولة التانية
+    ممكن تكرر الرد، وده أخف ضررًا من ضياعه.
+    """
+    import time
+
+    last_error = None
+    for attempt in range(max_retries):
+        try:
+            bot.reply_to(message, text, **kwargs)
+            return True
+        except Exception as e:
+            last_error = e
+            if attempt < max_retries - 1:
+                logger.warning("الرد فشل (محاولة " + str(attempt + 1) + "): " + str(e))
+                time.sleep(2)
+    logger.error("الرد فشل نهائيًا: " + str(last_error))
+    return False
 
 # ملف الإعدادات
 config = {"chat_id": None, "reminder_time": "08:00"}
@@ -203,9 +267,15 @@ def send_welcome(message):
 # ============================================================
 
 def send_error_message(message, error_text):
-    """إرسال رسالة خطأ آمنة"""
+    """إرسال رسالة خطأ آمنة.
+
+    أعطال الشبكة العابرة بتتحول لرسالة مفهومة بدل ما نرمي لأحمد نص
+    استثناء خام (زي HTTPSConnectionPool...) -- الأخطاء الحقيقية بتفضل
+    ظاهرة بنصها عشان ما نخفيش مشاكل فعلية.
+    """
+    text = NETWORK_ERROR_REPLY if is_network_error(error_text) else f"❌ {error_text}"
     try:
-        bot.reply_to(message, f"❌ {error_text}")
+        bot.reply_to(message, text)
     except Exception as e:
         logger.error(f"❌ فشل إرسال رسالة الخطأ: {e}")
 

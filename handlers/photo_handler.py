@@ -7,7 +7,7 @@
 """
 
 import base64
-from bot import bot, set_chat_id, send_error_message
+from bot import bot, set_chat_id, send_error_message, safe_typing
 from utils.logger import logger
 from services.claude_service import analyze_with_vision
 from services.firebase_service import save_conversation
@@ -19,7 +19,7 @@ def handle_photo_message(message):
     try:
         chat_id = message.chat.id
         set_chat_id(chat_id)
-        bot.send_chat_action(chat_id, 'typing')
+        safe_typing(chat_id)
 
         logger.info(f"🖼️ صورة من {chat_id}")
 
