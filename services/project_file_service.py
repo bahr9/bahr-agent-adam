@@ -77,6 +77,34 @@ def resolve_project_name(query, existing_names):
         return "resolved", partial
     if len(partial) > 1:
         return "ambiguous", sorted(partial)
+
+    # مقاطع الاسم المركب (درس اختبار الحجم 2026-08-04): "مشروع essam
+    # farag اللي كلمتك عنه" -- الاسم الكامل "Rock Eden - essam farag"
+    # مش جوه الجملة، بس مقطعه جواها. نفس منطق التعرف من الـ title
+    # block في الـ DXF. مرشح واحد بس = حل؛ أكتر = اسأل زي ما هو.
+    fragment_hits = {}
+    for name in existing_names:
+        fragments = [
+            " ".join(f.split()).casefold()
+            for f in str(name).replace("_", "-").split("-")
+        ]
+        matched = [f for f in fragments if len(f) >= 4 and f in q]
+        if matched:
+            fragment_hits[name] = matched
+    if len(fragment_hits) == 1:
+        winner, matched = next(iter(fragment_hits.items()))
+        # فخ "محمد سعيد" مقابل "محمد سعيد تاني": المقطع الفائز لو
+        # موجود جوه اسم مشروع تاني، الحل الواثق يبقى تخمين متخفي --
+        # نرجع التباس ونسأل زي القاعدة
+        lookalikes = [
+            name for name, n in normalized.items()
+            if name != winner and any(f in n for f in matched)
+        ]
+        if lookalikes:
+            return "ambiguous", sorted([winner] + lookalikes)
+        return "resolved", [winner]
+    if len(fragment_hits) > 1:
+        return "ambiguous", sorted(fragment_hits)
     return "none", []
 
 

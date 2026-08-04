@@ -61,6 +61,21 @@ def main():
         status, matches = resolve_project_name("مدينة نصر", names)
         assert status == "ambiguous" and len(matches) == 2, (status, matches)
 
+    def name_fragment_inside_long_sentence_resolves():
+        # الفشل الوحيد في اختبار الحجم (30 مشروع): مقطع الاسم المركب
+        # جوه جملة طبيعية -- "بالظبط الطريقة اللي بكلمك بيها عادي"
+        status, matches = resolve_project_name(
+            "مشروع essam farag اللي كلمتك عنه", existing
+        )
+        assert (status, matches) == ("resolved", ["Rock Eden - essam farag"]), (status, matches)
+
+    def fragment_tie_between_two_clients_asks():
+        names = ["شقة جاردينيا - محمد سعيد", "فيلا العبور - محمد سعيد تاني"]
+        status, matches = resolve_project_name(
+            "عايز أراجع شغل محمد سعيد", names
+        )
+        assert status == "ambiguous" and len(matches) == 2, (status, matches)
+
     def unknown_name_returns_none():
         status, matches = resolve_project_name("مشروع مجهول تمامًا", existing)
         assert status == "none" and matches == []
@@ -139,6 +154,8 @@ def main():
         ("التطابق الجزئي الوحيد بيتحل", partial_match_resolves_uniquely),
         ("الاسم جوه جملة أطول بيتحل", query_containing_the_name_also_resolves),
         ("الغموض بيتسأل عنه مش بيتخمن", ambiguity_is_asked_not_guessed),
+        ("مقطع الاسم جوه جملة طويلة بيتحل", name_fragment_inside_long_sentence_resolves),
+        ("تعادل المقاطع بيسأل مش بيخمن", fragment_tie_between_two_clients_asks),
         ("الاسم المجهول بيرجع none", unknown_name_returns_none),
         ("الطلب الفاضي none", empty_query_returns_none),
         ("المساحة بتتحسب من الأبعاد المكتوبة بس", area_computed_from_written_dims_only),
