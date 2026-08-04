@@ -26,6 +26,7 @@ def main():
     from services.claude_service import TOOLS, build_system_prompt_parts
     from services.project_file_service import (
         CATEGORIES,
+        computed_area,
         format_project_file,
         project_id_for_name,
         resolve_project_name,
@@ -67,6 +68,25 @@ def main():
     def empty_query_returns_none():
         assert resolve_project_name("   ", existing) == ("none", [])
 
+    # ---------- الحساب المشتق من الأبعاد المكتوبة (الفجوة 2 -- الشريحة الرخيصة) ----------
+
+    def area_computed_from_written_dims_only():
+        # ضرب حتمي في بايثون -- مش حساب ذهني من الموديل
+        assert computed_area("7.70×5.99 م") == 46.12
+        assert computed_area("5.00x3.78") == 18.9
+        assert computed_area("3.70 × 3.85 متر") == 14.25
+
+    def arabic_indic_digits_compute_too():
+        assert computed_area("٣.٧٠×٣.٨٥") == 14.25
+
+    def no_written_dims_means_no_area():
+        # الفخ المتفق نتجنبه: فراغ من غير رقم مكتوب = غير محسوب، مش تخمين
+        assert computed_area("واسع وبيطل على الحديقة") is None
+        assert computed_area("مش واضح في البلان") is None
+        assert computed_area("") is None
+        # رقم واحد مش أبعاد -- متضربش في حاجة متخيلة
+        assert computed_area("46 م²") is None
+
     # ---------- التنسيق ----------
 
     def formatting_shows_categories_and_values():
@@ -83,6 +103,8 @@ def main():
         assert "فراغات" in text and "الريسبشن: 7.70×5.99 م" in text
         assert "قرارات" in text and "Scandinavian-Bohemian" in text
         assert "ميزانية" not in text, "الفئة الفاضية متتعرضش"
+        # البُعد المكتوب بيظهر معاه المساحة المحسوبة حتميًا بمصدرها
+        assert "46.12 م²" in text and "محسوبة من الأبعاد المكتوبة" in text, text
 
     def empty_file_says_so():
         assert "لسه مفيهوش" in format_project_file({"display_name": "جديد", "facts": {}})
@@ -104,6 +126,13 @@ def main():
         assert "قاعدة ملفات المشاريع" in static_part
         assert "get_project_file فورًا" in static_part
 
+    def prompt_forbids_visual_estimation():
+        # قرار أحمد: رقم غلط أسوأ من رقم ناقص -- الفراغ من غير رقم
+        # مكتوب يتعلّم "غير محسوب" ولا يتقدّرش من شكل الرسم أبدًا
+        static_part, _ = build_system_prompt_parts()
+        assert "غير محسوب" in static_part
+        assert "المحسوبة في الملف" in static_part
+
     for name, fn in [
         ("نفس الاسم = نفس الملف عبر الجلسات", same_name_same_id_across_sessions),
         ("التطابق الكامل بيكسب", exact_match_wins),
@@ -112,10 +141,14 @@ def main():
         ("الغموض بيتسأل عنه مش بيتخمن", ambiguity_is_asked_not_guessed),
         ("الاسم المجهول بيرجع none", unknown_name_returns_none),
         ("الطلب الفاضي none", empty_query_returns_none),
+        ("المساحة بتتحسب من الأبعاد المكتوبة بس", area_computed_from_written_dims_only),
+        ("الأرقام الهندية بتتحسب برضه", arabic_indic_digits_compute_too),
+        ("مفيش رقم مكتوب = مفيش مساحة", no_written_dims_means_no_area),
         ("التنسيق بالفئات والقيم", formatting_shows_categories_and_values),
         ("الملف الفاضي بيقول كده", empty_file_says_so),
         ("الأداتين متسجلين بفئات منظمة", both_tools_registered_with_structured_categories),
         ("الـ prompt بيعلّم الاسترجاع التلقائي", prompt_teaches_auto_recall),
+        ("الـ prompt بيمنع التقدير البصري", prompt_forbids_visual_estimation),
     ]:
         results.append(run_test(name, fn))
 

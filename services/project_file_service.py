@@ -19,12 +19,21 @@
 """
 
 import hashlib
+import re
 
 from utils.logger import logger
 from utils.time_utils import now_cairo
 
 # الفئات المسموحة -- بنية حقول مش نص حر (طلب أحمد الصريح).
 CATEGORIES = ("فراغات", "أبعاد", "قرارات", "ميزانية", "عميل", "ملاحظات")
+
+# أبعاد مكتوبة صراحة: رقمين حواليهم علامة ضرب (×/x/*). أي حاجة غير كده
+# -- وصف، رقم واحد، "مش واضح" -- مش أبعاد ومفيش حساب (الفجوة 2: الحساب
+# الحتمي من المطبوع بس، ورقم غلط أسوأ من رقم ناقص).
+_WRITTEN_DIMS = re.compile(
+    r"(\d+(?:[.,]\d+)?)\s*[×xX*]\s*(\d+(?:[.,]\d+)?)"
+)
+_ARABIC_INDIC = str.maketrans("٠١٢٣٤٥٦٧٨٩٫", "0123456789.")
 
 
 # ============================================================
@@ -71,6 +80,19 @@ def resolve_project_name(query, existing_names):
     return "none", []
 
 
+def computed_area(value):
+    """مساحة محسوبة حتميًا (ضرب بايثون) من أبعاد مكتوبة صراحة في القيمة.
+
+    بترجع None لو مفيش بُعدين مكتوبين -- من غير أي تقدير أو تخمين.
+    """
+    match = _WRITTEN_DIMS.search(str(value or "").translate(_ARABIC_INDIC))
+    if not match:
+        return None
+    width = float(match.group(1).replace(",", "."))
+    length = float(match.group(2).replace(",", "."))
+    return round(width * length, 2)
+
+
 def format_project_file(doc):
     """يحوّل مستند الملف لعرض عربي مقروء، فئة فئة."""
     lines = ["📁 ملف مشروع: " + doc.get("display_name", "بدون اسم")]
@@ -84,7 +106,11 @@ def format_project_file(doc):
         for key in sorted(entries):
             entry = entries[key]
             value = entry.get("value", "") if isinstance(entry, dict) else str(entry)
-            lines.append("  - " + key + ": " + value)
+            line = "  - " + key + ": " + value
+            area = computed_area(value)
+            if area is not None:
+                line += " (المساحة: " + f"{area:g}" + " م² -- محسوبة من الأبعاد المكتوبة)"
+            lines.append(line)
     if len(lines) == 1:
         lines.append("(الملف موجود لكن لسه مفيهوش حقائق مسجلة)")
     return "\n".join(lines)
@@ -145,11 +171,17 @@ def save_project_fact(project_name, category, key, value):
         "facts": {},
     }
     facts = doc.setdefault("facts", {})
-    facts.setdefault(category, {})[str(key).strip()] = {
+    entry = {
         "value": str(value).strip(),
         "source": "ahmed",
         "updated_at": str(now_cairo()),
     }
+    # حقل منفصل للمساحة المحسوبة حتميًا -- موجود بس لما فيه أبعاد
+    # مكتوبة فعلًا، وغيابه معناه "غير محسوب" مش صفر
+    area = computed_area(value)
+    if area is not None:
+        entry["computed_area_m2"] = area
+    facts.setdefault(category, {})[str(key).strip()] = entry
     doc["updated_at"] = str(now_cairo())
     ref.set(doc)
     logger.info("📁 حقيقة اتسجلت في مشروع " + resolved_name + ": " + str(key))
