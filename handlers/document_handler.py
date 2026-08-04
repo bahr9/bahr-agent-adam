@@ -68,6 +68,9 @@ def _extract_text_from_txt(file_path):
 # قراءة البلانات (2b -- دمج دور HOPE، ADR 0006)
 # ============================================================
 
+# الأنواع المدعومة في المسار (الـ DXF بيتقري رياضيًا مش نصيًا)
+SUPPORTED_EXTENSIONS = (".pdf", ".docx", ".html", ".htm", ".txt", ".dxf")
+
 # كلمات في اسم الملف أو التعليق بتقول "ده بلان مش مستند نصي".
 _PLAN_KEYWORDS = (
     "plan", "model", "layout", "arch", "furniture", "asbuilt", "as built",
@@ -128,9 +131,8 @@ def handle_document_message(message):
         return
 
     # ===== فحص النوع =====
-    supported = (".pdf", ".docx", ".html", ".htm", ".txt")
-    if not any(file_name.lower().endswith(ext) for ext in supported):
-        bot.reply_to(message, "نوع الملف ده مش مدعوم دلوقتي.\nالأنواع المدعومة: PDF, DOCX, HTML, TXT")
+    if not any(file_name.lower().endswith(ext) for ext in SUPPORTED_EXTENSIONS):
+        bot.reply_to(message, "نوع الملف ده مش مدعوم دلوقتي.\nالأنواع المدعومة: PDF, DOCX, HTML, TXT, DXF")
         return
 
     # ===== تنزيل الملف =====
@@ -143,6 +145,25 @@ def handle_document_message(message):
         with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
             tmp.write(downloaded)
             tmp_path = tmp.name
+
+        # ===== مسار DXF: قراءة رياضية حتمية + فحص اتساق تلقائي =====
+        if file_name.lower().endswith(".dxf"):
+            from services.dxf_service import analyze_dxf_for_ahmed
+
+            logger.info("📐 ملف DXF -- قراءة رياضية: " + file_name)
+            reply = analyze_dxf_for_ahmed(tmp_path)
+            bot.reply_to(message, reply)
+            logger.info("✅ تم قراءة الـ DXF والرد على " + str(chat_id))
+
+            conversation_text = "[لوحة DXF] " + file_name
+            if message.caption:
+                conversation_text += " - " + message.caption
+            save_conversation(chat_id, conversation_text, reply)
+            try:
+                update_memory(chat_id, conversation_text, reply)
+            except Exception as e:
+                logger.warning("Memory (dxf) error: " + str(e))
+            return
 
         # ===== استخراج النص =====
         text, file_type = extract_text(tmp_path, file_name)
