@@ -141,7 +141,7 @@ def import_graph_nodes(client, docs):
         rows.append({
             "firestore_id": d["_doc_id"],
             "label": d.get("label") or d["_doc_id"],
-            "category": d.get("category") or "topic",
+            "category": d.get("category") or "",   # أمانة: الفاضي يفضل فاضي، مش تخمين
             "facts": d.get("facts") or [],
             "links": d.get("links") or [],
             "size": int(d.get("size") or 16),

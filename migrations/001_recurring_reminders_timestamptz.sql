@@ -52,6 +52,15 @@ order by created_at;
 
 begin;
 
+-- تصحيح 2026-08-05 مساءً (خطأ 42804 ظهر عند التنفيذ الفعلي): العمود
+-- القديم عليه DEFAULT رقمي (epoch)، وPostgres مش بيعرف يحوّل الـ default
+-- تلقائيًا مع تغيير النوع. لازم الـ default يتشال الأول، بعدين التحويل،
+-- بعدين default جديد مناسب للنوع الجديد.
+alter table public.recurring_reminders
+    alter column created_at drop default;
+alter table public.recurring_reminders
+    alter column last_sent drop default;
+
 alter table public.recurring_reminders
     alter column created_at type timestamptz
         using to_timestamp(created_at / 1000.0),
