@@ -4,3 +4,7 @@ __pycache__/
 **/__pycache__/
 second_brain.json
 memory_cache.json
+
+# ملفات وقت التشغيل -- مالهاش مكان في الريبو (أوديت 2026-08-05)
+bahr_agent.log
+project_tree.txt
