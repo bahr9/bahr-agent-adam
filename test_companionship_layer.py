@@ -10,12 +10,12 @@ inference_rules.py لسه مش موجود (Roadmap لاحق) -- fired_rules هن
 تحاكي شكلها المتوقع، مش قراءة من ملف حقيقي، وده موثّق صراحة هنا.
 """
 
-from services.firebase_service import init_firebase
+from fake_firestore import install_fake_firestore
 from services import truth_layer, meaning_layer, companionship_layer, claim_validator, event_store
 
 
 def main():
-    assert init_firebase(), "فشل الاتصال بـ Firebase"
+    install_fake_firestore()
 
     # ============================================================
     # Part A: مسار سعيد حقيقي -- LLM call فعلي على بيانات حقيقية
@@ -64,12 +64,22 @@ def main():
     # ============================================================
     original_call_llm = companionship_layer._call_llm
 
+    # العدد الحقيقي المحسوب دلوقتي -- الاختبار كان بيقارن بـ 7 ثابتة، وهي
+    # كانت مربوطة ببيانات الإنتاج وقت كتابته. مع fake_firestore (خريطة دفع
+    # فاضية) العدد بيختلف، وكمان compute_pending_obligation_load بيحسب
+    # الشهر الحالي مش الشهور الفايتة بس. فبنشتقّه من الحزمة نفسها.
+    expected_count = next(
+        f.value for f in truth_packet.facts
+        if f.field == "pending_obligation_load.count"
+    )
+    print(f"ℹ️ العدد المحسوب فعليًا دلوقتي: {expected_count}")
+
     # C1: أول محاولة تفشل (رقم خام) -- التانية تنجح
     attempts = {"n": 0}
     def flaky_then_ok(mp, retry_feedback=None):
         attempts["n"] += 1
         if attempts["n"] == 1:
-            return "فيه 7 أقساط متأخرة."  # رقم خام -- هيترفض
+            return "فيه 7 أقساط متأخرة."  # رقم خام -- هيترفض مهما كانت قيمته
         assert retry_feedback is not None, "المفروض المحاولة التانية تاخد retry_feedback"
         return "فيه {pending_obligation_load.count} أقساط متأخرة -- {inference:pending_obligation_concern}."
 
@@ -79,7 +89,9 @@ def main():
         assert attempts["n"] == 2, f"المفروض محاولتين بالظبط، حصل {attempts['n']}"
         assert result_c1["source"] == "companionship"
         assert result_c1["verified"] is True
-        assert "7" in result_c1["text"]
+        assert str(expected_count) in result_c1["text"], (
+            f"الـ slot المفروض يتملى بـ {expected_count}: {result_c1['text']!r}"
+        )
         print(f"✅ محاولة أولى فشلت (رقم خام)، التانية نجحت بعد retry_feedback: {result_c1['text']!r}")
     finally:
         companionship_layer._call_llm = original_call_llm

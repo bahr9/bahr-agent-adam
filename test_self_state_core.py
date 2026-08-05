@@ -12,7 +12,7 @@ Confidence, Current Mode, Diagnosis Summary).
 مايلمسوش companionship_layer أصلًا، فمفيش تكلفة Anthropic هنا خالص.
 """
 
-from services.firebase_service import init_firebase
+from fake_firestore import install_fake_firestore
 from services import event_store, self_diagnosis, self_state_core, self_state_engine, verified_expression
 
 TEST_ENTITY_ID = "test_self_state_core"
@@ -161,7 +161,7 @@ def test_missing_evidence(monkeypatch_target=None):
 
 
 def main():
-    assert init_firebase(), "فشل الاتصال بـ Firebase"
+    install_fake_firestore()
     from services.firebase_service import firestore_db
 
     pre_existing = event_store.get_events_for_entity("self_diagnosis", TEST_ENTITY_ID)

@@ -20,7 +20,7 @@
 صفر LLM هنا -- كله فحص بنيوي واستدعاء دوال حقيقية بس.
 """
 
-from services.firebase_service import init_firebase
+from fake_firestore import install_fake_firestore
 from services.claude_service import TOOLS, _execute_tool
 
 REQUIRED_TOOLS = [
@@ -73,7 +73,7 @@ def test_dispatch_actually_reaches_required_tools():
     TOOLS بس نسينا نضيف elif في الـdispatch، النتيجة هتكون "أداة غير معروفة"
     والاختبار ده هيفشل فورًا.
     """
-    assert init_firebase(), "فشل الاتصال بـ Firebase"
+    install_fake_firestore()
 
     for tool_name in REQUIRED_TOOLS:
         result = _execute_tool(tool_name, {}, chat_id=None)

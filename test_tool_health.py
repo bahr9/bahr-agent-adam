@@ -13,7 +13,7 @@ Tests First -- Runtime Capabilities & Tool Health V1.
 بس safe_probes (قراءة بحتة، مؤكدة سلفًا في capabilities_registry.py).
 """
 
-from services.firebase_service import init_firebase
+from fake_firestore import install_fake_firestore
 from services import (
     capabilities_registry, tool_health_heartbeat, tool_health_engine,
     tool_health_alerts, tool_failure_observer, self_state_core, event_store,
@@ -231,7 +231,7 @@ def test_deterministic_report():
 
 
 def main():
-    assert init_firebase(), "فشل الاتصال بـ Firebase"
+    install_fake_firestore()
 
     test_registry_alignment_and_drift()
     test_heartbeat_timeout_mechanics()

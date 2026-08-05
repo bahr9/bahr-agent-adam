@@ -52,6 +52,11 @@ def _probe_expense_summary():
     return get_expense_summary()
 
 
+def _probe_get_prices():
+    from services.price_base_service import get_prices
+    return get_prices()
+
+
 def _probe_loan_overview():
     from services import loan_service
     return loan_service.get_overview()
@@ -195,6 +200,24 @@ _TOOL_METADATA = {
     # (تقرير صحة الأدوات مايراقبش نفسه عبر heartbeat).
     "get_tools_health_status":      {"domain": "system_health", "operation_type": "analysis", "criticality": "low",
                                      "source_owner": "services/tool_health_engine.py"},
+
+    # ---- أدوات 2026-08-04 (ملفات المشاريع، قاعدة الأسعار، الموودبورد) ----
+    # الخمسة دول اتضافوا لـ TOOLS من غير تصنيف هنا، فكانوا بياخدوا الـ entry
+    # الافتراضي المحافظ. مش عطل -- التصميم بيمنع أي أداة تختفي بصمت -- بس
+    # test_tool_health.py كان بيفشل عليهم عن حق، والتصنيف الصريح هو المقصود.
+    "save_project_fact":            {"domain": "project_files", "operation_type": "write", "criticality": "medium",
+                                     "source_owner": "services/project_file_service.py"},
+    "get_project_file":             {"domain": "project_files", "operation_type": "read", "criticality": "low",
+                                     "source_owner": "services/project_file_service.py"},
+    "save_price":                   {"domain": "price_base", "operation_type": "write", "criticality": "medium",
+                                     "source_owner": "services/price_base_service.py"},
+    "get_prices":                   {"domain": "price_base", "operation_type": "read", "criticality": "low",
+                                     "health_check_supported": True, "safe_probe": _probe_get_prices,
+                                     "source_owner": "services/price_base_service.py"},
+    # مفيش safe_probe: بتولّد صورة عبر OpenAI -- نداء مدفوع وبطيء،
+    # مش "صفر جانب-تأثير" بالمعنى اللي الـ heartbeat محتاجه.
+    "generate_mood_board":          {"domain": "design", "operation_type": "write", "criticality": "medium",
+                                     "source_owner": "services/moodboard_service.py"},
 }
 
 

@@ -19,7 +19,7 @@ tool_relevant_but_skipped مؤجَّل رسميًا (قرار أحمد 2026-07-2
 موجودة فعليًا في Event Store، مش عدّاد في الذاكرة.
 """
 
-from services.firebase_service import init_firebase
+from fake_firestore import install_fake_firestore
 from services import companionship_layer, event_store, self_diagnosis
 
 
@@ -33,7 +33,7 @@ MEANING_PACKET = {
 
 
 def main():
-    assert init_firebase(), "فشل الاتصال بـ Firebase"
+    install_fake_firestore()
     from services.firebase_service import firestore_db
 
     dimension = MEANING_PACKET["primary_focus"]

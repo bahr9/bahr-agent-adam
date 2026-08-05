@@ -20,28 +20,15 @@ ALLOWED = {
 }
 
 # ============================================================
-# دين متبقّي -- اختبارات لسه بتلمس الإنتاج (2026-08-05)
+# دين متبقّي -- اختبارات لسه بتلمس الإنتاج
 # ============================================================
-# القاعدة اتحطت بعد ما اتصلحت اختبارات الأقساط الأربعة. الحارس كشف إن فيه
-# 11 اختبار تاني على نفس النمط، ودول من قبل القاعدة.
+# ✅ **فضيت في 2026-08-05.** كل الخمستاشر اختبار اللي كانوا بيفتحوا اتصال
+# حقيقي بـ Firestore اتحوّلوا لـ fake_firestore.
 #
-# الليستة دي **سقف مش أرضية**: أي اختبار جديد بيلمس Firestore هيفشل هنا
-# فورًا، والليستة المفروض تقصر مع الوقت لحد ما تفضى -- ممنوع تكبر.
-#
-# اللي اتحوّل خلاص: test_loan_commands, test_loan_conflict_observer,
-# test_conflict_resolution_flow, test_tracking_stability, test_memory.
-KNOWN_UNMIGRATED = {
-    "test_companionship_layer.py",
-    "test_event_store.py",
-    "test_pipeline_integration.py",
-    "test_self_diagnosis.py",
-    "test_self_state_core.py",
-    "test_self_state_engine.py",
-    "test_tool_health.py",
-    "test_tool_lifecycle_diagnostics.py",
-    "test_tool_registration_guard.py",
-    "test_verified_expression.py",
-}
+# الليستة دي **سقف مش أرضية**: أي اختبار جديد بيلمس الإنتاج هيفشل هنا
+# فورًا. وأي اسم يتحط هنا لازم يكون خطوة مؤقتة في طريقها للصفر --
+# ممنوع تكبر.
+KNOWN_UNMIGRATED = set()
 
 FORBIDDEN_PATTERNS = [
     (re.compile(r"^\s*from services\.firebase_service import.*\binit_firebase\b", re.M),
@@ -98,14 +85,18 @@ def main():
             "دول بقوا نضاف -- شيلهم من KNOWN_UNMIGRATED:\n  - " + "\n  - ".join(stale)
         )
 
-    def the_migrated_loan_tests_stay_migrated():
-        """الأربعة اللي اتصلحوا في 2026-08-05 ممنوع يرجعوا يلمسوا الإنتاج."""
-        migrated = {
-            "test_loan_commands.py", "test_loan_conflict_observer.py",
-            "test_conflict_resolution_flow.py", "test_tracking_stability.py",
-        }
-        regressed = sorted(migrated & _scan())
-        assert not regressed, "رجعوا يلمسوا الإنتاج تاني:\n  - " + "\n  - ".join(regressed)
+    def no_test_at_all_touches_production():
+        """الحالة المستهدفة: صفر اختبار بيفتح اتصال حقيقي -- من غير استثناءات."""
+        offenders = sorted(_scan())
+        assert not offenders, (
+            "المفروض ولا اختبار يلمس الإنتاج خالص:\n  - " + "\n  - ".join(offenders)
+        )
+
+    def the_debt_list_is_empty():
+        """لو رجع فيها أسامي، يبقى إحنا بنمشي لورا."""
+        assert KNOWN_UNMIGRATED == set(), (
+            "الدين رجع يكبر: " + ", ".join(sorted(KNOWN_UNMIGRATED))
+        )
 
     def the_fake_is_actually_available():
         from fake_firestore import FakeFirestore, install_fake_firestore, use_fake_firestore
@@ -187,9 +178,10 @@ def main():
         assert db.count("x") == 1 and db.count("y") == 1
 
     for name, fn in [
-        ("ولا اختبار جديد بيلمس الإنتاج (الحارس الأساسي)", no_new_test_opens_a_real_connection),
+        ("ولا اختبار بيلمس الإنتاج خالص (الحارس الأساسي)", no_test_at_all_touches_production),
+        ("ولا اختبار جديد بيلمس الإنتاج", no_new_test_opens_a_real_connection),
+        ("ليستة الدين فاضية", the_debt_list_is_empty),
         ("ليستة الدين بتقصر مش بتكبر", the_debt_list_only_shrinks),
-        ("اختبارات الأقساط الأربعة فضلت متحوّلة", the_migrated_loan_tests_stay_migrated),
         ("fake_firestore متاح وشغال", the_fake_is_actually_available),
         ("الـ fake بيترفع حتى لو حصل استثناء", the_fake_never_leaks_into_the_real_module),
         ("الـ fake بيغطي كل اللي event_store محتاجه", the_fake_supports_what_the_event_store_needs),

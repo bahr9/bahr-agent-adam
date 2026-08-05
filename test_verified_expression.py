@@ -11,7 +11,7 @@
 كل حاجة في الآخر.
 """
 
-from services.firebase_service import init_firebase
+from fake_firestore import install_fake_firestore
 from services import (
     loan_service, loan_commands, event_store,
     self_state_engine, decision_engine, verified_expression, expression_vocabulary,
@@ -24,7 +24,7 @@ TEST_CHAT_ID = 999999
 
 
 def main():
-    assert init_firebase(), "فشل الاتصال بـ Firebase"
+    install_fake_firestore()
     from services.firebase_service import firestore_db
 
     program = loan_service._find_program(PROGRAM)

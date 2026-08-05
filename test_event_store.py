@@ -4,12 +4,12 @@
 ثم يمسحه. مش unit test framework، مجرد سكريبت تحقق يدوي زي test_memory.py.
 """
 
-from services.firebase_service import init_firebase
+from fake_firestore import install_fake_firestore
 from services import event_store
 
 
 def main():
-    assert init_firebase(), "فشل الاتصال بـ Firebase"
+    install_fake_firestore()
 
     # 1) رفض حدث ناقص الحقول الإجبارية
     for kwargs in [

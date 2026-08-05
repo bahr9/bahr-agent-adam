@@ -14,7 +14,7 @@ LLM حقيقي)، ما عدا استدعاء الـLLM في مسار الرفض 
 فرض رد معيّن من LLM حقيقي بشكل حتمي مش ممكن، وده موثّق صراحة هنا.
 """
 
-from services.firebase_service import init_firebase
+from fake_firestore import install_fake_firestore
 from services import (
     loan_service, loan_commands, event_store,
     truth_layer, meaning_layer, companionship_layer,
@@ -25,7 +25,7 @@ MONTH_KEY = "01/06/2032"
 
 
 def main():
-    assert init_firebase(), "فشل الاتصال بـ Firebase"
+    install_fake_firestore()
     from services.firebase_service import firestore_db
 
     program = loan_service._find_program(PROGRAM)

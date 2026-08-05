@@ -10,7 +10,7 @@ expression بس" -- مكتوبة قبل ما get_adam_self_state يتبنى) ا�
 الاختبار ده هيفشل فورًا بدليل حقيقي، مش هيسيب حد يكتشفها بالصدفة زي ما حصل.
 """
 
-from services.firebase_service import init_firebase
+from fake_firestore import install_fake_firestore
 from services import event_store, tool_lifecycle_diagnostics
 from services.claude_service import ask_claude_agentic
 
@@ -242,7 +242,7 @@ def test_two_turn_paste_back_no_false_retraction():
 
 
 def main():
-    assert init_firebase(), "فشل الاتصال بـ Firebase"
+    install_fake_firestore()
     test_unregistered_tool_shows_no_fabricated_state()
     test_recording_and_query_for_real_registered_tool()
     test_live_model_actually_selects_get_adam_self_state()

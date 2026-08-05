@@ -63,9 +63,25 @@ def _matches(actual, op, expected):
 class FakeDocumentSnapshot:
     """لقطة مستند -- زي DocumentSnapshot بتاعة Firestore."""
 
-    def __init__(self, doc_id, data):
+    def __init__(self, doc_id, data, store=None, collection_name=None):
         self.id = doc_id
         self._data = data
+        self._store = store
+        self._collection = collection_name
+
+    @property
+    def reference(self):
+        """مرجع المستند -- زي snapshot.reference في Firestore.
+
+        بيخلي أنماط زي `doc.reference.delete()` و
+        `doc.reference.collection(child)` تشتغل زي الحقيقي بالظبط.
+        """
+        if self._store is None:
+            raise AttributeError(
+                "اللقطة دي مالهاش مرجع -- اتعملت من غير store "
+                "(استخدم collection().stream() أو document().get())"
+            )
+        return FakeDocumentRef(self._store, self._collection, self.id)
 
     @property
     def exists(self):
@@ -84,7 +100,10 @@ class FakeDocumentRef:
     def get(self):
         data = self._store._data.get(self._collection, {}).get(self.id)
         self._store.reads += 1
-        return FakeDocumentSnapshot(self.id, copy.deepcopy(data) if data else None)
+        return FakeDocumentSnapshot(
+            self.id, copy.deepcopy(data) if data else None,
+            self._store, self._collection,
+        )
 
     def set(self, data, merge=False):
         self._store._apply_set(self._collection, self.id, data, merge)
@@ -94,6 +113,15 @@ class FakeDocumentRef:
 
     def delete(self):
         self._store._data.get(self._collection, {}).pop(self.id, None)
+
+    def collection(self, name):
+        """مجموعة فرعية تحت المستند ده -- زي doc.reference.collection(x).
+
+        بتتخزن داخليًا بمسار مركّب "parent/doc_id/child"، فمجموعات فرعية
+        تحت مستندات مختلفة مابتتخلطش. ده اللي بيخلي منطق تصدير
+        المجموعات الفرعية قابل للاختبار من غير Firestore حقيقي.
+        """
+        return FakeCollectionRef(self._store, f"{self._collection}/{self.id}/{name}")
 
 
 class FakeQuery:
@@ -156,7 +184,10 @@ class FakeQuery:
         # ده بيخلي الاختبارات تقدر تقيس تكلفة القراءة بالرقم، مش بالتخمين.
         self._store.reads += len(docs)
 
-        return iter([FakeDocumentSnapshot(d, copy.deepcopy(v)) for d, v in docs])
+        return iter([
+            FakeDocumentSnapshot(d, copy.deepcopy(v), self._store, self._collection)
+            for d, v in docs
+        ])
 
 
 class FakeCollectionRef(FakeQuery):
@@ -210,7 +241,11 @@ class FakeFirestore:
     # ---------- أدوات للاختبارات ----------
 
     def seed(self, collection_name, doc_id, data):
-        """يحط مستند جاهز قبل الاختبار."""
+        """يحط مستند جاهز قبل الاختبار.
+
+        collection_name ممكن يكون مسار مجموعة فرعية:
+        "projects/PRJ-1/invoices"
+        """
         self._data.setdefault(collection_name, {})[doc_id] = copy.deepcopy(data)
 
     def all_docs(self, collection_name):
