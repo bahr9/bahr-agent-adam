@@ -36,6 +36,7 @@ from datetime import datetime, timedelta
 from services import capabilities_registry
 from config import TOOL_HEALTH_CHECKS_COLLECTION, TOOL_FAILURES_LOG_COLLECTION
 from utils.time_utils import now_cairo
+from utils.logger import logger
 
 # ============================================================
 # عتبات Version 1 -- مؤقتة، موثّقة صراحة (معتمدة 2026-07-27)
@@ -45,17 +46,79 @@ MIN_SAMPLE_FOR_HEALTHY = 3          # >= 3 فحص ناجح في 24 ساعة قب
 DEGRADED_FAILURE_COUNT = 3          # >= 3 فشل إجمالي (أي مصدر) في 24 ساعة -> DEGRADED
 DEGRADED_REPEATED_CAUSE_COUNT = 2   # نفس error_type اتكرر مرتين -> DEGRADED حتى لو الإجمالي أقل
 
+# ============================================================
+# حدود القراءة (إصلاح نزيف الكوتا 2026-08-05)
+# ============================================================
+# سقف صارم لعدد المستندات في أي قراءة واحدة. نافذة 24 ساعة عادية فيها
+# 61 أداة × عدد مرات الـ heartbeat -- مئات قليلة. أي رقم قريب من السقف
+# ده معناه إن فيه حاجة غلط، مش استخدام طبيعي.
+MAX_RECORDS_PER_FETCH = 3000
 
-def _fetch_all(collection_name: str) -> list:
-    """قراءة كل السجلات في collection معيّن -- فلترة النافذة الزمنية بتحصل بعد كده في بايثون
-    (نفس نمط self_diagnosis.py -- تجنّب الحاجة لـ composite index في Firestore)."""
+# هامش قبل حد النافذة في الاستعلام الخام. التواريخ متخزنة كنص ISO بإزاحة
+# القاهرة، واللي بتتغير مع التوقيت الصيفي (+02:00 شتاءً / +03:00 صيفًا).
+# الهامش بيمنع أي فقد على حدود التحويل، والفلترة الدقيقة بتحصل في بايثون
+# بعدها بالظبط زي الأول -- يعني النتيجة النهائية مطابقة تمامًا.
+QUERY_MARGIN_HOURS = 3
+
+
+def _fetch_window(collection_name: str, timestamp_field: str, cutoff: datetime) -> list:
+    """يقرا سجلات النافذة الزمنية بس -- مش المجموعة كاملة.
+
+    ليه ده اتغيّر (أوديت 2026-08-05 -- حادثة إنتاج حقيقية):
+    الدالة القديمة `_fetch_all` كانت بتعمل `.stream()` على المجموعة **كاملة**
+    من غير أي فلتر ولا حد، وتفلتر النافذة في بايثون بعد كده. ومجموعة
+    tool_health_checks بتكبر للأبد -- الـ heartbeat بيكتب سجل لكل أداة من
+    الـ 61 أداة كل 6 ساعات، ومفيش أي job تنظيف ليها.
+
+    والدالة دي بتتنادى من:
+      - فحص الحالة الذاتية كل ساعة (self_state_active_check_job)
+      - كل نداء لأداة get_adam_self_state
+      - كل نداء لأداة get_tools_health_status
+      - الـ heartbeat نفسه
+
+    النتيجة المقيسة يوم 2026-08-05: **53 ألف قراءة مقابل 156 كتابة بس**،
+    والكوتا المجانية (50 ألف) خلصت، وآدم اتشل عن أي قراءة من Firestore.
+
+    الفلتر server-side هنا على **حقل واحد** -- ده بيستخدم الـ index التلقائي
+    بتاع Firestore ومش محتاج composite index (وده كان سبب تجنّبه أصلاً في
+    التعليق القديم).
+    """
     from services.firebase_service import firestore_db
     if firestore_db is None:
         return []
+
+    query_floor = (cutoff - timedelta(hours=QUERY_MARGIN_HOURS)).isoformat()
+
     try:
-        return [d.to_dict() for d in firestore_db.collection(collection_name).stream()]
-    except Exception:
-        return []
+        from google.cloud.firestore_v1.base_query import FieldFilter
+        docs = (
+            firestore_db.collection(collection_name)
+            .where(filter=FieldFilter(timestamp_field, ">=", query_floor))
+            .limit(MAX_RECORDS_PER_FETCH)
+            .stream()
+        )
+        records = [d.to_dict() for d in docs]
+        if len(records) >= MAX_RECORDS_PER_FETCH:
+            logger.warning(
+                f"⚠️ {collection_name}: وصلنا لسقف {MAX_RECORDS_PER_FETCH} سجل في نافذة "
+                f"{QUERY_MARGIN_HOURS + WINDOW_HOURS} ساعة -- يستاهل مراجعة"
+            )
+        return records
+    except Exception as e:
+        # الاستعلام المفلتر فشل (حقل ناقص في سجلات قديمة مثلاً).
+        # بنرجع لقراءة **محدودة بسقف**، مش المجموعة كاملة -- أسوأ حالة
+        # نتيجة أقل دقة، مش نزيف كوتا تاني.
+        logger.warning(
+            f"⚠️ استعلام النافذة فشل على {collection_name} ({timestamp_field}) -- "
+            f"رجعت لقراءة محدودة بـ {MAX_RECORDS_PER_FETCH}: {e}"
+        )
+        try:
+            return [
+                d.to_dict() for d in
+                firestore_db.collection(collection_name).limit(MAX_RECORDS_PER_FETCH).stream()
+            ]
+        except Exception:
+            return []
 
 
 def _within_window(iso_ts: str, cutoff: datetime) -> bool:
@@ -128,8 +191,9 @@ def evaluate_all_tools(window_hours: int = WINDOW_HOURS) -> dict:
     cutoff = now_cairo() - timedelta(hours=window_hours)
     registry = capabilities_registry.get_registry()
 
-    all_checks = _fetch_all(TOOL_HEALTH_CHECKS_COLLECTION)
-    all_failures = _fetch_all(TOOL_FAILURES_LOG_COLLECTION)
+    # قراءة النافذة بس -- الحقول الزمنية مختلفة بين المجموعتين
+    all_checks = _fetch_window(TOOL_HEALTH_CHECKS_COLLECTION, "checked_at", cutoff)
+    all_failures = _fetch_window(TOOL_FAILURES_LOG_COLLECTION, "failed_at", cutoff)
 
     checks_by_tool = {}
     for c in all_checks:

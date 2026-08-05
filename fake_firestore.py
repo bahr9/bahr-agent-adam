@@ -30,6 +30,36 @@ import uuid
 from contextlib import contextmanager
 
 
+_OPERATORS = {"==", "!=", ">", ">=", "<", "<="}
+
+
+def _matches(actual, op, expected):
+    """مقارنة قيمة مستند بشرط -- بتقلّد سلوك Firestore.
+
+    Firestore بيتجاهل المستندات اللي الحقل مش موجود فيها خالص في استعلامات
+    المدى (مش بيعتبرها أقل من أي قيمة) -- وده مهم، لأن السجلات القديمة اللي
+    مالهاش حقل زمني المفروض تتشال من نتيجة النافذة مش تدخل فيها.
+    """
+    if op == "==":
+        return actual == expected
+    if op == "!=":
+        return actual != expected
+    if actual is None:
+        return False
+    try:
+        if op == ">":
+            return actual > expected
+        if op == ">=":
+            return actual >= expected
+        if op == "<":
+            return actual < expected
+        if op == "<=":
+            return actual <= expected
+    except TypeError:
+        return False        # أنواع مش قابلة للمقارنة -- زي Firestore، مابتتطابقش
+    return False
+
+
 class FakeDocumentSnapshot:
     """لقطة مستند -- زي DocumentSnapshot بتاعة Firestore."""
 
@@ -53,6 +83,7 @@ class FakeDocumentRef:
 
     def get(self):
         data = self._store._data.get(self._collection, {}).get(self.id)
+        self._store.reads += 1
         return FakeDocumentSnapshot(self.id, copy.deepcopy(data) if data else None)
 
     def set(self, data, merge=False):
@@ -89,9 +120,11 @@ class FakeQuery:
             field = filter.field_path
             op = filter.op_string
             value = filter.value
-        if op != "==":
-            raise NotImplementedError(f"الـ fake بيدعم '==' بس، مش '{op}'")
-        return self._clone(filters=self._filters + [(field, value)])
+        if op not in _OPERATORS:
+            raise NotImplementedError(
+                f"الـ fake مابيدعمش '{op}' -- المدعوم: {', '.join(sorted(_OPERATORS))}"
+            )
+        return self._clone(filters=self._filters + [(field, op, value)])
 
     def order_by(self, field, direction="ASCENDING"):
         return self._clone(order=(field, direction))
@@ -103,7 +136,7 @@ class FakeQuery:
         docs = [
             (doc_id, data)
             for doc_id, data in self._store._data.get(self._collection, {}).items()
-            if all(data.get(field) == value for field, value in self._filters)
+            if all(_matches(data.get(field), op, value) for field, op, value in self._filters)
         ]
 
         if self._order:
@@ -118,6 +151,10 @@ class FakeQuery:
 
         if self._limit is not None:
             docs = docs[: self._limit]
+
+        # عدّاد القراءات -- Firestore بيحاسب على كل مستند بيترجع فعلاً.
+        # ده بيخلي الاختبارات تقدر تقيس تكلفة القراءة بالرقم، مش بالتخمين.
+        self._store.reads += len(docs)
 
         return iter([FakeDocumentSnapshot(d, copy.deepcopy(v)) for d, v in docs])
 
@@ -157,6 +194,10 @@ class FakeFirestore:
 
     def __init__(self):
         self._data = {}
+        self.reads = 0          # كام مستند اتقرا فعلاً -- ده اللي Firestore بيحاسب عليه
+
+    def reset_reads(self):
+        self.reads = 0
 
     # ---------- واجهة Firestore ----------
 
