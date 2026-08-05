@@ -104,8 +104,12 @@ def check_project_status_alerts(send_message_fn) -> list:
                     "last_alert_kind": alert_kind,
                 })
             except Exception as e:
-                logger.error(f"❌ فشل إرسال تنبيه حالة المشروع {project_id} (مش حرج): {e}")
-                _set_alert_state(project_id, {"last_status": current_status})
+                logger.error(f"❌ فشل إرسال تنبيه حالة المشروع {project_id}: {e}")
+                # ممنوع نكتب الحالة هنا (أوديت 2026-08-05). الكتابة كانت
+                # بتخلي الدورة الجاية تشوف prev == current يعني "مفيش انتقال"،
+                # فالتنبيه كان بيضيع **للأبد** بسبب فشل شبكة لحظي واحد -- وده
+                # حصل فعلاً في لوج 2026-08-04. من غير كتابة، الانتقال يفضل
+                # مكتشَف والتنبيه يتعاد الدورة الجاية.
         # لو should_alert=False -- عمدًا مفيش أي كتابة هنا، نفس سبب
         # tool_health_alerts.py: last_status لازم يفضل يمثّل "آخر حالة اتبعت
         # عنها تنبيه فعليًا" بس، عشان الـcooldown ميبلعش تغيّرات حقيقية.

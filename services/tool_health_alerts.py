@@ -120,8 +120,12 @@ def maybe_alert(evaluations: dict, send_message_fn) -> list:
                     "last_alert_kind": alert_kind,
                 })
             except Exception as e:
-                logger.error(f"❌ فشل إرسال تنبيه صحة الأداة {tool_name} (مش حرج): {e}")
-                _set_alert_state(tool_name, {"last_status": current_status, "last_cause": current_cause})
+                logger.error(f"❌ فشل إرسال تنبيه صحة الأداة {tool_name}: {e}")
+                # ممنوع نكتب الحالة هنا (أوديت 2026-08-05) -- نفس منطق الـ
+                # cooldown اللي مكتوب تحت بالظبط: المخزَّن لازم يفضل يمثّل "آخر
+                # حالة اتبعت عنها تنبيه **فعليًا**". الكتابة عند فشل الإرسال
+                # كانت بتبلع الانتقال نهائيًا فالأداة تفضل DEGRADED من غير ما
+                # حد يعرف.
         # لو should_alert=False (سواء مفيش انتقال أصلًا أو الـcooldown منع الإرسال) --
         # **عمدًا مفيش أي كتابة هنا**. last_status/last_cause المخزّنين لازم يفضلوا
         # يمثّلوا "آخر حالة/سبب اتبعت عنه تنبيه فعليًا" بس -- لو حدّثناهم هنا كمان،

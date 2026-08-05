@@ -201,6 +201,44 @@ def get_event(event_id: str) -> Optional[dict]:
         return None
 
 
+def _query_latest_events(field: str, value: str, limit: int) -> list:
+    """أحدث `limit` حدث مطابق للفلتر، مرجّعين مرتبين تصاعديًا (الأقدم أولاً).
+
+    ليه ده مهم (أوديت 2026-08-05): من غير order_by، Firestore بيرجع
+    المستندات بترتيب الـ document id -- وإحنا بنستخدم UUID، يعني الترتيب
+    عشوائي فعليًا. الـ limit كان بيقص عينة عشوائية **قبل** ترتيب بايثون،
+    فـ "آخر حدث" مكانش آخر حدث. ده كان بيكسر تصنيف تعارض الأقساط وتقرير
+    دورة حياة الأدوات وعدّادات التشخيص كلها بصمت.
+
+    الاستعلام المرتّب محتاج composite index على (الحقل + occurred_at). لو
+    الـ index لسه متعملش، بنرجع للاستعلام القديم مع تحذير واضح -- أحسن من
+    إننا نرمي ونرجع فاضي (اللي كان هيفتح حارس التعارض).
+    """
+    from services.firebase_service import firestore_db
+    from google.cloud.firestore_v1.base_query import FieldFilter
+    from google.cloud.firestore_v1 import Query
+
+    base = (
+        firestore_db.collection(EVENTS_COLLECTION)
+        .where(filter=FieldFilter(field, "==", value))
+    )
+
+    try:
+        events = [
+            d.to_dict() for d in
+            base.order_by("occurred_at", direction=Query.DESCENDING).limit(limit).stream()
+        ]
+    except Exception as e:
+        logger.warning(
+            f"⚠️ استعلام مرتّب فشل على {field} (غالبًا composite index ناقص "
+            f"على {field} + occurred_at) -- رجعت لاستعلام غير مرتّب: {e}"
+        )
+        events = [d.to_dict() for d in base.limit(limit).stream()]
+
+    events.sort(key=lambda e: e.get("occurred_at", ""))
+    return events
+
+
 def get_events_for_entity(entity_type: str, entity_id: str, limit: int = 200) -> list:
     """
     كل الأحداث المسجلة لـ entity معيّن، مرتبة زمنيًا (الأقدم أولاً).
@@ -211,19 +249,9 @@ def get_events_for_entity(entity_type: str, entity_id: str, limit: int = 200) ->
     if firestore_db is None:
         return []
 
-    from google.cloud.firestore_v1.base_query import FieldFilter
-
     entity_key = f"{entity_type}:{entity_id}"
     try:
-        docs = (
-            firestore_db.collection(EVENTS_COLLECTION)
-            .where(filter=FieldFilter("entity_key", "==", entity_key))
-            .limit(limit)
-            .stream()
-        )
-        events = [d.to_dict() for d in docs]
-        events.sort(key=lambda e: e.get("occurred_at", ""))
-        return events
+        return _query_latest_events("entity_key", entity_key, limit)
     except Exception as e:
         logger.error(f"❌ خطأ في جلب أحداث {entity_key}: {e}")
         return []
@@ -241,19 +269,9 @@ def get_events_by_type_and_attribute(entity_type: str, attribute: str, limit: in
     if firestore_db is None:
         return []
 
-    from google.cloud.firestore_v1.base_query import FieldFilter
-
     key = f"{entity_type}:{attribute}"
     try:
-        docs = (
-            firestore_db.collection(EVENTS_COLLECTION)
-            .where(filter=FieldFilter("type_attribute_key", "==", key))
-            .limit(limit)
-            .stream()
-        )
-        events = [d.to_dict() for d in docs]
-        events.sort(key=lambda e: e.get("occurred_at", ""))
-        return events
+        return _query_latest_events("type_attribute_key", key, limit)
     except Exception as e:
         logger.error(f"❌ خطأ في جلب أحداث {key}: {e}")
         return []
