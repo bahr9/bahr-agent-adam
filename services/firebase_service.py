@@ -1378,3 +1378,216 @@ def list_memory_notes(user_id: str, limit: int = 50) -> list:
     except Exception as e:
         logger.error(f"❌ خطأ في جلب الملاحظات: {e}")
         return []
+
+
+# ============================================================
+# 🐘 بلوك الأولوية لـ Supabase (قرار أحمد الصريح -- 2026-08-05 مساءً)
+# ============================================================
+# «من دلوقتي حالًا Supabase -- ميعطلنيش أبدًا الباقة بتاعت Firebase.»
+#
+# حادثة اليوم: كوتا قراءة Firestore خلصت (53 ألف قراءة) وآدم اتشل عن أي
+# قراءة لباقي اليوم. القرار: القراية من Supabase الأول، وFirestore بقى
+# شبكة أمان بس.
+#
+# الطريقة: **إعادة ربط الأسماء** في آخر الملف. التعريفات الأصلية فوق
+# مالمسناهاش حرفيًا -- محفوظة بأسماء _fs_* وبتشتغل كـ fallback. أي
+# مستورد (`from services.firebase_service import X`) بياخد النسخة
+# الجديدة تلقائيًا لأن الاستيراد بيحصل بعد تنفيذ الملف كله.
+#
+# العقد:
+#   - القراءة: Supabase الأول؛ None منه معناها "مش قادر أجاوب" فبنرجع
+#     للمسار القديم (اللي جواه أصلاً fallback الكاش المحلي).
+#   - الكتابة: Supabase + mirror لـ Firestore (best-effort). كتابات
+#     Firestore مش متأثرة بالكوتا (0.8% استهلاك) والـ mirror بيخلي
+#     النسخ الاحتياطي الليلي كامل ويسيب باب رجوع مفتوح.
+#   - لو Supabase مش متهيأ أصلاً (client=None): السلوك مطابق 100%
+#     للقديم -- وده اللي بيخلي كل الاختبارات الحالية تعدي زي ما هي.
+
+from services import supabase_store as _sb
+
+# ---------- الذاكرة الدائمة ----------
+_fs_get_memory_summary = get_memory_summary
+_fs_save_memory_summary = save_memory_summary
+
+
+def get_memory_summary(user_id):
+    result = _sb.get_memory_summary(user_id)
+    if result is not None:
+        return result
+    return _fs_get_memory_summary(user_id)
+
+
+def save_memory_summary(user_id, summary_text):
+    sb_ok = _sb.save_memory_summary(user_id, summary_text)
+    try:
+        fs_ok = _fs_save_memory_summary(user_id, summary_text)
+    except Exception:
+        fs_ok = False
+    return sb_ok or fs_ok
+
+
+# ---------- الملاحظات ----------
+_fs_save_memory_note = save_memory_note
+_fs_list_memory_notes = list_memory_notes
+_fs_search_memory_notes = search_memory_notes
+_fs_update_memory_note = update_memory_note
+_fs_get_upcoming_deadlines = get_upcoming_deadlines
+
+
+def save_memory_note(user_id, text, category="", related_to=""):
+    # النص ممكن يوصل والموعد مدفون جواه (مسار save_memory_note_with_deadline
+    # القديم) -- بنطلعه لعموده الحقيقي قبل التخزين
+    from migration_transform import extract_deadline, TransformError
+    try:
+        clean_text, deadline = extract_deadline(text)
+    except TransformError:
+        clean_text, deadline = text, None
+
+    sb_ok = _sb.save_memory_note(user_id, clean_text, category, related_to, deadline)
+    try:
+        fs_ok = _fs_save_memory_note(user_id, text, category, related_to)
+    except Exception:
+        fs_ok = False
+    return sb_ok or fs_ok
+
+
+def list_memory_notes(user_id, limit=50):
+    result = _sb.list_memory_notes(user_id, limit)
+    if result is not None:
+        return result
+    return _fs_list_memory_notes(user_id, limit)
+
+
+def search_memory_notes(user_id, keyword, limit=10):
+    result = _sb.search_memory_notes(user_id, keyword, limit)
+    if result is not None:
+        return result
+    return _fs_search_memory_notes(user_id, keyword, limit)
+
+
+def update_memory_note(note_id, new_text=None, status=None):
+    sb_ok = _sb.update_memory_note(note_id, new_text, status)
+    try:
+        fs_ok = _fs_update_memory_note(note_id, new_text, status)
+    except Exception:
+        fs_ok = False
+    return sb_ok or fs_ok
+
+
+def get_upcoming_deadlines(user_id, days_ahead=30):
+    result = _sb.get_upcoming_deadlines(user_id, days_ahead)
+    if result is not None:
+        return result
+    return _fs_get_upcoming_deadlines(user_id, days_ahead)
+
+
+# ---------- المحادثات ----------
+_fs_save_conversation = save_conversation
+_fs_get_conversation_history = get_conversation_history
+
+
+def save_conversation(user_id, user_message, assistant_response):
+    _sb.save_conversation(user_id, user_message, assistant_response)
+    # المسار القديم بيكتب كمان الكاش المحلي -- بننده عليه دايمًا
+    try:
+        return _fs_save_conversation(user_id, user_message, assistant_response)
+    except Exception as e:
+        logger.warning(f"⚠️ mirror المحادثة لـ Firestore فشل (مش حرج): {str(e)[:60]}")
+        return None
+
+
+def get_conversation_history(user_id, limit=50):
+    result = _sb.get_conversation_history(user_id, limit)
+    if result is not None:
+        return result
+    return _fs_get_conversation_history(user_id, limit)
+
+
+# ---------- الـ Human Model ----------
+_fs_get_human_model = get_human_model
+_fs_update_human_model = update_human_model
+_fs_update_human_model_bulk = update_human_model_bulk
+
+
+def get_human_model():
+    result = _sb.get_human_model()
+    if result is not None:
+        return result
+    return _fs_get_human_model()
+
+
+def update_human_model(key, value):
+    sb_ok = _sb.update_human_model(key, value)
+    try:
+        fs_ok = _fs_update_human_model(key, value)
+    except Exception:
+        fs_ok = False
+    return sb_ok or fs_ok
+
+
+def update_human_model_bulk(data):
+    sb_ok = _sb.update_human_model_bulk(data)
+    try:
+        fs_ok = _fs_update_human_model_bulk(data)
+    except Exception:
+        fs_ok = False
+    return sb_ok or fs_ok
+
+
+# ---------- الجراف ----------
+_fs_graph_add_node = graph_add_node
+_fs_graph_edit_node = graph_edit_node
+_fs_graph_delete_node = graph_delete_node
+_fs_graph_list_nodes = graph_list_nodes
+_fs_graph_get_node = graph_get_node
+
+
+def graph_add_node(node_id, label, category, facts_list, links_list=None):
+    sb_ok = _sb.graph_add_node(node_id, label, category, facts_list, links_list)
+    try:
+        fs_ok, fs_msg = _fs_graph_add_node(node_id, label, category, facts_list, links_list)
+    except Exception as e:
+        fs_ok, fs_msg = False, str(e)
+    if sb_ok or fs_ok:
+        return True, "تم"
+    return False, fs_msg
+
+
+def graph_edit_node(node_id, new_fact):
+    sb_result = _sb.graph_edit_node(node_id, new_fact)
+    try:
+        fs_ok, fs_msg = _fs_graph_edit_node(node_id, new_fact)
+    except Exception as e:
+        fs_ok, fs_msg = False, str(e)
+    if sb_result is True or fs_ok:
+        return True, "تم"
+    if sb_result is False:
+        return False, "ما لقيتش العنصر"
+    return False, fs_msg
+
+
+def graph_delete_node(node_id):
+    sb_result = _sb.graph_delete_node(node_id)
+    try:
+        fs_ok, fs_msg = _fs_graph_delete_node(node_id)
+    except Exception as e:
+        fs_ok, fs_msg = False, str(e)
+    if sb_result is True or fs_ok:
+        return True, "تم"
+    if sb_result is False:
+        return False, "ما لقيتش العنصر"
+    return False, fs_msg
+
+
+def graph_list_nodes():
+    result = _sb.graph_list_nodes()
+    if result is not None:
+        return result
+    return _fs_graph_list_nodes()
+
+
+def graph_get_node(node_id):
+    result = _sb.graph_get_node(node_id)
+    if result is not None:
+        return result
+    return _fs_graph_get_node(node_id)

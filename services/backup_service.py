@@ -104,6 +104,12 @@ SUBCOLLECTIONS = {
 # القاعدة لأي جدول بيتهاجر بعد كده: ضيفه هنا **قبل** ما تشيل الـ dual-write.
 SUPABASE_TABLES = [
     "recurring_reminders",
+    # دماغ آدم اتنقل لـ Supabase (قرار 2026-08-05 مساءً) -- المصدر بقى هنا
+    "user_memory",
+    "memory_notes",
+    "conversation_messages",
+    "human_model",
+    "bahr_graph_nodes",
 ]
 
 
