@@ -1571,9 +1571,20 @@ def _execute_tool(tool_name, tool_input, chat_id):
                         try:
                             from datetime import datetime
                             followup_date = datetime.fromisoformat(nfd)
-                            if 0 <= (followup_date - now).days <= days:
+                            # المقارنة بالتاريخ مش بالـ datetime (أوديت 2026-08-05):
+                            # fromisoformat على "YYYY-MM-DD" بيطلع naive، و now_cairo()
+                            # بيطلع aware -- الطرح المباشر كان بيرمي TypeError على كل
+                            # سجل، والـ `except: pass` كان بيبلعه، فالأداة كانت بترد
+                            # "مفيش متابعات" مهما كان عدد العملاء المستحقين.
+                            delta_days = (followup_date.date() - now.date()).days
+                            if 0 <= delta_days <= days:
                                 upcoming.append(d)
-                        except: pass
+                        except Exception as parse_error:
+                            logger.warning(
+                                "⚠️ تاريخ متابعة مش مقروء لـ "
+                                + str(d.get("name", "عميل بدون اسم"))
+                                + ": '" + str(nfd) + "' -- " + str(parse_error)
+                            )
                 if not upcoming:
                     result = "مفيش متابعات خلال " + str(days) + " أيام"
                 else:
@@ -1852,7 +1863,12 @@ def ask_claude_agentic(user_message, chat_id, conversation_history=None, memory_
         # بنحقن تعليمة محددة تجبر الموديل يسأل عن الناقص بس -- مش يقول
         # "مش متاحة".
         # ============================================================
-        real_tool_names = {t["name"] for t in TOOLS}
+        # أدوات السيرفر (زي web_search) مستثناة (أوديت 2026-08-05): مالهاش
+        # input_schema، فـ required_args كانت بتطلع [] والكود كان بيفرضها عبر
+        # tool_choice -- وده مش مدعوم للأدوات دي وبيرجّع 400 للرسالة كلها.
+        # يعني "استخدم web_search وشوف الأسعار" -- بالظبط الحالة اللي الفيتشر
+        # اتعمل عشانها -- كانت بترد "❌ حصلت مشكلة".
+        real_tool_names = {t["name"] for t in TOOLS if "input_schema" in t}
         explicit_tool_request = detect_explicit_tool_request(user_message, real_tool_names)
 
         forced_tool_choice = None
@@ -1889,7 +1905,10 @@ def ask_claude_agentic(user_message, chat_id, conversation_history=None, memory_
 
             create_kwargs = dict(
                 model=CLAUDE_MODEL,
-                max_tokens=2048,
+                # 4096 مش 2048 (أوديت 2026-08-05): الـ system prompt نفسه
+                # بيطلب لصق تقارير كاملة حرفيًا (الحالة الذاتية، صحة الأدوات،
+                # قاعدة الأسعار) -- 2048 كانت ضيقة عليها وبتقطع الرد.
+                max_tokens=4096,
                 thinking={"type": "disabled"},
                 system=system_blocks,
                 tools=TOOLS,
@@ -1900,17 +1919,52 @@ def ask_claude_agentic(user_message, chat_id, conversation_history=None, memory_
 
             response = claude_client.messages.create(**create_kwargs)
 
-            logger.info(f"🧭 stop_reason: {response.stop_reason}")
+            stop_reason = response.stop_reason
+            logger.info(f"🧭 stop_reason: {stop_reason}")
 
             selected_tool_names = [c.name for c in response.content if c.type == "tool_use"]
-            record_model_selection(response.stop_reason, selected_tool_names)
+            record_model_selection(stop_reason, selected_tool_names)
 
-            if response.stop_reason != "tool_use":
+            # ------------------------------------------------------------
+            # معالجة أسباب التوقف (أوديت 2026-08-05).
+            # قبل كده أي سبب مش "tool_use" كان بيترجع كإجابة نهائية -- يعني
+            # بحث وِب وقف في النص، أو رد اتقطع عند حد التوكنز، أو رفض، كلهم
+            # كانوا بيوصلوا لأحمد كأنهم رد كامل ومقصود.
+            # ------------------------------------------------------------
+
+            # أداة سيرفر (web_search) وقفت عشان تكمّل في طلب تاني
+            if stop_reason == "pause_turn":
+                logger.info("⏸️ pause_turn -- بكمّل نفس الدور")
+                messages.append({"role": "assistant", "content": response.content})
+                continue
+
+            if stop_reason == "refusal":
+                logger.warning("⚠️ الموديل رفض يكمّل الرد")
+                return "معلش، مقدرتش أكمّل الرد ده. جرّب تصيغ الطلب بشكل تاني."
+
+            if stop_reason != "tool_use":
                 reply = ""
                 for content in response.content:
                     if content.type == "text":
                         reply += content.text
-                return reply.strip() if reply.strip() else "تمام."
+                reply = reply.strip()
+
+                if stop_reason == "max_tokens":
+                    logger.warning("⚠️ الرد اتقطع عند حد التوكنز")
+                    prefix = reply + "\n\n" if reply else ""
+                    if selected_tool_names:
+                        # الموديل كان بيكتب استدعاء أداة والتوكنز خلصت في نصه.
+                        # الأداة **متنفذتش** -- ممنوع نسكت وكأنها اتعملت.
+                        logger.warning(
+                            "⚠️ استدعاء أداة اتقطع ومتنفذش: " + ", ".join(selected_tool_names)
+                        )
+                        return prefix + (
+                            "⚠️ الرد اتقطع قبل ما أنفّذ الخطوة الأخيرة -- يعني معملتهاش فعليًا. "
+                            "ابعتلي الطلب تاني مقسّم لأجزاء أصغر."
+                        )
+                    return prefix + "⚠️ الرد اتقطع لأنه طويل -- قوللي أكمّل."
+
+                return reply if reply else "تمام."
             
             # الموديل طلب يستخدم أداة (أو أكتر) — ننفذها ونرجعله بالنتيجة
             messages.append({"role": "assistant", "content": response.content})
