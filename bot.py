@@ -46,6 +46,75 @@ def is_network_error(error):
     return any(mark in str(error).lower() for mark in _NETWORK_ERROR_MARKS)
 
 
+# ============================================================
+# ✂️ حد الرسالة في تليجرام (إصلاح 2026-08-05)
+# ============================================================
+
+TELEGRAM_MAX_MESSAGE = 4096
+
+
+def split_message(text, limit=TELEGRAM_MAX_MESSAGE):
+    """يقسّم النص لقطع تحت حد تليجرام، وبيفضّل القطع عند فاصل طبيعي.
+
+    الترتيب: فاصل فقرة، بعدين سطر، بعدين مسافة، وآخر حاجة قطع خام.
+    القطع بيتم بس لو الفاصل في النص التاني من النافذة -- عشان مانطلعش
+    قطعة صغيرة جدًا وراها قطعة ضخمة.
+    """
+    if not text:
+        return []
+
+    text = str(text)
+    if len(text) <= limit:
+        return [text]
+
+    parts = []
+    remaining = text
+
+    while len(remaining) > limit:
+        window = remaining[:limit]
+        cut = 0
+        for separator in ("\n\n", "\n", " "):
+            found = window.rfind(separator)
+            if found > limit // 2:
+                cut = found + len(separator)
+                break
+        if cut <= 0:
+            cut = limit
+
+        chunk = remaining[:cut].rstrip()
+        if chunk:
+            parts.append(chunk)
+        remaining = remaining[cut:].lstrip()
+
+    if remaining:
+        parts.append(remaining)
+
+    return parts
+
+
+def _with_auto_split(send_func):
+    """يلفّ دالة إرسال عشان تقسّم أي نص أطول من حد تليجرام تلقائيًا."""
+    def wrapped(target, text, *args, **kwargs):
+        chunks = split_message(text)
+        if len(chunks) <= 1:
+            return send_func(target, text, *args, **kwargs)
+
+        logger.info("الرسالة " + str(len(text)) + " حرف -- اتقسمت لـ " + str(len(chunks)) + " أجزاء")
+        result = None
+        for chunk in chunks:
+            result = send_func(target, chunk, *args, **kwargs)
+        return result
+    return wrapped
+
+
+# كل نقاط الإرسال في المشروع بتعدّي من الدالتين دول، فالتقسيم بيتطبق مرة
+# واحدة هنا بدل ما نفتكره في ٣٠ مكان. قبل كده تقرير DXF فيه ١٠٠+ قياس كان
+# بيرمي ApiTelegramException، والمعالج بيمسكه ويقول للمستخدم "الملف متشفر
+# أو تالف" -- والملف سليم تمامًا.
+bot.send_message = _with_auto_split(bot.send_message)
+bot.reply_to = _with_auto_split(bot.reply_to)
+
+
 def safe_typing(chat_id):
     """مؤشر 'بيكتب' — تجميلي بحت، وممنوع يوقّع الرسالة.
 
