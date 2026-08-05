@@ -29,13 +29,63 @@ GITHUB_TOKEN = os.getenv("GITHUB_TOKEN")
 GITHUB_REPO  = os.getenv("GITHUB_REPO")   # bahr9/adam-backups
 GITHUB_API   = "https://api.github.com"
 
-# أسماء الـ Collections المطلوب حمايتها
+# أسماء الـ Collections المطلوب حمايتها.
+#
+# توسعة أوديت 2026-08-05: الليستة القديمة كانت 5 collections بس، ومكانش
+# فيها ولا واحدة من البيانات المالية -- لا الأقساط ولا المصاريف ولا مشاريع
+# Bahr OS ولا سجل الأحداث (adam_events) اللي نظام Self-State كله قايم عليه.
+# يعني أي فقد من ناحية Firestore مكانش ليه أي مسار استرجاع.
+#
+# المستبعَد عن قصد: بيانات القياس والتشخيص اللي بتتولد تلقائي وبتكبر بسرعة
+# (tool_health_checks, tool_failures_log, alert_state, state_snapshots)
+# -- دي معلومات تشغيلية بتتبني من تاني، مش بيانات شغل.
 COLLECTIONS = [
+    # ذاكرة آدم والمحادثات
     "user_memory",
     "memory_notes",
     "conversations",
     "adam_human_model",
-    "bahr_graph_nodes"
+    "bahr_graph_nodes",
+
+    # بيانات مالية -- الأهم على الإطلاق
+    "loans",
+    "expenses",
+    "decision_ledger",
+    "price_base",
+
+    # سجل الأحداث الثابت (Event Store)
+    "adam_events",
+
+    # مشاريع وعملاء
+    "projects",
+    "project_files",
+    "site_projects",
+    "bahrSites",
+    "clients",
+    "client_followups",
+
+    # مهام وتذكيرات
+    "reminders",
+    "recurring_reminders",
+    "office_tasks",
+    "personal_tasks",
+    "ideas",
+
+    # عين الخبير
+    "eye_expert_config",
+    "ain_al_khabeer_logs",
+]
+
+# جداول Supabase المطلوب حمايتها (Pilot: Firestore -> Supabase).
+#
+# مهم: مصدر الحقيقة للتذكيرات المتكررة بقى Supabase -- نسخة Firestore مجرد
+# mirror للفترة التجريبية. طول ما الـ dual-write شغال الاتنين متطابقين، لكن
+# أول ما الـ pilot يخلص والـ mirror يتشال، النسخ من Firestore هيفضل يقول
+# "تم بنجاح ✅" وهو بياخد داتا بايتة. فبناخد الأصل من Supabase من دلوقتي.
+#
+# القاعدة لأي جدول بيتهاجر بعد كده: ضيفه هنا **قبل** ما تشيل الـ dual-write.
+SUPABASE_TABLES = [
+    "recurring_reminders",
 ]
 
 
@@ -43,17 +93,25 @@ COLLECTIONS = [
 # Firestore Export
 # ============================================================
 
-def export_collection(collection_name: str) -> list:
+def export_collection(collection_name: str):
     """
     يصدّر collection كاملة من Firestore كـ list of dicts.
     بيستخدم firestore_db الـ global من firebase_service.
+
+    بيرجع list عند النجاح (ممكن تكون فاضية لو الـ collection نفسها فاضية)،
+    أو None لو الاتصال أو القراءة فشلت.
+
+    التفرقة دي مهمة (أوديت 2026-08-05): قبل كده الحالتين كانوا بيرجعوا []،
+    فلو Firebase وقع الـ backup كان بيرفع ملف فاضي **فوق النسخة الكويسة**
+    ويقول "تم بنجاح ✅" -- شبكة الأمان كانت بتفشل بالظبط في اللحظة اللي
+    محتاجينها فيها.
     """
     try:
         from services.firebase_service import firestore_db
 
         if firestore_db is None:
             logger.error(f"❌ Firestore مش متصل — تعذّر تصدير {collection_name}")
-            return []
+            return None
 
         docs = firestore_db.collection(collection_name).stream()
         data = []
@@ -67,7 +125,31 @@ def export_collection(collection_name: str) -> list:
 
     except Exception as e:
         logger.error(f"❌ Export failed ({collection_name}): {e}")
-        return []
+        return None
+
+
+def export_supabase_table(table_name: str):
+    """
+    يصدّر جدول كامل من Supabase كـ list of dicts.
+
+    نفس عقد export_collection: list عند النجاح، None عند الفشل.
+    """
+    try:
+        from services import supabase_service
+
+        if supabase_service.supabase_client is None:
+            logger.error(f"❌ Supabase مش متصل — تعذّر تصدير {table_name}")
+            return None
+
+        resp = supabase_service.supabase_client.table(table_name).select("*").execute()
+        data = resp.data or []
+
+        logger.info(f"📦 Exported [Supabase] {table_name}: {len(data)} rows")
+        return data
+
+    except Exception as e:
+        logger.error(f"❌ Export failed [Supabase] ({table_name}): {e}")
+        return None
 
 
 # ============================================================
@@ -150,10 +232,32 @@ def run_backup(bot=None, chat_id=None) -> dict:
     time_str   = now.strftime("%H:%M")
     results    = {}
 
-    for collection in COLLECTIONS:
+    # كل وحدة نسخ = (اسم للعرض، مسار الملف، دالة التصدير)
+    jobs = [
+        (name, f"backups/{date_str}/{name}.json", lambda n=name: export_collection(n))
+        for name in COLLECTIONS
+    ] + [
+        (f"supabase:{table}",
+         f"backups/{date_str}/supabase/{table}.json",
+         lambda t=table: export_supabase_table(t))
+        for table in SUPABASE_TABLES
+    ]
 
-        # 1. Export من Firestore
-        data = export_collection(collection)
+    for label, filename, export in jobs:
+
+        # 1. Export من المصدر
+        data = export()
+
+        # فشل قراءة = وقفة. ممنوع نرفع ملف فاضي فوق نسخة كويسة موجودة.
+        if data is None:
+            logger.error(f"⛔ {label}: التصدير فشل — مش هنرفع حاجة فوق النسخة القديمة")
+            results[label] = {
+                "success": False,
+                "count":   0,
+                "file":    None,
+                "error":   "export failed",
+            }
+            continue
 
         # 2. تحويل لـ JSON
         content = json.dumps(
@@ -163,11 +267,10 @@ def run_backup(bot=None, chat_id=None) -> dict:
             default=str          # يتعامل مع Timestamps وأي object غير قابل للـ serialize
         )
 
-        # 3. رفع على GitHub — المسار: backups/YYYY-MM-DD/collection.json
-        filename = f"backups/{date_str}/{collection}.json"
-        success  = upload_to_github(filename, content)
+        # 3. رفع على GitHub
+        success = upload_to_github(filename, content)
 
-        results[collection] = {
+        results[label] = {
             "success": success,
             "count":   len(data),
             "file":    filename
@@ -178,7 +281,7 @@ def run_backup(bot=None, chat_id=None) -> dict:
     # ============================================================
 
     success_count = sum(1 for r in results.values() if r["success"])
-    total         = len(COLLECTIONS)
+    total         = len(results)
 
     if bot and chat_id:
         try:
