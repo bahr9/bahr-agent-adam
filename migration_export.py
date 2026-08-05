@@ -87,7 +87,35 @@ COLLECTIONS = [
     "office_tasks",
     "site_projects",
     "recurring_tasks",
+
+    # مجموعات فرونت Bahr OS -- آدم مش عارفها خالص (اكتشاف 2026-08-05)
+    "users",           # users/{uid}.projects[] -- فهرس عضوية المستخدم في المشاريع
+    "notifications",   # طلبات الشراء -- بتتكتب ومحدش بيقراها
 ]
+
+
+# ============================================================
+# المجموعات الفرعية (subcollections)
+# ============================================================
+# 🔴 اكتشاف حرج (2026-08-05): تحليل فرونت Bahr OS كشف إن فيه تلات
+# مجموعات فرعية تحت كل مستند مشروع، وآدم مش عارفها خالص:
+#
+#     projects/{code}/invoices/{phase}
+#     projects/{code}/siteReports/{YYYY-MM-DD}
+#     projects/{code}/purchases/{autoId}
+#
+# دي **كل فاتورة وكل تقرير موقع وكل أمر شراء في الشغل**.
+#
+# و`.stream()` على مجموعة أب **مابيرجّعش** المجموعات الفرعية -- فالنسخة
+# من غير الجزء ده كانت هتبان مكتملة وهي ناقصة أخطر البيانات. ولو مشينا
+# على Firestore واعتمدنا عليها، الاكتشاف كان هيحصل بعد فوات الأوان.
+#
+# نفس الثغرة موجودة في services/backup_service.py -- النسخ الاحتياطي
+# اليومي كمان مابياخدش المجموعات الفرعية دي.
+
+SUBCOLLECTIONS = {
+    "projects": ["invoices", "siteReports", "purchases"],
+}
 
 EXPORT_ROOT = "exports"
 MANIFEST_NAME = "manifest.json"
@@ -137,6 +165,44 @@ def save_manifest(export_dir, manifest):
 # التصدير
 # ============================================================
 
+def _write_json(export_dir, name, docs):
+    """كتابة ذرية: ملف مؤقت ثم إعادة تسمية -- انقطاع في النص مايسيبش
+    ملف نص نص مكان ملف كويس."""
+    payload = json.dumps(docs, ensure_ascii=False, indent=2, default=str)
+    final_path = os.path.join(export_dir, f"{name}.json")
+    tmp_path = final_path + ".tmp"
+    with open(tmp_path, "w", encoding="utf-8") as f:
+        f.write(payload)
+    os.replace(tmp_path, final_path)
+    return len(payload.encode("utf-8"))
+
+
+def export_subcollection(firestore_db, parent, child, export_dir):
+    """يصدّر مجموعة فرعية عبر **كل** مستندات الأب في ملف واحد.
+
+    كل سجل بياخد `_parent_id` عشان نعرف تحت أنهي مشروع كان.
+    """
+    docs = []
+    for parent_doc in firestore_db.collection(parent).stream():
+        for snapshot in parent_doc.reference.collection(child).stream():
+            record = snapshot.to_dict() or {}
+            record["_doc_id"] = snapshot.id
+            record["_parent_id"] = parent_doc.id
+            record["_parent_collection"] = parent
+            docs.append(record)
+
+    name = f"{parent}__{child}"
+    size = _write_json(export_dir, name, docs)
+    return {
+        "status": "success",
+        "documents": len(docs),
+        "bytes": size,
+        "file": f"{name}.json",
+        "kind": "subcollection",
+        "exported_at": utc_stamp(),
+    }
+
+
 def export_collection(firestore_db, name, export_dir):
     """يصدّر مجموعة واحدة.
 
@@ -169,6 +235,19 @@ def export_collection(firestore_db, name, export_dir):
     }
 
 
+def export_units():
+    """كل وحدات التصدير: مجموعات أب + مجموعات فرعية."""
+    units = [(name, None) for name in COLLECTIONS]
+    for parent, children in SUBCOLLECTIONS.items():
+        for child in children:
+            units.append((parent, child))
+    return units
+
+
+def unit_name(parent, child):
+    return parent if child is None else f"{parent}__{child}"
+
+
 def run_export(fresh=False):
     from services.firebase_service import init_firebase
     import services.firebase_service as fs
@@ -198,7 +277,8 @@ def run_export(fresh=False):
     log(f"{'المجموعة':<32} {'الحالة':<10} {'مستندات':>9}  {'حجم':>10}")
     log("-" * 68)
 
-    for name in COLLECTIONS:
+    for parent, child in export_units():
+        name = unit_name(parent, child)
         previous = done.get(name)
         if previous and previous.get("status") == "success" and not fresh:
             skipped.append(name)
@@ -207,7 +287,10 @@ def run_export(fresh=False):
             continue
 
         try:
-            result = export_collection(fs.firestore_db, name, export_dir)
+            if child is None:
+                result = export_collection(fs.firestore_db, name, export_dir)
+            else:
+                result = export_subcollection(fs.firestore_db, parent, child, export_dir)
             done[name] = result
             total_docs += result["documents"]
             log(f"{name:<32} {'✅':<10} {result['documents']:>9}  {result['bytes']:>9,}b")
@@ -261,7 +344,8 @@ def run_verify(export_dir=None):
     log(f"{'المجموعة':<32} {'مستندات':>9}  {'الحالة'}")
     log("-" * 68)
 
-    for name in COLLECTIONS:
+    for parent, child in export_units():
+        name = unit_name(parent, child)
         entry = recorded.get(name)
         path = os.path.join(export_dir, f"{name}.json")
 
@@ -340,7 +424,7 @@ def run_verify(export_dir=None):
             log(f"   - {p}")
         return 1
 
-    log(f"✅ النسخة مؤكدة: {len(COLLECTIONS)} مجموعة، {total_docs:,} مستند، JSON كله صالح.")
+    log(f"✅ النسخة مؤكدة: {len(export_units())} وحدة، {total_docs:,} مستند، JSON كله صالح.")
     log(f"   المجلد: {export_dir}")
     return 0
 
