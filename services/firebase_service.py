@@ -697,10 +697,20 @@ def get_expense_summary(category=None, project=None):
 _LOANS_DOC_ID = "paid_status"
 
 def get_loan_paid_map():
-    """جلب خريطة حالة الدفع لكل الأقساط ({'valu_0': True, ...})"""
+    """جلب خريطة حالة الدفع لكل الأقساط ({'valu_0': True, ...}).
+
+    بيرجع dict عند نجاح القراءة (ممكن يكون فاضي لو مفيش أي قسط اتسجل لسه)،
+    أو None لو القراءة نفسها فشلت.
+
+    التفرقة دي مهمة (أوديت 2026-08-05): قبل كده الحالتين كانوا بيرجعوا {}،
+    فأثناء أي عطل لحظي في Firestore كان الملخص بيحسب "مدفوع = صفر" لكل
+    برنامج ويعرضها كحقيقة -- يعني بيقول لأحمد إنه مدين بالإجمالي كامل شامل
+    شهور دفعها فعلاً، من غير أي إشارة لخطأ.
+    """
     if firestore_db is None:
-        return {}
-    
+        logger.error("❌ Firestore مش متصل -- مش قادر أجيب حالة الأقساط")
+        return None
+
     try:
         doc = firestore_db.collection(LOANS_COLLECTION).document(_LOANS_DOC_ID).get()
         if doc.exists:
@@ -708,7 +718,7 @@ def get_loan_paid_map():
         return {}
     except Exception as e:
         logger.error(f"❌ خطأ في جلب حالة الأقساط: {e}")
-        return {}
+        return None
 
 # ملاحظة: الكتابة المباشرة لحالة الدفع (save_loan_paid_status) اتشالت في Stage 2
 # (ADAM Self-State & Observation System). الكتابة دلوقتي بتمر حصريًا من
@@ -858,6 +868,18 @@ def delete_bahr_project(project_id):
     if firestore_db is None:
         return False, "Firestore مش متصل"
     try:
+        # حارس الوجود (أوديت 2026-08-05): Firestore delete() على مستند مش
+        # موجود بينجح بصمت، فمعرّف غلط من الموديل كان بيرجع "تم الحذف" وهو
+        # مالمسش حاجة. update_bahr_project خد الحارس ده في أوديت 2026-08-04
+        # والحذف -- اللي مالهوش رجعة -- فضل من غيره.
+        from services.update_guard import (
+            document_exists, list_document_ids, missing_document_message,
+        )
+        if not document_exists("projects", project_id):
+            return False, missing_document_message(
+                "مشروع", project_id, list_document_ids("projects")
+            )
+
         firestore_db.collection("projects").document(project_id).delete()
         return True, "تم الحذف"
     except Exception as e:

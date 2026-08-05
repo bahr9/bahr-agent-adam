@@ -88,13 +88,74 @@ PROGRAMS = _build_programs()
 # اسم عربي أو إنجليزي مرن للبحث عن البرنامج
 PROGRAM_NAME_MAP = {p["id"]: p["name"] for p in PROGRAMS}
 
+# أسماء مستعارة معلنة لكل برنامج (أوديت 2026-08-05).
+# القاعدة القديمة كانت `p["id"] in search`، والـ id "ca" بيماتش جوه أي كلمة
+# فيها الحرفين -- "premium card" كانت بتتحوّل لـ Credit Agricole وتسجّل قسط
+# 13,000 على القرض الغلط. المطابقة بقت على الأسماء المعلنة دي بس.
+PROGRAM_ALIASES = {
+    "valu":     ["فاليو", "فالو", "valu"],
+    "souhoula": ["سهولة", "سهوله", "souhoula", "sohoula"],
+    "ca":       ["credit agricole", "credit agricol", "كريدي اجريكول", "كريدي أجريكول", "كريدي"],
+    "halan":    ["حالا", "halan"],
+    "premium":  ["بريميم كارد", "بريميوم كارد", "بريميم", "بريميوم", "premium card", "premium"],
+    "mani":     ["ماني فيلوز", "ماني", "mani fellows", "mani"],
+    "fawry":    ["فوري", "fawry"],
+}
+
+# أقصر اسم مسموح يتطابق كجزء من نص أطول -- أقصر من كده لازم مطابقة تامة
+_MIN_PARTIAL_ALIAS = 4
+
+
+def _normalize_name(text):
+    """توحيد النص للمقارنة: حروف صغيرة، ألف/ياء/تاء مربوطة موحّدة، تشكيل متشال."""
+    if not text:
+        return ""
+    result = str(text).strip().lower()
+    for sources, target in (("أإآٱ", "ا"), ("ى", "ي"), ("ة", "ه"), ("ؤ", "و"), ("ئ", "ي")):
+        for char in sources:
+            result = result.replace(char, target)
+    result = "".join(char for char in result if char not in "ًٌٍَُِّْـ")
+    return " ".join(result.split())
+
 
 def _find_program(program_name):
-    """بحث مرن عن البرنامج بالاسم أو الـ id"""
-    search = program_name.strip().lower()
+    """بحث عن البرنامج بالـ id أو الاسم الرسمي أو اسم مستعار معلن.
+
+    مطابقة تامة الأول، وبعدين مطابقة جزئية للأسماء الطويلة بس. لو النص
+    محتمل يكون أكتر من برنامج بيرجع None بدل ما يخمّن -- تسجيل قسط على
+    القرض الغلط أسوأ بكتير من إننا نسأل أحمد يوضّح.
+    """
+    search = _normalize_name(program_name)
+    if not search:
+        return None
+
+    by_id = {p["id"]: p for p in PROGRAMS}
+
+    # 1) مطابقة تامة: id أو اسم رسمي أو اسم مستعار
     for p in PROGRAMS:
-        if search in p["name"].lower() or search in p["id"].lower() or p["id"].lower() in search:
+        if search in (_normalize_name(p["id"]), _normalize_name(p["name"])):
             return p
+    for program_id, aliases in PROGRAM_ALIASES.items():
+        if any(search == _normalize_name(alias) for alias in aliases):
+            return by_id[program_id]
+
+    # 2) مطابقة جزئية -- للأسماء الطويلة بس، ولازم برنامج واحد بالظبط
+    matched = set()
+    for program_id, aliases in PROGRAM_ALIASES.items():
+        for alias in list(aliases) + [by_id[program_id]["name"]]:
+            normalized = _normalize_name(alias)
+            if len(normalized) >= _MIN_PARTIAL_ALIAS and normalized in search:
+                matched.add(program_id)
+                break
+
+    if len(matched) == 1:
+        return by_id[matched.pop()]
+
+    if len(matched) > 1:
+        logger.warning(
+            "⚠️ اسم برنامج ملتبس: '" + str(program_name) + "' محتمل يكون "
+            + ", ".join(by_id[m]["name"] for m in sorted(matched))
+        )
     return None
 
 
@@ -127,9 +188,32 @@ def get_previous_month_key():
 # 💾 حالة الدفع (مخزّنة في Firestore)
 # ============================================================
 
+class LoanDataUnavailable(Exception):
+    """قراءة حالة الأقساط فشلت -- ممنوع نكمّل بأرقام مالية مخترعة."""
+
+
 def _get_paid_map():
     from services.firebase_service import get_loan_paid_map
-    return get_loan_paid_map()
+
+    paid_map = get_loan_paid_map()
+    if paid_map is None:
+        # فشل قراءة، مش "مفيش أقساط مدفوعة" (أوديت 2026-08-05).
+        # الوقفة هنا مقصودة: رسالة خطأ صريحة أحسن مليون مرة من ملخص
+        # بيقول لأحمد إنه مدين بمبلغ فيه شهور دفعها بالفعل.
+        raise LoanDataUnavailable(
+            "مش قادر أقرا حالة الأقساط من Firestore دلوقتي، "
+            "ومش هأقولك أرقام ممكن تكون غلط. جرّب تاني كمان شوية."
+        )
+    return paid_map
+
+
+def _month_sort_key(month_key):
+    """يحوّل '01/MM/YYYY' لـ (سنة، شهر) للمقارنة الزمنية."""
+    try:
+        _, month, year = str(month_key).split("/")
+        return (int(year), int(month))
+    except Exception:
+        return (0, 0)
 
 
 def is_paid(program_id, index, paid_map=None):
@@ -200,9 +284,34 @@ def get_month_installments(month_key):
 
 
 def get_overdue_installments():
-    """أقساط الشهر إلي فات اللي لسه مدفوعتش -- عشان تفضل ظاهرة حتى بعد ما الشهر يتغير"""
-    month_key = get_previous_month_key()
-    items, total = get_month_installments(month_key)
-    unpaid = [x for x in items if not x["paid"]]
+    """كل الأقساط الفايتة اللي لسه مدفوعتش -- مش الشهر اللي فات بس.
+
+    بيرجع (العناصر، الإجمالي، أقدم شهر متأخر).
+
+    قبل كده (أوديت 2026-08-05) كانت بتفحص get_previous_month_key() لوحده،
+    فقسط يونيو مدفعش كان بيختفي من شاشة المتأخرات تمامًا أول ما أغسطس يبدأ
+    -- بالرغم إن الـ docstring نفسه بيقول إن المتأخرات "تفضل ظاهرة".
+    """
+    paid_map = _get_paid_map()
+    current_key = _month_sort_key(get_current_month_key())
+
+    unpaid = []
+    for p in PROGRAMS:
+        for i, inst in enumerate(p["installments"]):
+            if _month_sort_key(inst["date"]) >= current_key:
+                continue                      # الشهر الحالي أو الجاي -- مش متأخر
+            if is_paid(p["id"], i, paid_map):
+                continue
+            unpaid.append({
+                "program":    p["name"],
+                "program_id": p["id"],
+                "index":      i,
+                "amount":     inst["amount"],
+                "date":       inst["date"],
+                "paid":       False,
+            })
+
+    unpaid.sort(key=lambda x: _month_sort_key(x["date"]))
     unpaid_total = sum(x["amount"] for x in unpaid)
-    return unpaid, unpaid_total, month_key
+    earliest_month = unpaid[0]["date"] if unpaid else get_previous_month_key()
+    return unpaid, unpaid_total, earliest_month
