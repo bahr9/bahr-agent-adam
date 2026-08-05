@@ -55,6 +55,18 @@ def _to_epoch_ms(iso_text):
         return None
 
 
+def _ilike_pattern(keyword):
+    """نمط ilike آمن لاستخدامه جوه or_() بتاعة PostgREST.
+
+    باگ اتمسك بالتجربة الحية (2026-08-05 مساءً): كلمة بحث فيها فاصلة --
+    زي "1,232,502" -- كانت بتكسر شجرة المنطق في PostgREST لأن الفاصلة
+    بتتفسر كفاصل بين الشروط ("failed to parse logic tree"). التغليف
+    بعلامات اقتباس مزدوجة بيخلي القيمة حرفية مهما كان فيها.
+    """
+    safe = str(keyword).replace('"', "").replace("\\", "")
+    return f'"%{safe}%"'
+
+
 def _display_text(row):
     """بيرجّع نص الملاحظة بالشكل اللي كل الكولرز القديمة متعودة عليه:
     الموعد النهائي متلحق بالنص. التخزين نضيف (عمود deadline منفصل)،
@@ -172,7 +184,7 @@ def search_memory_notes(user_id, keyword, limit=10):
     if _client() is None:
         return None
     try:
-        pattern = f"%{keyword}%"
+        pattern = _ilike_pattern(keyword)
         resp = _client().table("memory_notes").select("*").eq(
             "user_id", str(user_id)
         ).or_(
@@ -304,7 +316,7 @@ def search_conversations(user_id, keyword, limit=10):
     if _client() is None:
         return None
     try:
-        pattern = f"%{keyword}%"
+        pattern = _ilike_pattern(keyword)
         resp = _client().table("conversation_messages").select(
             "user_text, assistant_text, occurred_at"
         ).eq("user_id", str(user_id)).or_(
