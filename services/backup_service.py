@@ -76,6 +76,24 @@ COLLECTIONS = [
     "ain_al_khabeer_logs",
 ]
 
+# ============================================================
+# المجموعات الفرعية -- كانت خارج النسخ الاحتياطي تمامًا
+# ============================================================
+# 🔴 اكتشاف 2026-08-05 (من تحليل فرونت Bahr OS): فيه تلات مجموعات فرعية
+# تحت كل مستند مشروع، والنسخ الاحتياطي **عمره ما أخد منها حاجة**:
+#
+#     projects/{code}/invoices/{phase}      -- كل الفواتير
+#     projects/{code}/siteReports/{date}    -- كل تقارير الموقع
+#     projects/{code}/purchases/{id}        -- كل أوامر الشراء
+#
+# السبب إن `.stream()` على مجموعة أب مابيرجّعش المجموعات الفرعية بتاعتها.
+# فالنسخة كانت بتخلص وتقول "تم بنجاح ✅" وهي مش شايلة السجل المالي للشغل.
+# ودي نفس فئة العطل اللي اتصلحت الصبح: نجاح شكله سليم وهو ناقص.
+
+SUBCOLLECTIONS = {
+    "projects": ["invoices", "siteReports", "purchases"],
+}
+
 # جداول Supabase المطلوب حمايتها (Pilot: Firestore -> Supabase).
 #
 # مهم: مصدر الحقيقة للتذكيرات المتكررة بقى Supabase -- نسخة Firestore مجرد
@@ -125,6 +143,36 @@ def export_collection(collection_name: str):
 
     except Exception as e:
         logger.error(f"❌ Export failed ({collection_name}): {e}")
+        return None
+
+
+def export_subcollection(parent: str, child: str):
+    """
+    يصدّر مجموعة فرعية عبر كل مستندات الأب.
+
+    نفس عقد export_collection: list عند النجاح، None عند الفشل.
+    كل سجل بياخد `_parent_id` عشان الرابط بالمشروع مايضيعش في النسخة.
+    """
+    try:
+        from services.firebase_service import firestore_db
+
+        if firestore_db is None:
+            logger.error(f"❌ Firestore مش متصل — تعذّر تصدير {parent}/{child}")
+            return None
+
+        data = []
+        for parent_doc in firestore_db.collection(parent).stream():
+            for doc in parent_doc.reference.collection(child).stream():
+                item = doc.to_dict() or {}
+                item["_doc_id"] = doc.id
+                item["_parent_id"] = parent_doc.id
+                data.append(item)
+
+        logger.info(f"📦 Exported {parent}/{child}: {len(data)} docs")
+        return data
+
+    except Exception as e:
+        logger.error(f"❌ Export failed ({parent}/{child}): {e}")
         return None
 
 
@@ -236,6 +284,12 @@ def run_backup(bot=None, chat_id=None) -> dict:
     jobs = [
         (name, f"backups/{date_str}/{name}.json", lambda n=name: export_collection(n))
         for name in COLLECTIONS
+    ] + [
+        (f"{parent}/{child}",
+         f"backups/{date_str}/{parent}__{child}.json",
+         lambda p=parent, c=child: export_subcollection(p, c))
+        for parent, children in SUBCOLLECTIONS.items()
+        for child in children
     ] + [
         (f"supabase:{table}",
          f"backups/{date_str}/supabase/{table}.json",
