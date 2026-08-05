@@ -166,6 +166,78 @@ def main():
             assert len(evaluations) > 0, "الـ registry المفروض يرجّع أدوات"
             assert all("status" in ev for ev in evaluations.values())
 
+
+    # ---------- النجاح الحقيقي كدليل (أوديت 2026-08-05 مساءً) ----------
+    def real_use_success_promotes_an_unprobed_tool():
+        """الحارس الأساسي الجديد: أداة من غير probe اتنفذت ونجحت = HEALTHY.
+        قبل الإصلاح كانت بتفضل NOT_MONITORED للأبد مهما اشتغلت."""
+        seed = {TOOL_HEALTH_CHECKS_COLLECTION: {}, TOOL_FAILURES_LOG_COLLECTION: {}}
+        seed[TOOL_HEALTH_CHECKS_COLLECTION]["ru_1"] = {
+            "tool_name": "save_price", "result": "success",
+            "probe_version": "real_use",
+            "checked_at": (now - timedelta(hours=1)).isoformat(),
+            "evidence_event_id": None,
+        }
+        with use_fake_firestore(seed=seed):
+            ev = eng.evaluate_all_tools()["save_price"]
+            assert ev["status"] == "HEALTHY", ev
+            assert ev["detail"].get("evidence") == "real_use", ev
+
+    def unprobed_tool_with_no_usage_stays_not_monitored():
+        """أداة من غير probe ومن غير أي استخدام -- NOT_MONITORED صادقة."""
+        with use_fake_firestore(seed={}):
+            ev = eng.evaluate_all_tools()["save_price"]
+            assert ev["status"] == "NOT_MONITORED", ev
+
+    def real_use_failure_still_wins_over_success():
+        """فشل حقيقي بيتغلب على النجاح -- مش بنجمّل الصورة."""
+        seed = {TOOL_HEALTH_CHECKS_COLLECTION: {}, TOOL_FAILURES_LOG_COLLECTION: {}}
+        seed[TOOL_HEALTH_CHECKS_COLLECTION]["ru_ok"] = {
+            "tool_name": "save_price", "result": "success",
+            "probe_version": "real_use",
+            "checked_at": (now - timedelta(hours=2)).isoformat(),
+        }
+        for i in range(2):
+            seed[TOOL_FAILURES_LOG_COLLECTION][f"f_{i}"] = {
+                "tool_name": "save_price", "error_type": "PermissionDenied",
+                "failed_at": (now - timedelta(hours=1)).isoformat(),
+                "evidence_event_id": f"ev_{i}",
+            }
+        with use_fake_firestore(seed=seed):
+            ev = eng.evaluate_all_tools()["save_price"]
+            assert ev["status"] == "DEGRADED", ev
+
+    def old_real_use_success_outside_window_does_not_count():
+        seed = {TOOL_HEALTH_CHECKS_COLLECTION: {}, TOOL_FAILURES_LOG_COLLECTION: {}}
+        seed[TOOL_HEALTH_CHECKS_COLLECTION]["old_ru"] = {
+            "tool_name": "save_price", "result": "success",
+            "probe_version": "real_use",
+            "checked_at": (now - timedelta(days=3)).isoformat(),
+        }
+        with use_fake_firestore(seed=seed):
+            ev = eng.evaluate_all_tools()["save_price"]
+            assert ev["status"] == "NOT_MONITORED", ev
+
+    def real_use_counts_toward_probed_tool_sample():
+        """للأداة المفحوصة: نجاح حقيقي + heartbeats بيكملوا العينة سوا."""
+        seed = {TOOL_HEALTH_CHECKS_COLLECTION: {}, TOOL_FAILURES_LOG_COLLECTION: {}}
+        for i in range(2):
+            seed[TOOL_HEALTH_CHECKS_COLLECTION][f"hb_{i}"] = {
+                "tool_name": "list_graph_nodes", "result": "success",
+                "probe_version": "v1",
+                "checked_at": (now - timedelta(hours=2 + i)).isoformat(),
+                "evidence_event_id": f"hb_ev_{i}",
+            }
+        seed[TOOL_HEALTH_CHECKS_COLLECTION]["ru"] = {
+            "tool_name": "list_graph_nodes", "result": "success",
+            "probe_version": "real_use",
+            "checked_at": (now - timedelta(minutes=30)).isoformat(),
+        }
+        with use_fake_firestore(seed=seed):
+            ev = eng.evaluate_all_tools()["list_graph_nodes"]
+            assert ev["status"] == "HEALTHY", ev
+            assert ev["detail"]["successful_checks"] == 3, ev
+
     for name, fn in [
         ("التكلفة مربوطة بالنافذة مش بحجم المجموعة (الحارس الأساسي)", reads_scale_with_the_window_not_the_collection),
         ("مجموعة أكبر 40 مرة ماتكلّفش أكتر", a_huge_collection_does_not_cost_more),
@@ -176,6 +248,11 @@ def main():
         ("سجل الفشل الحقيقي بيتقرا بنفس المنطق", real_use_failures_are_read_too),
         ("سجل من غير تاريخ بيتخطى", records_without_a_timestamp_are_skipped),
         ("مجموعات فاضية مش خطأ", empty_collections_are_not_an_error),
+        ("نجاح حقيقي بيخلي أداة بلا probe سليمة (الحارس الجديد)", real_use_success_promotes_an_unprobed_tool),
+        ("بلا probe وبلا استخدام = غير مُراقَبة بصدق", unprobed_tool_with_no_usage_stays_not_monitored),
+        ("الفشل بيتغلب على النجاح -- مفيش تجميل", real_use_failure_still_wins_over_success),
+        ("نجاح قديم برة النافذة مش بيتحسب", old_real_use_success_outside_window_does_not_count),
+        ("النجاح الحقيقي بيكمّل عينة الأداة المفحوصة", real_use_counts_toward_probed_tool_sample),
     ]:
         results.append(run_test(name, fn))
 

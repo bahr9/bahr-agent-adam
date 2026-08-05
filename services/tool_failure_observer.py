@@ -52,18 +52,24 @@ def record_tool_failure(tool_name: str, exc: Exception, chat_id=None, latency_ms
             actor="claude_service._execute_tool",
         )
 
+        failure_row = {
+            "tool_name": tool_name,
+            "failed_at": now_cairo().isoformat(),
+            "execution_source": "real_use",
+            "error_type": error_type,
+            "sanitized_error_summary": summary,
+            "latency_ms": latency_ms,
+            "chat_id_present": chat_id is not None,
+            "evidence_event_id": event_id,
+        }
+
+        # Supabase الأول (2026-08-05) -- المحرك بيقرا أدلته من هنا
+        from services import supabase_store
+        supabase_store.record_health_failure(dict(failure_row))
+
         from services.firebase_service import firestore_db
         if firestore_db is not None:
-            firestore_db.collection(TOOL_FAILURES_LOG_COLLECTION).document().set({
-                "tool_name": tool_name,
-                "failed_at": now_cairo().isoformat(),
-                "execution_source": "real_use",
-                "error_type": error_type,
-                "sanitized_error_summary": summary,
-                "latency_ms": latency_ms,
-                "chat_id_present": chat_id is not None,
-                "evidence_event_id": event_id,
-            })
+            firestore_db.collection(TOOL_FAILURES_LOG_COLLECTION).document().set(failure_row)
     except Exception as observer_err:
         logger.error(
             f"❌ فشل تسجيل tool_failures_log لـ {tool_name} (مش حرج -- الخطأ الأصلي كمّل زي ما هو): {observer_err}"

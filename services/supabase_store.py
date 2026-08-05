@@ -329,6 +329,51 @@ def search_conversations(user_id, keyword, limit=10):
 
 
 # ============================================================
+# 🩺 أدلة صحة الأدوات -- عشان المراقبة متبقاش عمياء وقت أعطال Firestore
+# ============================================================
+# حادثة 2026-08-05 مساءً: تقرير الصحة طلع "0 سليمة، 13 غير معروفة، 49 غير
+# مُراقَبة" -- مش لأن الأدوات بايظة، لأن المحرك بيقرا أدلته من Firestore
+# والكوتا كانت خلصانة. المراقبة نفسها كانت عمياء. الأدلة بقت تتكتب وتتقرا
+# من هنا الأول.
+
+def record_health_check(row):
+    """يسجّل فحص صحة (heartbeat أو real_use) -- best-effort."""
+    if _client() is None:
+        return False
+    try:
+        _client().table("tool_health_checks").insert(row).execute()
+        return True
+    except Exception as e:
+        logger.warning(f"⚠️ [Supabase] تسجيل فحص الصحة فشل: {str(e)[:80]}")
+        return False
+
+
+def record_health_failure(row):
+    if _client() is None:
+        return False
+    try:
+        _client().table("tool_failures_log").insert(row).execute()
+        return True
+    except Exception as e:
+        logger.warning(f"⚠️ [Supabase] تسجيل الفشل فشل: {str(e)[:80]}")
+        return False
+
+
+def fetch_health_window(table, ts_field, cutoff_iso, cap=3000):
+    """أدلة النافذة الزمنية -- None عند أي فشل (fallback لـ Firestore)."""
+    if _client() is None:
+        return None
+    try:
+        resp = _client().table(table).select("*").gte(
+            ts_field, cutoff_iso
+        ).limit(cap).execute()
+        return resp.data or []
+    except Exception as e:
+        logger.warning(f"⚠️ [Supabase] قراءة أدلة الصحة فشلت ({table}): {str(e)[:80]}")
+        return None
+
+
+# ============================================================
 # 👤 human_model -- نموذج أحمد
 # ============================================================
 

@@ -1841,6 +1841,16 @@ def _execute_tool(tool_name, tool_input, chat_id):
             result = f"أداة غير معروفة: {tool_name}"
         
         logger.info(f"✅ نتيجة الأداة {tool_name}: {result[:200]}")
+
+        # تسجيل النجاح الحقيقي كدليل صحة (أوديت 2026-08-05 مساءً): قبل كده
+        # الفشل بس كان بيتسجل -- فأداة شغالة كويس كانت بتفضل "غير مُراقَبة"
+        # للأبد. best-effort، Supabase بس، وعمره ما يأثر على الرد.
+        try:
+            from services.tool_health_heartbeat import record_real_use_success
+            record_real_use_success(tool_name, int((time.time() - _tool_start_time) * 1000))
+        except Exception:
+            pass
+
         return result
             
     except Exception as e:

@@ -83,11 +83,22 @@ def _fetch_window(collection_name: str, timestamp_field: str, cutoff: datetime) 
     بتاع Firestore ومش محتاج composite index (وده كان سبب تجنّبه أصلاً في
     التعليق القديم).
     """
+    query_floor = (cutoff - timedelta(hours=QUERY_MARGIN_HOURS)).isoformat()
+
+    # Supabase الأول (2026-08-05 مساءً): تقرير "0 سليمة / 13 غير معروفة /
+    # 49 غير مُراقَبة" طلع مش لأن الأدوات بايظة -- لأن المحرك بيقرا أدلته
+    # من Firestore والكوتا كانت خلصانة. المراقبة كانت عمياء عن أدلتها.
+    from services import supabase_store
+    timestamp_field = "checked_at" if collection_name == TOOL_HEALTH_CHECKS_COLLECTION else "failed_at"
+    sb_records = supabase_store.fetch_health_window(
+        collection_name, timestamp_field, query_floor, MAX_RECORDS_PER_FETCH
+    )
+    if sb_records is not None:
+        return sb_records
+
     from services.firebase_service import firestore_db
     if firestore_db is None:
         return []
-
-    query_floor = (cutoff - timedelta(hours=QUERY_MARGIN_HOURS)).isoformat()
 
     try:
         from google.cloud.firestore_v1.base_query import FieldFilter
@@ -153,19 +164,37 @@ def _classify_one(tool_name: str, meta: dict, checks: list, failures: list) -> d
     failure_evidence_ids = [fe["evidence_event_id"] for fe in failure_events if fe.get("evidence_event_id")]
 
     if failures_total == 0:
+        successes = [c for c in checks if c.get("result") == "success"]
+        real_use_successes = [c for c in successes if c.get("probe_version") == "real_use"]
+
         if health_check_supported:
-            successes = [c for c in checks if c.get("result") == "success"]
             if len(successes) >= MIN_SAMPLE_FOR_HEALTHY:
                 return {
                     "status": "HEALTHY",
                     "evidence_event_ids": [c["evidence_event_id"] for c in successes if c.get("evidence_event_id")],
-                    "detail": {"successful_checks": len(successes)},
+                    "detail": {"successful_checks": len(successes),
+                               "real_use_successes": len(real_use_successes)},
                 }
             return {
                 "status": "UNKNOWN",
                 "evidence_event_ids": [c["evidence_event_id"] for c in checks if c.get("evidence_event_id")],
                 "detail": {"reason": "insufficient_sample", "successful_checks": len(successes)},
             }
+
+        # أداة من غير safe_probe لكن **اتنفذت فعليًا ونجحت** في النافذة
+        # (أوديت صحة الأدوات 2026-08-05): التنفيذ الحقيقي الناجح أقوى دليل
+        # ممكن -- أقوى من أي probe. نجاح واحد بيكفي (مش عتبة الـ 3 بتاعة
+        # الـ heartbeat) لأنه مش عيّنة اصطناعية، ده الشغل الفعلي نفسه.
+        # قبل التعديل ده، أداة بتشتغل مية مرة في اليوم من غير مشكلة كانت
+        # بتتصنف "غير مُراقَبة" للأبد.
+        if real_use_successes:
+            return {
+                "status": "HEALTHY",
+                "evidence_event_ids": [],
+                "detail": {"evidence": "real_use",
+                           "real_use_successes": len(real_use_successes)},
+            }
+
         return {"status": "NOT_MONITORED", "evidence_event_ids": [], "detail": {"reason": "no_safe_probe_no_failures"}}
 
     if repeated_cause_count >= DEGRADED_REPEATED_CAUSE_COUNT or failures_total >= DEGRADED_FAILURE_COUNT:

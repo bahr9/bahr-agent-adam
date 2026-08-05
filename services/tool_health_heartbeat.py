@@ -76,20 +76,56 @@ def _record_check(tool_name: str, outcome: str, latency_ms: int, error_type, sum
             actor="tool_health_heartbeat",
         )
 
+        check_row = {
+            "tool_name": tool_name,
+            "checked_at": now_cairo().isoformat(),
+            "result": outcome,
+            "latency_ms": latency_ms,
+            "error_type": error_type,
+            "sanitized_error_summary": summary,
+            "probe_version": PROBE_VERSION,
+            "evidence_event_id": event_id,
+        }
+
+        # Supabase الأول (2026-08-05): المحرك بيقرا أدلته من هنا دلوقتي --
+        # عشان المراقبة متبقاش عمياء لما كوتا Firestore تخلص
+        from services import supabase_store
+        supabase_store.record_health_check(dict(check_row))
+
         from services.firebase_service import firestore_db
         if firestore_db is not None:
-            firestore_db.collection(TOOL_HEALTH_CHECKS_COLLECTION).document().set({
-                "tool_name": tool_name,
-                "checked_at": now_cairo().isoformat(),
-                "result": outcome,
-                "latency_ms": latency_ms,
-                "error_type": error_type,
-                "sanitized_error_summary": summary,
-                "probe_version": PROBE_VERSION,
-                "evidence_event_id": event_id,
-            })
+            firestore_db.collection(TOOL_HEALTH_CHECKS_COLLECTION).document().set(check_row)
     except Exception as e:
         logger.error(f"❌ فشل تسجيل tool_health_checks لـ {tool_name} (مش حرج): {e}")
+
+
+def record_real_use_success(tool_name: str, latency_ms: int) -> None:
+    """تسجيل تنفيذ حقيقي **ناجح** -- الفجوة اللي خلت 49 أداة NOT_MONITORED.
+
+    قبل كده (أوديت صحة الأدوات، 2026-08-05 مساءً): النجاح الحقيقي مكانش
+    بيتسجل في أي مكان -- الفشل بس (tool_failure_observer). فأداة كتابة
+    بتشتغل مية مرة في اليوم من غير مشكلة كانت بتفضل "غير مُراقَبة" للأبد،
+    لأن مفيش safe_probe ليها ومفيش أي أثر لنجاحها.
+
+    التنفيذ الحقيقي الناجح هو **أقوى دليل صحة ممكن** -- أقوى من أي probe.
+    بيتسجل في Supabase بس (صفر لمس لكوتا Firestore)، وبـ
+    probe_version="real_use" عشان المحرك يفرّقه عن الـ heartbeat.
+    best-effort بالكامل -- عمره ما يأثر على رد الأداة نفسه.
+    """
+    try:
+        from services import supabase_store
+        supabase_store.record_health_check({
+            "tool_name": tool_name,
+            "checked_at": now_cairo().isoformat(),
+            "result": "success",
+            "latency_ms": latency_ms,
+            "error_type": None,
+            "sanitized_error_summary": None,
+            "probe_version": "real_use",
+            "evidence_event_id": None,
+        })
+    except Exception:
+        pass
 
 
 PROBE_SPACING_SECONDS = 0.5  # فاصل بين كل probe والتاني (اعتماد 2/8 -- انظر التعليق تحت)

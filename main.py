@@ -859,8 +859,15 @@ if __name__ == "__main__":
                          id='loans_check', timezone='Africa/Cairo', misfire_grace_time=60)
         scheduler.add_job(self_state_active_check_job, 'interval', hours=1,
                          id='self_state_active_check', timezone='Africa/Cairo', misfire_grace_time=300)
+        # next_run_time (أوديت صحة الأدوات 2026-08-05): job الـ interval في
+        # APScheduler أول تشغيلة ليه بتيجي بعد الفاصل كامل -- يعني بعد أي
+        # deploy/restart الـ heartbeat كان بيستنى 6 ساعات قبل أول فحص.
+        # يوم فيه كذا deploy (زي النهاردة) = صفر فحوصات طول اليوم، وكل
+        # الأدوات المفحوصة بتطلع UNKNOWN. أول فحص بقى بعد البداية بـ 3 دقايق.
+        from datetime import datetime as _dt, timedelta as _td
         scheduler.add_job(tool_health_check_job, 'interval', hours=6,
-                         id='tool_health_check', timezone='Africa/Cairo', misfire_grace_time=300)
+                         id='tool_health_check', timezone='Africa/Cairo', misfire_grace_time=300,
+                         next_run_time=_dt.now() + _td(minutes=3))
         scheduler.add_job(project_status_check_job, 'interval', hours=1,
                          id='project_status_check', timezone='Africa/Cairo', misfire_grace_time=300)
         scheduler.add_job(urgent_deadlines_check_job, 'interval', hours=1,
