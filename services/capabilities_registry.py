@@ -57,6 +57,12 @@ def _probe_get_prices():
     return get_prices()
 
 
+def _probe_search_conversations():
+    from services.supabase_store import search_conversations
+    from bot import get_chat_id
+    return search_conversations(get_chat_id() or "0", "بحر", limit=1)
+
+
 def _probe_loan_overview():
     from services import loan_service
     return loan_service.get_overview()
@@ -218,6 +224,13 @@ _TOOL_METADATA = {
     # مش "صفر جانب-تأثير" بالمعنى اللي الـ heartbeat محتاجه.
     "generate_mood_board":          {"domain": "design", "operation_type": "write", "criticality": "medium",
                                      "source_owner": "services/moodboard_service.py"},
+
+    # ---- قدرات اتفتحت بهجرة Supabase (2026-08-05) ----
+    # البحث جوه المحادثات كان مستحيلًا على Firestore (الرسايل مصفوفة جوه
+    # مستند واحد) -- على Postgres بقت ilike عادية.
+    "search_conversations":         {"domain": "memory", "operation_type": "read", "criticality": "low",
+                                     "health_check_supported": True, "safe_probe": _probe_search_conversations,
+                                     "source_owner": "services/supabase_store.py"},
 }
 
 

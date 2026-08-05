@@ -538,6 +538,17 @@ TOOLS = [
         "input_schema": {"type": "object", "properties": {}, "required": []}
     },
     {
+        "name": "search_conversations",
+        "description": "يبحث في تاريخ المحادثات القديمة كلها بكلمة مفتاحية. استخدمها لما أحمد يسأل 'فاكر لما قلتلك...' أو 'إمتى اتكلمنا عن...' أو يدوّر على حاجة اتقالت قبل كده.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "keyword": {"type": "string", "description": "كلمة أو عبارة البحث"}
+            },
+            "required": ["keyword"]
+        }
+    },
+    {
         "name": "list_reminders",
         "description": "يجيب كل التذكيرات المسجلة لأحمد (مرسلة وغير مرسلة). استخدمها لما أحمد يسأل عن تذكيراته أو يطلب يشوف القايمة.",
         "input_schema": {"type": "object", "properties": {}, "required": []}
@@ -1283,6 +1294,24 @@ def _execute_tool(tool_name, tool_input, chat_id):
             else:
                 lines = [f"- [{n['timestamp']}] {n['text']}" for n in notes]
                 result = f"نتائج '{keyword}':" + chr(10) + chr(10).join(lines)
+
+        elif tool_name == "search_conversations":
+            # قدرة اتفتحت بهجرة Supabase (2026-08-05): البحث جوه المحادثات
+            # كان مستحيل على Firestore -- الرسايل مصفوفة جوه مستند واحد
+            from services import supabase_store
+            keyword = tool_input.get("keyword", "")
+            hits = supabase_store.search_conversations(chat_id, keyword)
+            if hits is None:
+                result = "البحث في المحادثات مش متاح دلوقتي (Supabase مش متوصل)"
+            elif not hits:
+                result = f"مفيش في المحادثات القديمة حاجة عن: {keyword}"
+            else:
+                lines = []
+                for h in hits:
+                    lines.append(f"— [{h['when']}]")
+                    lines.append(f"  أحمد: {h['user'][:150]}")
+                    lines.append(f"  آدم: {h['assistant'][:150]}")
+                result = f"نتائج البحث في المحادثات عن '{keyword}':" + chr(10) + chr(10).join(lines)
 
         elif tool_name == "list_memory_notes":
             from services.firebase_service import list_memory_notes

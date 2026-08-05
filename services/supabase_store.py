@@ -294,6 +294,40 @@ def get_conversation_history(user_id, limit=50):
         return None
 
 
+def search_conversations(user_id, keyword, limit=10):
+    """بحث نصي في تاريخ المحادثات كله.
+
+    القدرة دي كانت **مستحيلة** على Firestore: الرسايل كانت متخزنة مصفوفة
+    جوه مستند واحد، ومفيش أي استعلام بيدخل جوه المصفوفات. على Postgres
+    هي ilike عادية.
+    """
+    if _client() is None:
+        return None
+    try:
+        pattern = f"%{keyword}%"
+        resp = _client().table("conversation_messages").select(
+            "user_text, assistant_text, occurred_at"
+        ).eq("user_id", str(user_id)).or_(
+            f"user_text.ilike.{pattern},assistant_text.ilike.{pattern}"
+        ).order("occurred_at", desc=True).limit(limit).execute()
+
+        results = []
+        for r in resp.data or []:
+            when = ""
+            ms = _to_epoch_ms(r.get("occurred_at"))
+            if ms:
+                when = datetime.fromtimestamp(ms / 1000, tz=CAIRO).strftime("%Y-%m-%d %H:%M")
+            results.append({
+                "user": r.get("user_text") or "",
+                "assistant": r.get("assistant_text") or "",
+                "when": when,
+            })
+        return results
+    except Exception as e:
+        logger.warning(f"⚠️ [Supabase] البحث في المحادثات فشل: {str(e)[:80]}")
+        return None
+
+
 # ============================================================
 # 👤 human_model -- نموذج أحمد
 # ============================================================
