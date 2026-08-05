@@ -67,15 +67,32 @@ def select_active_reminders():
 
 
 def update_last_sent(reminder_id, now_ms):
-    """تحديث آخر وقت إرسال لصف معيّن، بالـ Supabase id بتاعه"""
+    """تحديث آخر وقت إرسال لصف معيّن، بالـ Supabase id بتاعه.
+
+    بيشتغل مع نوعين العمود (تحضير هجرة 2026-08-05): بيجرّب يكتب نص ISO
+    (المناسب لـ timestamptz) الأول، ولو العمود لسه bigint الكتابة بتترفض
+    فبيرجع يكتب epoch بالميلي. كده تحويل العمود في قاعدة البيانات ينفع
+    يحصل قبل نشر الكود أو بعده -- من غير أي نافذة مكسورة في النص.
+    """
     if supabase_client is None:
         return False
-    try:
-        supabase_client.table(RECURRING_REMINDERS_TABLE).update({"last_sent": now_ms}).eq("id", reminder_id).execute()
-        return True
-    except Exception as e:
-        logger.error(f"❌ [Supabase] خطأ في تحديث آخر وقت إرسال ({reminder_id}): {e}")
-        return False
+
+    from datetime import datetime, timezone
+    iso_value = datetime.fromtimestamp(now_ms / 1000, tz=timezone.utc).isoformat()
+
+    for value, label in ((iso_value, "timestamptz"), (now_ms, "epoch_ms")):
+        try:
+            supabase_client.table(RECURRING_REMINDERS_TABLE).update(
+                {"last_sent": value}
+            ).eq("id", reminder_id).execute()
+            return True
+        except Exception as e:
+            logger.warning(
+                f"⚠️ [Supabase] كتابة last_sent كـ {label} فشلت ({reminder_id}): {str(e)[:90]}"
+            )
+
+    logger.error(f"❌ [Supabase] فشل تحديث آخر وقت إرسال بالشكلين ({reminder_id})")
+    return False
 
 
 def update_firestore_id(reminder_id, firestore_id):

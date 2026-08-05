@@ -32,6 +32,53 @@ INTERVALS_MS = {
 }
 
 
+def as_epoch_ms(value):
+    """يوحّد أي شكل وقت لـ epoch بالميلي ثانية، أو None لو مش مفهوم.
+
+    ليه ده لازم (تحضير هجرة Supabase، 2026-08-05): نفس الحقل بييجي بشكلين
+    مختلفين حسب المصدر خلال فترة الـ dual-write --
+      - Supabase بعد التحويل لـ timestamptz  ->  نص ISO ("2026-08-05T09:00:00+03:00")
+      - Firestore (شبكة الأمان)              ->  رقم epoch بالميلي (1785490887553)
+
+    من غير التوحيد ده، المقارنة في is_reminder_due بتبقى بين نص ورقم وترمي
+    TypeError، والتذكير مايضربش. الدالة دي بتخلي منطق الاستحقاق مستقل تمامًا
+    عن شكل التخزين، فالتحويل في قاعدة البيانات مايكسرش حاجة.
+    """
+    if value is None or value == "":
+        return None
+
+    if isinstance(value, bool):
+        return None
+
+    if isinstance(value, (int, float)):
+        return int(value)
+
+    if hasattr(value, "timestamp"):                 # datetime
+        try:
+            return int(value.timestamp() * 1000)
+        except Exception:
+            return None
+
+    if isinstance(value, str):
+        text = value.strip()
+        if text.lstrip("-").isdigit():              # رقم متخزن كنص
+            return int(text)
+        try:
+            from datetime import datetime
+            from utils.time_utils import CAIRO_TZ
+            parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+            if parsed.tzinfo is None and CAIRO_TZ is not None:
+                # نص من غير إزاحة -- كل تواريخ المشروع بتوقيت القاهرة
+                parsed = parsed.replace(tzinfo=CAIRO_TZ)
+            return int(parsed.timestamp() * 1000)
+        except Exception as e:
+            logger.warning(f"⚠️ قيمة وقت مش مفهومة في تذكير متكرر: {value!r} -- {e}")
+            return None
+
+    logger.warning(f"⚠️ نوع وقت غير متوقع في تذكير متكرر: {type(value).__name__}")
+    return None
+
+
 def is_reminder_due(reminder, now_cairo_time, now_ms):
     """هل التذكير المتكرر ده مستحق الإرسال دلوقتي؟ -- دالة صافية، بلا شبكة.
 
@@ -42,7 +89,8 @@ def is_reminder_due(reminder, now_cairo_time, now_ms):
     والـ job كان بيشتغل كل 15 دقيقة -- فالدقيقة المطلوبة عمرها ما كانت بتيجي
     والتذكيرات اليومية عمرها ما ضربت. القاعدة الجديدة صح مهما كان إيقاع الفحص.
     """
-    last_sent = reminder.get("last_sent")
+    # التوحيد هنا بيخلي الباقي شغال على رقم واحد مهما كان مصدر الحقل
+    last_sent = as_epoch_ms(reminder.get("last_sent"))
     interval_type = reminder.get("interval_type", "daily")
     scheduled_hour = reminder.get("scheduled_hour")
 

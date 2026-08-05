@@ -149,6 +149,50 @@ def main():
              "scheduled_hour": None, "last_sent": ms(now) - 23 * 60 * 60 * 1000}
         assert is_reminder_due(r, now, ms(now)) is False
 
+
+    # ---------- توحيد شكل الوقت (تحضير هجرة Supabase) ----------
+    def epoch_ms_and_iso_behave_identically():
+        """نفس اللحظة بالشكلين لازم تدي نفس القرار بالظبط."""
+        from services.recurring_reminders_service import as_epoch_ms
+        sent_at = at(2026, 8, 5, 8, 1)
+        now = at(2026, 8, 5, 8, 20)
+
+        as_number = daily(8, 0, last_sent=ms(sent_at))
+        as_iso    = daily(8, 0, last_sent=sent_at.isoformat())
+
+        assert as_epoch_ms(sent_at.isoformat()) == ms(sent_at), "التحويل من ISO غلط"
+        assert is_reminder_due(as_number, now, ms(now)) is False
+        assert is_reminder_due(as_iso, now, ms(now)) is False,             "الشكل النصي (timestamptz) اداه قرار مختلف عن الرقمي"
+
+    def iso_last_sent_still_fires_next_day():
+        sent_at = at(2026, 8, 5, 8, 0)
+        now = at(2026, 8, 6, 8, 2)
+        assert is_reminder_due(daily(8, 0, last_sent=sent_at.isoformat()), now, ms(now)) is True
+
+    def unparseable_time_is_treated_as_never_sent():
+        """قيمة باظت ماتمنعش التذكير للأبد -- بتتعامل كأنه متبعتش."""
+        now = at(2026, 8, 5, 8, 5)
+        assert is_reminder_due(daily(8, 0, last_sent="مش وقت خالص"), now, ms(now)) is True
+
+    def time_normalizer_handles_every_shape():
+        from services.recurring_reminders_service import as_epoch_ms
+        moment = at(2026, 8, 5, 9, 30)
+        expected = ms(moment)
+        assert as_epoch_ms(expected) == expected                    # رقم
+        assert as_epoch_ms(str(expected)) == expected               # رقم كنص
+        assert as_epoch_ms(moment.isoformat()) == expected          # ISO بإزاحة
+        assert as_epoch_ms(moment) == expected                      # datetime
+        assert as_epoch_ms(None) is None
+        assert as_epoch_ms("") is None
+        assert as_epoch_ms("حاجة غلط") is None
+
+    def naive_iso_is_read_as_cairo():
+        """نص من غير إزاحة -- كل تواريخ المشروع بتوقيت القاهرة."""
+        from services.recurring_reminders_service import as_epoch_ms
+        moment = at(2026, 8, 5, 9, 30)
+        naive = moment.replace(tzinfo=None).isoformat()
+        assert as_epoch_ms(naive) == ms(moment), "النص الساذج مااتقراش بتوقيت القاهرة"
+
     for name, fn in [
         ("بيضرب مع فحص على دقيقة :07 (الحارس الأساسي)", fires_on_a_fifteen_minute_poll_offset),
         ("بيضرب في الميعاد بالظبط", fires_exactly_on_time),
@@ -165,6 +209,11 @@ def main():
         ("custom_minutes بيحترم الفاصل بتاعه", custom_minutes_respects_its_interval),
         ("تذكير متبعتش قبل كده بيضرب", never_sent_interval_reminder_fires),
         ("daily من غير ميعاد بيرجع لمنطق الفاصل", daily_without_scheduled_hour_uses_interval),
+        ("الشكل الرقمي والنصي بيدوا نفس القرار", epoch_ms_and_iso_behave_identically),
+        ("last_sent كنص ISO بيضرب بكرة صح", iso_last_sent_still_fires_next_day),
+        ("وقت باظ = يتعامل كأنه متبعتش", unparseable_time_is_treated_as_never_sent),
+        ("موحّد الوقت بيقبل كل الأشكال", time_normalizer_handles_every_shape),
+        ("النص من غير إزاحة بيتقرا بتوقيت القاهرة", naive_iso_is_read_as_cairo),
     ]:
         results.append(run_test(name, fn))
 
