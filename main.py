@@ -375,7 +375,9 @@ def check_loans_job():
         message_parts = []
 
         if overdue:
-            lines = ["- " + i.get("program", "") + ": " + str(i.get("amount", "")) + " جنيه"
+            # كل سطر بيبيّن شهره -- بقى ممكن تيجي متأخرات من أكتر من شهر
+            lines = ["- " + i.get("program", "") + " (" + str(i.get("date", "")) + "): "
+                     + str(i.get("amount", "")) + " جنيه"
                      for i in overdue]
             part = ("⚠️ أقساط متأخرة من " + overdue_month_key
                     + " لسه متسجلة مش مدفوعة:"
@@ -654,10 +656,11 @@ def check_recurring_reminders_job():
     try:
         from services.recurring_reminders_service import (
             get_active_recurring_reminders,
-            update_recurring_reminder_last_sent
+            update_recurring_reminder_last_sent,
+            is_reminder_due,
         )
         import time
-        from datetime import datetime, timezone, timedelta
+        from utils.time_utils import now_cairo
 
         chat_id = get_chat_id()
         if not chat_id:
@@ -665,35 +668,26 @@ def check_recurring_reminders_job():
 
         reminders = get_active_recurring_reminders()
         now_ms = int(time.time() * 1000)
+        now_cairo_time = now_cairo()
 
         for reminder in reminders:
-            last_sent = reminder.get("last_sent")
-            interval_type = reminder.get("interval_type", "daily")
-            interval_value = reminder.get("interval_value", 1)
+            # \u0643\u0644 \u062a\u0630\u0643\u064a\u0631 \u0641\u064a try \u0644\u0648\u062d\u062f\u0647 -- \u0642\u0628\u0644 \u0643\u062f\u0647 \u0633\u062c\u0644 \u0648\u0627\u062d\u062f \u0628\u0627\u0638 (\u0646\u0635 \u0646\u0627\u0642\u0635 \u0645\u062b\u0644\u0627\u064b)
+            # \u0643\u0627\u0646 \u0628\u064a\u0631\u0645\u064a \u0627\u0633\u062a\u062b\u0646\u0627\u0621 \u064a\u0648\u0642\u0641 \u0627\u0644\u0644\u0648\u0628 \u0648\u064a\u0645\u0646\u0639 \u0643\u0644 \u0627\u0644\u062a\u0630\u0643\u064a\u0631\u0627\u062a \u0627\u0644\u0628\u0627\u0642\u064a\u0629
+            try:
+                text = reminder.get("text")
+                if not text:
+                    logger.warning("\u062a\u0630\u0643\u064a\u0631 \u0645\u062a\u0643\u0631\u0631 \u0645\u0646 \u063a\u064a\u0631 \u0646\u0635: " + str(reminder.get("id")))
+                    continue
 
-            intervals = {
-                "daily": 24 * 60 * 60 * 1000,
-                "weekly": 7 * 24 * 60 * 60 * 1000,
-                "hourly": 60 * 60 * 1000,
-                "custom_minutes": int(interval_value) * 60 * 1000
-            }
-            interval_ms = intervals.get(interval_type, 24 * 60 * 60 * 1000)
+                if not is_reminder_due(reminder, now_cairo_time, now_ms):
+                    continue
 
-            should_send = (last_sent is None or (now_ms - last_sent) >= interval_ms)
-
-            scheduled_hour = reminder.get("scheduled_hour")
-            if scheduled_hour is not None and interval_type == "daily":
-                cairo_tz = timezone(timedelta(hours=3))
-                now_cairo_time = datetime.now(cairo_tz)
-                should_send = (
-                    should_send and
-                    now_cairo_time.hour == scheduled_hour and
-                    now_cairo_time.minute == reminder.get("scheduled_minute", 0)
-                )
-
-            if should_send:
-                bot.send_message(chat_id, "\u0631\u0633\u0627\u0644\u0629: " + reminder['text'])
+                bot.send_message(chat_id, "\u0631\u0633\u0627\u0644\u0629: " + text)
                 update_recurring_reminder_last_sent(reminder)
+            except Exception as item_error:
+                logger.error(
+                    "Recurring reminder item failed (" + str(reminder.get("id")) + "): " + str(item_error)
+                )
 
     except Exception as e:
         logger.error("Recurring reminders error: " + str(e))
@@ -859,7 +853,7 @@ if __name__ == "__main__":
         # Scheduler
         scheduler.add_job(check_reminders_job, 'interval', seconds=30,
                          id='reminders', misfire_grace_time=10)
-        scheduler.add_job(check_recurring_reminders_job, 'interval', minutes=15,
+        scheduler.add_job(check_recurring_reminders_job, 'interval', minutes=1,
                          id='recurring', misfire_grace_time=60)
         scheduler.add_job(check_loans_job, 'cron', hour=9, minute=0,
                          id='loans_check', timezone='Africa/Cairo', misfire_grace_time=60)

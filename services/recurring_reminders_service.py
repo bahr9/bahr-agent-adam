@@ -13,9 +13,59 @@ firebase_service.py نفسه متلمسش هنا خالص -- ده اللي بي�
 """
 
 import time
+from datetime import timedelta
 
 from utils.logger import logger
 from services import supabase_service, firebase_service
+
+
+# نافذة اللحاق للتذكير اليومي بميعاد محدد (أوديت 2026-08-05).
+# بتحل مشكلتين مع بعض: (1) لو البوت كان واقف لحظة الميعاد بالظبط، يلحق
+# التذكير أول ما يرجع بدل ما يضيع؛ (2) تذكير جديد اتعمل بعد ميعاده بساعات
+# مايضربش فورًا لحظة الإنشاء -- يستنى ميعاد بكرة.
+DAILY_CATCHUP_MINUTES = 90
+
+INTERVALS_MS = {
+    "daily":  24 * 60 * 60 * 1000,
+    "weekly":  7 * 24 * 60 * 60 * 1000,
+    "hourly":      60 * 60 * 1000,
+}
+
+
+def is_reminder_due(reminder, now_cairo_time, now_ms):
+    """هل التذكير المتكرر ده مستحق الإرسال دلوقتي؟ -- دالة صافية، بلا شبكة.
+
+    للتذكير اليومي بميعاد محدد القاعدة هي: "عدّينا ميعاد النهارده وإحنا لسه
+    جوه نافذة اللحاق، ولسه متبعتش بعد الميعاد ده".
+
+    القاعدة القديمة كانت بتطلب `now.minute == scheduled_minute` بالظبط،
+    والـ job كان بيشتغل كل 15 دقيقة -- فالدقيقة المطلوبة عمرها ما كانت بتيجي
+    والتذكيرات اليومية عمرها ما ضربت. القاعدة الجديدة صح مهما كان إيقاع الفحص.
+    """
+    last_sent = reminder.get("last_sent")
+    interval_type = reminder.get("interval_type", "daily")
+    scheduled_hour = reminder.get("scheduled_hour")
+
+    if scheduled_hour is not None and interval_type == "daily":
+        target = now_cairo_time.replace(
+            hour=int(scheduled_hour),
+            minute=int(reminder.get("scheduled_minute") or 0),
+            second=0,
+            microsecond=0,
+        )
+        since_target = now_cairo_time - target
+        if since_target < timedelta(0):
+            return False                       # الميعاد لسه ماجاش النهارده
+        if since_target > timedelta(minutes=DAILY_CATCHUP_MINUTES):
+            return False                       # فات الميعاد بكتير -- استنى بكرة
+        return last_sent is None or last_sent < int(target.timestamp() * 1000)
+
+    if interval_type == "custom_minutes":
+        interval_ms = int(reminder.get("interval_value") or 1) * 60 * 1000
+    else:
+        interval_ms = INTERVALS_MS.get(interval_type, INTERVALS_MS["daily"])
+
+    return last_sent is None or (now_ms - last_sent) >= interval_ms
 
 
 def save_recurring_reminder(text, interval_type, interval_value, chat_id, scheduled_hour=None, scheduled_minute=None):
