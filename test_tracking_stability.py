@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """
-تحقق فعلي من tracking_stability (Stage 5.1) ضد Firestore الحقيقي. بيولّد
-5 تصحيحات حقيقية (loan_update_installment) على القسط الآمن، ويتأكد إن
-العتبة (5) بتشتغل صح والتفسير محايد مش سلبي، وبعدين بينضف كل حاجة.
+تحقق من tracking_stability (Stage 5.1): 5 تصحيحات (loan_update_installment)
+ويتأكد إن العتبة (5) بتشتغل صح والتفسير محايد مش سلبي.
+
+بيشتغل على fake_firestore -- صفر شبكة، وكان بيكتب على الإنتاج قبل كده.
 """
 
-from services.firebase_service import init_firebase
+from fake_firestore import install_fake_firestore
 from services import loan_service, loan_commands, event_store, self_state_engine
 
 PROGRAM = "Credit Agricole"
@@ -13,7 +14,7 @@ MONTH_KEY = "01/06/2032"
 
 
 def main():
-    assert init_firebase(), "فشل الاتصال بـ Firebase"
+    install_fake_firestore()
 
     program = loan_service._find_program(PROGRAM)
     idx = len(program["installments"]) - 1

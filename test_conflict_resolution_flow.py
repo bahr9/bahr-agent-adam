@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-تحقق فعلي من Conflict Resolution Flow (Stage 4) -- نفس القسط الآمن
-(Credit Agricole، 01/06/2032). بيتأكد إن loan_record_installment بتوقف
-فعليًا ومتكتبش لما فيه تعارض، وإن loan_resolve_conflict هو المسار الوحيد
+تحقق من Conflict Resolution Flow (Stage 4): loan_record_installment بتوقف
+فعليًا ومتكتبش لما فيه تعارض، وloan_resolve_conflict هو المسار الوحيد
 لتجاوز التوقف ده.
+
+الثابت المحروس بدقة: الرفض مبيكتبش أي حدث paid_status ولا أي كتابة domain،
+لكنه **بيسجّل** حدث conflict_status -- الرفض نفسه دليل لازم يفضل ليه أثر.
+
+بيشتغل على fake_firestore -- صفر شبكة.
 """
 
-from services.firebase_service import init_firebase
+from fake_firestore import install_fake_firestore
 from services import loan_service, loan_commands, event_store, loan_conflict_observer
 
 PROGRAM = "Credit Agricole"
@@ -14,7 +18,7 @@ MONTH_KEY = "01/06/2032"
 
 
 def main():
-    assert init_firebase(), "فشل الاتصال بـ Firebase"
+    install_fake_firestore()
 
     program = loan_service._find_program(PROGRAM)
     idx = len(program["installments"]) - 1
@@ -47,10 +51,21 @@ def main():
     assert still_true is True, "❌ القيمة اتغيرت رغم إن الكتابة المفروض تكون اترفضت!"
     print("✅ القيمة الفعلية متغيرتش -- الرفض كان حقيقي مش شكلي")
 
-    # 4) تأكيد: مفيش حدث جديد اتسجل بسبب المحاولة المرفوضة (لسه حدث واحد بس)
-    events_after_refusal = event_store.get_events_for_entity("loan_installment", identity_key)
-    assert len(events_after_refusal) == 1, f"❌ المفروض حدث واحد بس، لقيت {len(events_after_refusal)}"
-    print("✅ مفيش حدث اتسجل للمحاولة المرفوضة -- التوقف كان قبل أي كتابة خالص")
+    # 4) تأكيد: الرفض مكتبش أي حدث paid_status جديد -- لسه حدث واحد بس.
+    #    (تصحيح 2026-08-05: الاختبار كان بيعدّ **كل** الأحداث ويتوقع 1. لكن
+    #    Stage 5 بيسجّل حدث conflict_status للرفض نفسه عن قصد، فالإجمالي 2.
+    #    الثابت الحقيقي اللي لازم يتحرس هو "مفيش كتابة domain حصلت"، يعني
+    #    مفيش paid_status جديد -- مش إن الرفض مالوش أثر خالص.)
+    all_events = event_store.get_events_for_entity("loan_installment", identity_key)
+    paid_events = [e for e in all_events if e.get("attribute") == "paid_status"]
+    assert len(paid_events) == 1, f"❌ المفروض حدث paid_status واحد بس، لقيت {len(paid_events)}"
+    print("✅ مفيش حدث paid_status اتسجل للمحاولة المرفوضة -- التوقف كان قبل أي كتابة domain")
+
+    # والرفض نفسه لازم يسيب أثر -- وإلا مفيش دليل إن التعارض حصل أصلاً
+    conflict_events = [e for e in all_events if e.get("attribute") == "conflict_status"]
+    assert len(conflict_events) == 1, f"❌ المفروض حدث conflict_status واحد، لقيت {len(conflict_events)}"
+    assert conflict_events[-1]["new_value"] == "pending", conflict_events[-1]
+    print("✅ الرفض نفسه اتسجل كـ conflict_status=pending -- فيه دليل إن التعارض حصل")
 
     # 5) محاولة تسجيل نفس القيمة (True) تاني -- مش تعارض (duplicate)، المفروض تعدي عادي
     ok3, msg3, e3 = loan_commands.loan_record_installment(PROGRAM, MONTH_KEY, True, chat_id=999)

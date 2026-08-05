@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 """
-تحقق فعلي من Loan Command API (Stage 2) -- بيستخدم قسط بعيد جدًا وآمن
-(Credit Agricole -- آخر قسط، 01/06/2032، حاليًا غير مدفوع) عشان يثبت
-المسار الحقيقي: تسجيل -> تحقق -> رجوع لنفس الحالة الأصلية.
+تحقق من Loan Command API (Stage 2): تسجيل -> تحقق -> رجوع للحالة الأصلية.
 
-مفيش أي قسط "حالي" أو قريب بيتلمس هنا خالص.
+قاعدة الاختبارات (2026-08-05): الاختبار ده كان بيكتب حدثين حقيقيين في
+adam_events عند كل تشغيلة، والحدثين دول كانوا بيمنعوا تلات اختبارات تانية
+من الشغل أصلاً (كانوا بيشترطوا سجل نضيف على نفس الكيان). دلوقتي بيشتغل على
+fake_firestore بالكامل -- صفر شبكة وصفر أثر على الإنتاج.
 """
 
-from services.firebase_service import init_firebase
+from fake_firestore import install_fake_firestore
 from services import loan_service, loan_commands, event_store
 
 PROGRAM = "Credit Agricole"
@@ -15,7 +16,7 @@ MONTH_KEY = "01/06/2032"  # آخر قسط -- بعيد جدًا وآمن للاخ
 
 
 def main():
-    assert init_firebase(), "فشل الاتصال بـ Firebase"
+    install_fake_firestore()
 
     program = loan_service._find_program(PROGRAM)
     idx = len(program["installments"]) - 1
@@ -78,7 +79,7 @@ def main():
     print("✅ loan_mark_paid اتشالت نهائيًا من TOOLS، والثلاث أدوات الجديدة موجودة")
 
     print("\n✅✅✅ Stage 2 verification: كله شغال، والقسط رجع لحالته الأصلية بالظبط")
-    print(f"\nملحوظة: اتسجل حدثين حقيقيين في adam_events بسبب الاختبار ده:\n  - {event_id}\n  - {event_id2}\nمتسيبتش أي أثر على البيانات الفعلية (القيمة رجعت زي ما كانت).")
+    print("\nكل ده حصل على fake_firestore في الذاكرة -- ولا حرف اتكتب في Firestore الحقيقي.")
 
 
 if __name__ == "__main__":

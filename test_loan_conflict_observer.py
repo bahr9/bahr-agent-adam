@@ -1,12 +1,17 @@
 # -*- coding: utf-8 -*-
 """
-تحقق فعلي من Loan Conflict Observer (Stage 3) -- نفس القسط الآمن اللي
-اتستخدم في Stage 2 (Credit Agricole، آخر قسط، 01/06/2032). بيمشّي على
-كل الحالات الأربعة (new/duplicate/update/conflict) بأحداث حقيقية، وبيرجّع
-القيمة لحالتها الأصلية في الآخر، وبينضف كل أحداث الاختبار.
+تحقق من Loan Conflict Observer (Stage 3): كل الحالات الأربعة
+(new/duplicate/update/conflict).
+
+ملحوظة معمارية: تصنيف "conflict" بقى غير قابل للإنتاج عبر الـ command API
+بعد Stage 4 -- loan_record_installment بترفض الكتابة المتعارضة أصلاً. يعني
+الفرع ده في الملاحِظ بيتفعّل بس على أحداث قديمة اتسجلت قبل Stage 4. الاختبار
+بيسجّل حدث بنفس الشكل ده مباشرة عشان يتحقق من عقد الملاحِظ.
+
+بيشتغل على fake_firestore -- صفر شبكة.
 """
 
-from services.firebase_service import init_firebase
+from fake_firestore import install_fake_firestore
 from services import loan_service, loan_commands, event_store, loan_conflict_observer
 
 PROGRAM = "Credit Agricole"
@@ -14,7 +19,7 @@ MONTH_KEY = "01/06/2032"
 
 
 def main():
-    assert init_firebase(), "فشل الاتصال بـ Firebase"
+    install_fake_firestore()
 
     program = loan_service._find_program(PROGRAM)
     idx = len(program["installments"]) - 1
@@ -46,14 +51,30 @@ def main():
     assert c2["classification"] == "duplicate", c2
     print(f"✅ نفس القيمة اتصنفت 'duplicate': {c2['explanation']}")
 
-    # 3) قيمة مختلفة عبر loan_record_installment تاني (مش update) -> "conflict"
+    # 3أ) نفس الطلب المتعارض عبر loan_record_installment -- Stage 4 بيرفضه
+    #     (تصحيح 2026-08-05: الاختبار ده اتكتب في Stage 3 وكان بيتوقع
+    #     `ok is True`، لأن ساعتها الملاحِظ كان بيصنّف بس والكتابة كانت
+    #     بتعدّي. Stage 4 خلّى الكتابة تتوقف تمامًا، والاختبار مااتحدّثش.)
     ok, msg3, e3 = loan_commands.loan_record_installment(PROGRAM, MONTH_KEY, False, chat_id=999)
-    assert ok
-    assert "⚠️" in msg3, "المفروض الرسالة تتضمن ملحوظة التعارض"
+    assert ok is False, "Stage 4 المفروض يرفض الكتابة المتعارضة"
+    assert e3 is None, "مفيش حدث paid_status المفروض يتسجل للطلب المرفوض"
+    assert "⚠️" in msg3 and "تعارض" in msg3
+    print(f"✅ الطلب المتعارض اترفض (Stage 4): {msg3.splitlines()[0]}")
+
+    # 3ب) التصنيف "conflict" نفسه: بقى غير قابل للإنتاج عبر الـ command API
+    #     بعد Stage 4، فبنسجّل حدث paid_status مباشرة بنفس شكل الأحداث
+    #     القديمة (actor=loan_record_installment) عشان نتحقق من عقد الملاحِظ.
+    event_store.record_event(
+        entity_type="loan_installment", entity_id=identity_key,
+        attribute="paid_status", new_value=False, previous_value=True,
+        source="llm_tool", actor="loan_record_installment",
+        raw_context={"note": "حدث قديم قبل Stage 4 -- محاكاة للتحقق من التصنيف"},
+    )
     c3 = loan_conflict_observer.classify_installment(program["id"], idx)
     assert c3["classification"] == "conflict", c3
-    print(f"✅ قيمة متضاربة من غير تصحيح اتصنفت 'conflict': {c3['explanation']}")
-    print(f"   الرسالة الراجعة فعلاً فيها الملحوظة: {msg3.splitlines()[-1]}")
+    print(f"✅ حدث متعارض قديم اتصنف 'conflict': {c3['explanation'][:80]}...")
+    # آخر قيمة متسجلة دلوقتي False -- فالخطوة الجاية (تصحيح لـ True) بتبقى
+    # تغيير حقيقي، وده اللي بيخلي التصنيف "update" مش "duplicate"
 
     # 4) تصحيح صريح بسبب -> "update"
     ok, msg4, e4 = loan_commands.loan_update_installment(

@@ -113,9 +113,13 @@ def loan_record_installment(program_name, month_key=None, paid=True, chat_id=Non
 
     Stage 4 (Conflict Resolution Flow): قبل أي كتابة، بتتفحص القيمة المطلوبة
     مقابل آخر قيمة متسجلة فعليًا لنفس القسط. لو فيه قيمة سابقة مختلفة
-    (يعني ادّعاءين متضاربين) -- **بتوقف ومبتكتبش خالص**، ومترجعش غير رسالة
-    توضيح للتعارض. مفيش حدث بيتسجل، مفيش كتابة بتحصل. الكتابة الفعلية في
+    (يعني ادّعاءين متضاربين) -- **بتوقف ومبتكتبش خالص**. الكتابة الفعلية في
     الحالة دي مش بتحصل غير عبر loan_resolve_conflict بسبب صريح موثّق.
+
+    مهم (تصحيح توثيق 2026-08-05): "مفيش كتابة" معناها مفيش كتابة domain ولا
+    حدث paid_status. لكن Stage 5 بيسجّل حدث **conflict_status** للرفض نفسه --
+    الرفض دليل حقيقي لازم يفضل ليه أثر. فبعد رفض واحد بيبقى فيه حدثين على
+    الـ entity: الـ paid_status الأصلي + conflict_status الجديد.
     """
     resolved, err = _resolve_installment(program_name, month_key)
     if err:

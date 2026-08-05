@@ -10,9 +10,15 @@
 
 نطاق Stage 3 (مهم):
   - الملف ده بيراقب/يصنّف بس. **مبيوقفش** أي كتابة ولا بياخد تأكيد من حد.
-    الـ "وقف + تأكيد يدوي" هو صلب Stage 4 (Conflict Resolution Flow) اللي
-    لسه مش متبني. Stage 3 بس بيوفر الإشارة (classification) اللي Stage 4
-    هيبني عليها قراره.
+    الـ "وقف + تأكيد يدوي" هو صلب Stage 4 (Conflict Resolution Flow).
+
+    تحديث 2026-08-05: Stage 4 **اتبنى فعلاً** (loan_commands.py) والتوثيق ده
+    كان لسه بيقول "لسه مش متبني". وليها أثر مهم: بما إن
+    loan_record_installment بقت ترفض الكتابة المتعارضة من أصلها، تصنيف
+    "conflict" تحت بقى **غير قابل للإنتاج** عبر الـ command API -- مفيش حدث
+    paid_status جديد بيتكتب عشان يتصنّف. الفرع ده فضل صالح للأحداث القديمة
+    اللي اتسجلت قبل Stage 4 بس، ولأي كتابة مباشرة على event_store.
+    الإشارة الحية للتعارض دلوقتي هي حدث conflict_status.
   - الـ identity_key المستخدم فعليًا (زي "ca_71") هو نفسه مفهوم
     normalized_program + billing_period المطلوب في التصميم الأصلي --
     التطبيع (normalize) بيحصل فعلاً في loan_commands._resolve_installment
