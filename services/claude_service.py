@@ -921,7 +921,7 @@ TOOLS = [
     },
     {
         "name": "dispatch_agent_task",
-        "description": "يسجّل تاسك في طابور التنسيق بين آدم وباقي الأنظمة (Hope / مداد / عين الخبير). دلوقتي فيه تنفيذ آلي حقيقي شغال لحالتين بس: target='مداد' مع action='generate_marketing_post_from_eye_expert' (بيتنفذ خلال ~2 دقيقة)، وtarget='عين_الخبير' مع action='retry_failed_eye_expert_reply' (بيتنفذ عن طريق Make.com). لازم تستخدم الـ action string بالظبط زي ما هو مكتوب هنا -- أي نص تاني (حتى لو قريب في المعنى) هيتسجل pending بس من غير تنفيذ آلي، وده هيتوضحلك في رسالة الرد لو حصل. لأي target/action تاني غير الاتنين دول، التاسك هيفضل معلّق لحد ما حد يراجعه يدويًا أو تتبني له أداة تنفيذ.",
+        "description": "يسجّل تاسك في طابور التنسيق بين آدم وباقي الأنظمة (Hope / مداد / عين الخبير). دلوقتي فيه تنفيذ آلي حقيقي شغال لحالتين بس: target='مداد' مع action='generate_marketing_post_from_eye_expert' (بيتنفذ خلال ~2 دقيقة)، وtarget='عين_الخبير' مع action='retry_failed_eye_expert_reply' (بيتنفذ عن طريق Make.com). لازم تستخدم الـ action string بالظبط زي ما هو مكتوب هنا -- أي نص تاني (حتى لو قريب في المعنى) هيتسجل pending بس من غير تنفيذ آلي، وده هيتوضحلك في رسالة الرد لو حصل. لأي target/action تاني غير الاتنين دول، التاسك هيفضل معلّق لحد ما حد يراجعه يدويًا أو تتبني له أداة تنفيذ. الأكشنات المضمونة التنفيذ عند مداد: echo_test_marker (اختبار)، generate_marketing_post_from_eye_expert (بوست من سؤال عميل)، website_readiness_report (تقرير حالة الويب سايت + خطة كاملة للجاهزية للنشر -- استخدمه لما أحمد يطلب تقرير أو خطة عن الموقع، وممكن payload فيه focus لو حدد تركيز معين).",
         "input_schema": {
             "type": "object",
             "properties": {
