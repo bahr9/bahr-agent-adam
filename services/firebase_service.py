@@ -1591,3 +1591,60 @@ def graph_get_node(node_id):
     if result is not None:
         return result
     return _fs_graph_get_node(node_id)
+
+
+# ---------- المالية (آخر قطعة في الهجرة -- 2026-08-06) ----------
+_fs_get_loan_paid_map = get_loan_paid_map
+_fs_add_expense = add_expense
+_fs_get_expenses = get_expenses
+_fs_save_decision = save_decision
+_fs_get_decisions = get_decisions
+
+
+def get_loan_paid_map():
+    """العقد الثلاثي محفوظ بالحرف: dict نجاح / {} فاضي / None فشل قراءة.
+
+    Supabase الأول؛ None منه = مش قادر يجاوب -> المسار القديم (اللي هو
+    نفسه بيرجع None عند فشله -- فسلسلة الفشل الكامل بتوصل للمنادي صح
+    وloan_service بيرمي LoanDataUnavailable بدل "صفر مدفوع" كاذبة).
+    """
+    result = _sb.get_loan_paid_map()
+    if result is not None:
+        return result
+    return _fs_get_loan_paid_map()
+
+
+def add_expense(amount, category, description="", project=None):
+    sb_ok = _sb.add_expense_row(amount, category, description, project)
+    try:
+        fs_ok, fs_msg = _fs_add_expense(amount, category, description, project)
+    except Exception as e:
+        fs_ok, fs_msg = False, str(e)
+    if sb_ok or fs_ok:
+        return True, "تم"
+    return False, fs_msg
+
+
+def get_expenses(limit=100):
+    result = _sb.list_expenses(limit)
+    if result is not None:
+        return result
+    return _fs_get_expenses(limit)
+
+
+def save_decision(decision_text, project=None, status="accepted", reason=None, source="conversation"):
+    sb_ok = _sb.save_decision_row(decision_text, project, status, reason, source)
+    try:
+        fs_result = _fs_save_decision(decision_text, project, status, reason, source)
+    except Exception:
+        fs_result = None
+    if fs_result is not None:
+        return fs_result
+    return sb_ok
+
+
+def get_decisions(project=None, status=None, limit=20):
+    result = _sb.list_decisions(project, status, limit)
+    if result is not None:
+        return result
+    return _fs_get_decisions(project, status, limit)

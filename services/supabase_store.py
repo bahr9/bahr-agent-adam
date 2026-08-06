@@ -423,6 +423,286 @@ def save_price_row(item, normalized, price_min, price_max, unit, note):
         return False, None
 
 
+
+
+# ============================================================
+# 💳 المالية -- القروض والمصاريف والقرارات وسجل الأحداث
+# ============================================================
+# آخر قطعة في الهجرة (2026-08-06): البيانات اتستوردت واتحقق منها صف صف،
+# ودي دوال القراية/الكتابة اللي بتخلي Firestore شبكة أمان بس.
+
+def get_loan_paid_map():
+    """{identity_key: paid} -- None عند الفشل (المنادي يقرر الـ fallback).
+
+    العقد الثلاثي محفوظ: dict = نجاح، {} = فعلاً مفيش صفوف،
+    None = **فشل قراءة** (وده اللي بيمنع "صفر مدفوع" الكاذبة).
+    """
+    if _client() is None:
+        return None
+    try:
+        resp = _client().table("loan_installment_status").select(
+            "identity_key, paid"
+        ).execute()
+        return {r["identity_key"]: bool(r["paid"]) for r in (resp.data or [])}
+    except Exception as e:
+        logger.warning(f"⚠️ [Supabase] قراءة خريطة الأقساط فشلت: {str(e)[:80]}")
+        return None
+
+
+def save_loan_status(identity_key, paid):
+    if _client() is None:
+        return False
+    try:
+        program_id, _, index_str = identity_key.rpartition("_")
+        _client().table("loan_installment_status").upsert({
+            "identity_key": identity_key,
+            "program_id": program_id,
+            "installment_index": int(index_str) if index_str.isdigit() else -1,
+            "paid": bool(paid),
+            "updated_at": _now_iso(),
+        }, on_conflict="identity_key").execute()
+        return True
+    except Exception as e:
+        logger.warning(f"⚠️ [Supabase] حفظ حالة القسط فشل ({identity_key}): {str(e)[:80]}")
+        return False
+
+
+def insert_event(event):
+    """تسجيل حدث في سجل الأحداث -- شكل الحدث زي بتاع event_store بالظبط."""
+    if _client() is None:
+        return False
+    try:
+        entity = event.get("entity") or {}
+        chat_id = event.get("chat_id")
+        _client().table("adam_events").insert({
+            "firestore_id": event.get("event_id"),
+            "event_id": event.get("event_id"),
+            "entity_type": entity.get("type") or "",
+            "entity_id": str(entity.get("id") or ""),
+            "attribute": event.get("attribute") or "",
+            "previous_value": event.get("previous_value"),
+            "new_value": event.get("new_value"),
+            "source": event.get("source") or "unknown",
+            "actor": event.get("actor") or "",
+            "chat_id": str(chat_id) if chat_id is not None else None,
+            "raw_context": event.get("raw_context") or {},
+            "metadata": event.get("metadata") or {},
+            "occurred_at": event.get("occurred_at"),
+        }).execute()
+        return True
+    except Exception as e:
+        logger.warning(f"⚠️ [Supabase] تسجيل الحدث فشل: {str(e)[:80]}")
+        return False
+
+
+def _event_row_to_legacy(r):
+    """صف Supabase -> شكل الحدث القديم اللي كل القراء متعودين عليه."""
+    return {
+        "event_id": r.get("event_id"),
+        "entity": {"type": r.get("entity_type"), "id": r.get("entity_id")},
+        "entity_key": f"{r.get('entity_type')}:{r.get('entity_id')}",
+        "type_attribute_key": f"{r.get('entity_type')}:{r.get('attribute')}",
+        "attribute": r.get("attribute"),
+        "previous_value": r.get("previous_value"),
+        "new_value": r.get("new_value"),
+        "source": r.get("source"),
+        "actor": r.get("actor"),
+        "chat_id": r.get("chat_id"),
+        "raw_context": r.get("raw_context") or {},
+        "metadata": r.get("metadata") or {},
+        "occurred_at": r.get("occurred_at"),
+    }
+
+
+def get_event(event_id):
+    if _client() is None:
+        return None
+    try:
+        resp = _client().table("adam_events").select("*").eq(
+            "event_id", event_id
+        ).limit(1).execute()
+        if not resp.data:
+            return {"__missing__": True}
+        return _event_row_to_legacy(resp.data[0])
+    except Exception as e:
+        logger.warning(f"⚠️ [Supabase] قراءة حدث فشلت: {str(e)[:80]}")
+        return None
+
+
+def get_events_for_entity(entity_type, entity_id, limit=200):
+    """أحدث limit حدث، مرتبين تصاعديًا (العقد القديم: events[-1] هو الأحدث).
+
+    الترتيب هنا **صح فعلاً** لأول مرة: على Firestore الفهرس المركب كان
+    ناقص من 21 يوليو والاستعلام كان بيرجع عيّنة عشوائية.
+    """
+    if _client() is None:
+        return None
+    try:
+        resp = _client().table("adam_events").select("*").eq(
+            "entity_type", entity_type
+        ).eq("entity_id", str(entity_id)).order(
+            "occurred_at", desc=True
+        ).limit(limit).execute()
+        rows = list(reversed(resp.data or []))
+        return [_event_row_to_legacy(r) for r in rows]
+    except Exception as e:
+        logger.warning(f"⚠️ [Supabase] قراءة أحداث الكيان فشلت: {str(e)[:80]}")
+        return None
+
+
+def get_events_by_type_and_attribute(entity_type, attribute, limit=500):
+    if _client() is None:
+        return None
+    try:
+        resp = _client().table("adam_events").select("*").eq(
+            "entity_type", entity_type
+        ).eq("attribute", attribute).order(
+            "occurred_at", desc=True
+        ).limit(limit).execute()
+        rows = list(reversed(resp.data or []))
+        return [_event_row_to_legacy(r) for r in rows]
+    except Exception as e:
+        logger.warning(f"⚠️ [Supabase] قراءة أحداث النوع فشلت: {str(e)[:80]}")
+        return None
+
+
+def add_expense_row(amount, category, description, project):
+    if _client() is None:
+        return False
+    try:
+        _client().table("expenses").insert({
+            "amount": float(amount),
+            "category": category,
+            "description": description or None,
+            "project": project or None,
+            "occurred_at": _now_iso(),
+            "created_at": _now_iso(),
+        }).execute()
+        return True
+    except Exception as e:
+        logger.warning(f"⚠️ [Supabase] حفظ المصروف فشل: {str(e)[:80]}")
+        return False
+
+
+def list_expenses(limit=100):
+    """الأحدث أولًا، بالشكل القديم (date نص قاهرة، created_at رقم)."""
+    if _client() is None:
+        return None
+    try:
+        resp = _client().table("expenses").select("*").order(
+            "created_at", desc=True
+        ).limit(limit).execute()
+        out = []
+        for r in resp.data or []:
+            occurred_ms = _to_epoch_ms(r.get("occurred_at"))
+            date_str = ""
+            if occurred_ms:
+                date_str = datetime.fromtimestamp(
+                    occurred_ms / 1000, tz=CAIRO
+                ).strftime("%Y-%m-%d %H:%M")
+            out.append({
+                "id": r.get("firestore_id") or r.get("id"),
+                "amount": float(r.get("amount") or 0),
+                "category": r.get("category") or "",
+                "description": r.get("description") or "",
+                "project": r.get("project"),
+                "date": date_str,
+                "created_at": _to_epoch_ms(r.get("created_at")) or 0,
+            })
+        return out
+    except Exception as e:
+        logger.warning(f"⚠️ [Supabase] قراءة المصاريف فشلت: {str(e)[:80]}")
+        return None
+
+
+def save_decision_row(decision_text, project, status, reason, source):
+    if _client() is None:
+        return False
+    try:
+        _client().table("decision_ledger").insert({
+            "decision": decision_text,
+            "project": project or None,
+            "status": status or "accepted",
+            "reason": reason or None,
+            "source": source or "conversation",
+            "occurred_at": _now_iso(),
+            "created_at": _now_iso(),
+        }).execute()
+        return True
+    except Exception as e:
+        logger.warning(f"⚠️ [Supabase] حفظ القرار فشل: {str(e)[:80]}")
+        return False
+
+
+def list_decisions(project=None, status=None, limit=20):
+    if _client() is None:
+        return None
+    try:
+        resp = _client().table("decision_ledger").select("*").order(
+            "created_at", desc=True
+        ).limit(limit).execute()
+        out = []
+        for r in resp.data or []:
+            created_ms = _to_epoch_ms(r.get("created_at"))
+            occurred_ms = _to_epoch_ms(r.get("occurred_at"))
+            date_str = ""
+            if occurred_ms:
+                date_str = datetime.fromtimestamp(
+                    occurred_ms / 1000, tz=CAIRO
+                ).strftime("%Y-%m-%d %H:%M")
+            d = {
+                "id": r.get("firestore_id") or r.get("id"),
+                "decision": r.get("decision") or "",
+                "project": r.get("project") or "",
+                "status": r.get("status") or "accepted",
+                "reason": r.get("reason") or "",
+                "source": r.get("source") or "conversation",
+                "date": date_str,
+                "created_at": created_ms or 0,
+            }
+            if project and d["project"].lower() != str(project).lower():
+                continue
+            if status and d["status"] != status:
+                continue
+            out.append(d)
+        return out
+    except Exception as e:
+        logger.warning(f"⚠️ [Supabase] قراءة القرارات فشلت: {str(e)[:80]}")
+        return None
+
+
+def get_eye_prompt():
+    """أحدث إصدار من برومبت عين الخبير -- None عند الفشل."""
+    if _client() is None:
+        return None
+    try:
+        resp = _client().table("eye_expert_prompt").select(
+            "content, updated_at"
+        ).order("updated_at", desc=True).limit(1).execute()
+        if not resp.data:
+            return {"__missing__": True}
+        return resp.data[0]
+    except Exception as e:
+        logger.warning(f"⚠️ [Supabase] قراءة برومبت عين الخبير فشلت: {str(e)[:80]}")
+        return None
+
+
+def append_eye_prompt(content, updated_by="adam"):
+    """إصدار جديد -- append-only، التاريخ كله محفوظ."""
+    if _client() is None:
+        return False
+    try:
+        _client().table("eye_expert_prompt").insert({
+            "content": content,
+            "updated_at": _now_iso(),
+            "updated_by": updated_by,
+        }).execute()
+        return True
+    except Exception as e:
+        logger.warning(f"⚠️ [Supabase] حفظ برومبت عين الخبير فشل: {str(e)[:80]}")
+        return False
+
+
 # ============================================================
 # 🏪 الموردين المرجعيين -- app_settings['suppliers']
 # ============================================================

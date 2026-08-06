@@ -108,21 +108,33 @@ def record_event(
         source, actor, chat_id, raw_context, metadata,
     )
 
-    from services.firebase_service import firestore_db
-    if firestore_db is None:
-        logger.error("❌ مينفعش نسجل event -- Firestore مش متصل")
-        raise RuntimeError("Firestore غير متصل -- تعذر تسجيل الحدث")
+    # كتابة مزدوجة (هجرة 2026-08-06): Supabase هو مصدر القراية دلوقتي،
+    # وFirestore mirror. القانون الحاكم ("مفيش تعبير من غير دليل") بيتحقق
+    # لو **أي** واحد فيهم نجح -- بنرمي بس لو الاتنين فشلوا مع بعض.
+    from services import supabase_store
+    sb_ok = supabase_store.insert_event(event)
 
-    try:
-        firestore_db.collection(EVENTS_COLLECTION).document(event["event_id"]).set(event)
-        logger.info(
-            f"📒 event recorded: [{event['entity_key']}].{attribute} "
-            f"({previous_value!r} -> {new_value!r}) id={event['event_id']}"
-        )
-        return event["event_id"]
-    except Exception as e:
-        logger.error(f"❌ خطأ في تسجيل الحدث: {e}")
-        raise
+    fs_ok = False
+    fs_error = None
+    from services.firebase_service import firestore_db
+    if firestore_db is not None:
+        try:
+            firestore_db.collection(EVENTS_COLLECTION).document(event["event_id"]).set(event)
+            fs_ok = True
+        except Exception as e:
+            fs_error = e
+            logger.warning(f"⚠️ mirror الحدث لـ Firestore فشل (Supabase شايله): {str(e)[:80]}")
+
+    if not sb_ok and not fs_ok:
+        logger.error(f"❌ تسجيل الحدث فشل في المخزنين: {fs_error}")
+        raise RuntimeError("تعذر تسجيل الحدث في أي مخزن -- Supabase وFirestore الاتنين فشلوا")
+
+    logger.info(
+        f"📒 event recorded: [{event['entity_key']}].{attribute} "
+        f"({previous_value!r} -> {new_value!r}) id={event['event_id']}"
+        + ("" if fs_ok and sb_ok else f" [sb={sb_ok} fs={fs_ok}]")
+    )
+    return event["event_id"]
 
 
 def record_event_with_write(
@@ -177,6 +189,17 @@ def record_event_with_write(
 
         batch.commit()
 
+        # mirror لـ Supabase (هجرة 2026-08-06): الـ batch بتاع Firestore هو
+        # الالتزام الذري الأساسي لسه (حدث + كتابة domain سوا). Supabase بياخد
+        # نسخة الحدث هنا، وكتابة الـ domain بيتولاها المنادي (loan_commands)
+        # لأنه صاحب معرفة الشكل. فشل الـ mirror بيتسجل بصوت عالي -- مش بيكسر.
+        from services import supabase_store as _sb_store
+        if not _sb_store.insert_event(event):
+            logger.error(
+                f"❌ mirror حدث الالتزام الذري لـ Supabase فشل -- القراء هيشوفوا "
+                f"نسخة أقدم لحد ما يتصلح: {event['event_id']}"
+            )
+
         logger.info(
             f"📒 event+write atomic commit: [{event['entity_key']}].{attribute} "
             f"({previous_value!r} -> {new_value!r}) id={event['event_id']} "
@@ -188,7 +211,17 @@ def record_event_with_write(
         raise
 
 
+def _supabase_first_events(fetch):
+    """None من Supabase = مش قادر -- fallback للمسار القديم."""
+    result = fetch()
+    return result
+
+
 def get_event(event_id: str) -> Optional[dict]:
+    from services import supabase_store
+    sb = supabase_store.get_event(event_id)
+    if sb is not None:
+        return None if sb.get("__missing__") else sb
     """جلب حدث واحد بالـ ID -- read-only. بيُستخدم للتحقق من evidence_event_ids لاحقًا."""
     from services.firebase_service import firestore_db
     if firestore_db is None or not event_id:
@@ -240,6 +273,10 @@ def _query_latest_events(field: str, value: str, limit: int) -> list:
 
 
 def get_events_for_entity(entity_type: str, entity_id: str, limit: int = 200) -> list:
+    from services import supabase_store
+    sb = supabase_store.get_events_for_entity(entity_type, entity_id, limit)
+    if sb is not None:
+        return sb
     """
     كل الأحداث المسجلة لـ entity معيّن، مرتبة زمنيًا (الأقدم أولاً).
     read-only. هتُستخدم في المرحلة 3 (Loan Conflict Observer) عشان تجيب
@@ -258,6 +295,10 @@ def get_events_for_entity(entity_type: str, entity_id: str, limit: int = 200) ->
 
 
 def get_events_by_type_and_attribute(entity_type: str, attribute: str, limit: int = 500) -> list:
+    from services import supabase_store
+    sb = supabase_store.get_events_by_type_and_attribute(entity_type, attribute, limit)
+    if sb is not None:
+        return sb
     """
     كل الأحداث من نوع entity + attribute معيّنين، عبر كل الـ entities (مش
     entity واحد زي get_events_for_entity) -- مرتبة زمنيًا. read-only.
