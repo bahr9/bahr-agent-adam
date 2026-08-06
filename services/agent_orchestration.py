@@ -158,21 +158,47 @@ def verify_task_completion(task: dict) -> dict:
     v_type = verification.get("type")
 
     if v_type == "firestore_document":
-        from services.firebase_service import firestore_db
         collection = verification.get("collection")
         expected_marker = verification.get("expected_marker")
         field = verification.get("field", "caption")
-        if firestore_db is None:
-            return {"verified": False, "reason": "Firestore مش متصل -- مينفعش نتحقق"}
         if not collection or not expected_marker:
             return {"verified": False, "reason": "بيانات التحقق ناقصة (collection/expected_marker)"}
+
+        # التحقق بيبص في **البيتين** (إصلاح 2026-08-06 مساءً): مداد بيكتب
+        # أدلته في Supabase دلوقتي (هجرته سبقتنا)، والاسم "firestore_document"
+        # بقى تاريخي -- المعنى الحقيقي: "مستند في مخزن البيانات". الحالة اللي
+        # كشفت الفجوة: مداد نفّذ بصدق وكتب الـ marker في Supabase، وآدم دوّر
+        # في Firestore بس وأبلغ أحمد "الادّعاء مش مؤكد" عن دليل موجود فعلًا.
+        # التحقق الصادق لازم يدور مطرح ما الدليل ممكن يكون -- مش مطرح ما
+        # كان زمان.
+
+        # 1) Supabase الأول -- البيت الحالي للأدلة
         try:
-            docs = firestore_db.collection(collection).where(field, "==", expected_marker).limit(1).stream()
-            if any(True for _ in docs):
-                return {"verified": True, "reason": f"اتأكد فعليًا -- المستند موجود في {collection}"}
-            return {"verified": False, "reason": f"مفيش مستند مطابق في {collection} -- الادّعاء مش مؤكد"}
+            from services import supabase_store
+            client = supabase_store._client()
+            if client is not None:
+                resp = client.table(collection).select("id").eq(
+                    field, expected_marker
+                ).limit(1).execute()
+                if resp.data:
+                    return {"verified": True,
+                            "reason": f"اتأكد فعليًا -- المستند موجود في {collection} (Supabase)"}
         except Exception as e:
-            return {"verified": False, "reason": f"خطأ أثناء التحقق: {e}"}
+            logger.warning(f"⚠️ التحقق من Supabase فشل ({collection}): {str(e)[:80]}")
+
+        # 2) Firestore -- البيت القديم (أدلة ما قبل الهجرة أو منفذ لسه بيكتب هناك)
+        from services.firebase_service import firestore_db
+        if firestore_db is not None:
+            try:
+                docs = firestore_db.collection(collection).where(field, "==", expected_marker).limit(1).stream()
+                if any(True for _ in docs):
+                    return {"verified": True,
+                            "reason": f"اتأكد فعليًا -- المستند موجود في {collection} (Firestore)"}
+            except Exception as e:
+                return {"verified": False, "reason": f"خطأ أثناء التحقق: {e}"}
+
+        return {"verified": False,
+                "reason": f"مفيش مستند مطابق في {collection} (اتفحص Supabase وFirestore) -- الادّعاء مش مؤكد"}
 
     return {"verified": False, "reason": f"نوع تحقق غير مدعوم عند آدم لسه: {v_type}"}
 
