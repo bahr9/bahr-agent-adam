@@ -703,6 +703,178 @@ def append_eye_prompt(content, updated_by="adam"):
         return False
 
 
+
+
+# ============================================================
+# 🕸️ طابور الأوركسترا -- agent_tasks (نقل 2026-08-06)
+# ============================================================
+# القناة بين آدم والوكلاء (مداد، عين الخبير، Hope). كانت على Firestore
+# والطرفين اتلسعوا من الكوتا (مداد عنده كود backoff مخصوص ليها). دلوقتي
+# البيت الجديد، والاتنين بيشتركوا في نفس مشروع Supabase أصلًا.
+
+def _task_row_to_legacy(r):
+    return {
+        "task_id": r.get("task_id"),
+        "source": r.get("source") or "ADAM",
+        "target": r.get("target"),
+        "action": r.get("action"),
+        "payload": r.get("payload") or {},
+        "status": r.get("status"),
+        "result": r.get("result"),
+        "reported_to_ahmed": bool(r.get("reported_to_ahmed")),
+        "retry_count": r.get("retry_count") or 0,
+        "created_at": r.get("created_at") or "",
+        "updated_at": r.get("updated_at") or "",
+        "executed_at": r.get("executed_at"),
+    }
+
+
+def q_dispatch(task_id, target, action, payload):
+    if _client() is None:
+        return False
+    try:
+        _client().table("agent_tasks").insert({
+            "firestore_id": task_id,
+            "task_id": task_id,
+            "source": "ADAM",
+            "target": target,
+            "action": action,
+            "payload": payload or {},
+            "status": "pending",
+            "reported_to_ahmed": False,
+            "created_at": _now_iso(),
+            "updated_at": _now_iso(),
+        }).execute()
+        return True
+    except Exception as e:
+        logger.warning(f"⚠️ [Supabase] إرسال التاسك فشل: {str(e)[:80]}")
+        return False
+
+
+def q_get_task(task_id):
+    if _client() is None:
+        return None
+    try:
+        resp = _client().table("agent_tasks").select("*").eq(
+            "task_id", task_id
+        ).limit(1).execute()
+        if not resp.data:
+            return {"__missing__": True}
+        return _task_row_to_legacy(resp.data[0])
+    except Exception as e:
+        logger.warning(f"⚠️ [Supabase] قراءة التاسك فشلت: {str(e)[:80]}")
+        return None
+
+
+def q_list(target=None, status=None, limit=50):
+    if _client() is None:
+        return None
+    try:
+        q = _client().table("agent_tasks").select("*")
+        if target:
+            q = q.eq("target", target)
+        if status:
+            q = q.eq("status", status)
+        resp = q.order("created_at", desc=True).limit(limit).execute()
+        return [_task_row_to_legacy(r) for r in (resp.data or [])]
+    except Exception as e:
+        logger.warning(f"⚠️ [Supabase] قايمة التاسكات فشلت: {str(e)[:80]}")
+        return None
+
+
+def q_pending(target, limit=20):
+    """المعلّق لهدف معيّن، الأقدم أولًا (عقد الـ poller بتاع مداد)."""
+    if _client() is None:
+        return None
+    try:
+        resp = _client().table("agent_tasks").select("*").eq(
+            "target", target
+        ).eq("status", "pending").order(
+            "created_at", desc=False
+        ).limit(limit).execute()
+        return [_task_row_to_legacy(r) for r in (resp.data or [])]
+    except Exception as e:
+        logger.warning(f"⚠️ [Supabase] قراءة المعلّق فشلت: {str(e)[:80]}")
+        return None
+
+
+def q_update_status(task_id, status, result=None, retry_count=None):
+    """تحديث حالة تاسك. الأعمدة الاختيارية (retry_count/executed_at) لو
+    لسه متضافتش للجدول، بنحاول من غيرها بدل ما التحديث كله يقع."""
+    if _client() is None:
+        return False
+
+    base = {"status": status, "updated_at": _now_iso()}
+    if result is not None:
+        base["result"] = result
+
+    extras = dict(base)
+    if retry_count is not None:
+        extras["retry_count"] = retry_count
+    if status in ("done", "failed"):
+        extras["executed_at"] = _now_iso()
+
+    for attempt, payload in ((1, extras), (2, base)):
+        try:
+            resp = _client().table("agent_tasks").update(payload).eq(
+                "task_id", task_id
+            ).execute()
+            if attempt == 2 and payload is not extras:
+                logger.warning(
+                    "⚠️ [Supabase] عمود retry_count/executed_at ناقص -- التحديث "
+                    "الأساسي نجح؛ شغّل سطري الـ ALTER"
+                )
+            return bool(resp.data)
+        except Exception as e:
+            if attempt == 1 and payload != base:
+                continue
+            logger.warning(f"⚠️ [Supabase] تحديث التاسك فشل: {str(e)[:80]}")
+            return False
+    return False
+
+
+def q_unreported_done():
+    if _client() is None:
+        return None
+    try:
+        resp = _client().table("agent_tasks").select("*").eq(
+            "status", "done"
+        ).eq("reported_to_ahmed", False).order(
+            "updated_at", desc=False
+        ).limit(50).execute()
+        return [_task_row_to_legacy(r) for r in (resp.data or [])]
+    except Exception as e:
+        logger.warning(f"⚠️ [Supabase] قراءة غير المبلّغ فشلت: {str(e)[:80]}")
+        return None
+
+
+def q_mark_reported(task_id):
+    if _client() is None:
+        return False
+    try:
+        _client().table("agent_tasks").update(
+            {"reported_to_ahmed": True, "updated_at": _now_iso()}
+        ).eq("task_id", task_id).execute()
+        return True
+    except Exception as e:
+        logger.warning(f"⚠️ [Supabase] تعليم مُبلّغ فشل: {str(e)[:80]}")
+        return False
+
+
+def q_stale(days=3):
+    if _client() is None:
+        return None
+    try:
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
+        resp = _client().table("agent_tasks").select("*").in_(
+            "status", ["pending", "in_progress"]
+        ).lt("created_at", cutoff).order("created_at", desc=False).limit(50).execute()
+        return [_task_row_to_legacy(r) for r in (resp.data or [])]
+    except Exception as e:
+        logger.warning(f"⚠️ [Supabase] قراءة الراكد فشلت: {str(e)[:80]}")
+        return None
+
+
 # ============================================================
 # 🏪 الموردين المرجعيين -- app_settings['suppliers']
 # ============================================================

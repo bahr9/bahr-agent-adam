@@ -259,3 +259,78 @@ def list_stale_agent_tasks(days: int = 3) -> list:
     except Exception as e:
         logger.error(f"❌ خطأ في جلب التاسكات العالقة: {e}")
         return []
+
+
+# ============================================================
+# 🐘 بلوك أولوية Supabase (نقل الطابور -- 2026-08-06)
+# ============================================================
+# نفس نمط firebase_service بالظبط: التعريفات الأصلية فوق محفوظة كـ fallback
+# بأسماء _fs_*، والأسماء العامة بتحاول Supabase الأول. الكتابة مزدوجة
+# (Supabase + mirror للمسار القديم) عشان عين الخبير (Make.com بيلمس
+# Firestore عبر endpoints آدم) والرجوع يفضلوا شغالين طول الانتقال.
+
+from services import supabase_store as _sbq
+
+_fs_dispatch_agent_task = dispatch_agent_task
+_fs_get_agent_task_status = get_agent_task_status
+_fs_list_agent_tasks = list_agent_tasks
+_fs_get_unreported_completed_tasks = get_unreported_completed_tasks
+_fs_mark_task_reported = mark_task_reported
+_fs_update_agent_task_status = update_agent_task_status
+_fs_list_stale_agent_tasks = list_stale_agent_tasks
+
+
+def dispatch_agent_task(target, action, payload=None):
+    result = _fs_dispatch_agent_task(target, action, payload)
+    task_id = (result or {}).get("task_id")
+    if task_id:
+        if not _sbq.q_dispatch(task_id, target, action, payload):
+            from utils.logger import logger as _lg
+            _lg.error(f"❌ التاسك {task_id} اتكتب في Firestore بس -- Supabase فشل! "
+                      f"مداد (لو بيقرا من Supabase) مش هيشوفه.")
+    return result
+
+
+def get_agent_task_status(task_id):
+    sb = _sbq.q_get_task(task_id)
+    if sb is not None and not sb.get("__missing__"):
+        return sb
+    return _fs_get_agent_task_status(task_id)
+
+
+def list_agent_tasks(target=None, status=None, limit=50):
+    sb = _sbq.q_list(target, status, limit)
+    if sb is not None:
+        return sb
+    return _fs_list_agent_tasks(target, status, limit)
+
+
+def get_unreported_completed_tasks():
+    sb = _sbq.q_unreported_done()
+    if sb is not None:
+        return sb
+    return _fs_get_unreported_completed_tasks()
+
+
+def mark_task_reported(task_id):
+    _sbq.q_mark_reported(task_id)
+    try:
+        _fs_mark_task_reported(task_id)
+    except Exception:
+        pass
+
+
+def update_agent_task_status(task_id, status, result=None):
+    sb_ok = _sbq.q_update_status(task_id, status, result)
+    try:
+        fs_ok = _fs_update_agent_task_status(task_id, status, result)
+    except Exception:
+        fs_ok = False
+    return sb_ok or fs_ok
+
+
+def list_stale_agent_tasks(days=3):
+    sb = _sbq.q_stale(days)
+    if sb is not None:
+        return sb
+    return _fs_list_stale_agent_tasks(days)
