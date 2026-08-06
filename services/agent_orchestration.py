@@ -36,8 +36,17 @@ PENDING_STATUSES = ("pending", "in_progress")
 # ملحوظة: مش allowlist صارم بيرفض حاجة تانية -- action حر لسه مسموح
 # (تاسك عام يقعد pending لحد ما حد يراجعه يدويًا). ده بس مرجع نعرف بيه
 # نصحح للموديل لو هو قاصد أوتوميشن حقيقي واستخدم string غلط.
+# ⚠️ قاعدة مزامنة (اتعلمناها بالعافية 2026-08-06): الليستة دي لازم تطابق
+# ALLOWLISTED_ACTIONS في `bahr marketing agent/services/agent_task_executor.py`
+# + فقرة الأوركسترا في الـ system prompt + وصف أداة dispatch_agent_task.
+# لما ضفنا website_readiness_report لمداد وحدّثنا الوصف بس، آدم شاف
+# تعارض بين مصدرين وبلّغ أحمد "الأكشن مش معروف" عن أكشن اتنفذ فعلًا.
 AUTOMATED_ACTIONS_BY_TARGET = {
-    "مداد": {"generate_marketing_post_from_eye_expert"},
+    "مداد": {
+        "echo_test_marker",
+        "generate_marketing_post_from_eye_expert",
+        "website_readiness_report",
+    },
     "عين_الخبير": {"retry_failed_eye_expert_reply", "retry_failed_eye_expert_reply_test"},
     "Hope": set(),
 }
