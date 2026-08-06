@@ -341,6 +341,56 @@ def search_conversations(user_id, keyword, limit=10):
 
 
 # ============================================================
+# 🏪 الموردين المرجعيين -- app_settings['suppliers']
+# ============================================================
+# طلب أحمد (2026-08-06): موردين معتمدين ليهم مواقع فيها أسعار الخامات،
+# يبقوا مرجع سوق جنب أسعاره المعتمدة (من غير ما يلمسوا price_base أبدًا).
+
+_suppliers_cache = {"data": None, "at": 0.0}
+_SUPPLIERS_TTL_SECONDS = 300
+
+
+def get_suppliers():
+    """قايمة الموردين، بكاش 5 دقايق -- بتتقرا مع كل رسالة فمينفعش
+    تضرب قاعدة البيانات كل مرة. None لو Supabase مش متاح."""
+    if _client() is None:
+        return None
+
+    now_ts = time.time()
+    if _suppliers_cache["data"] is not None and (now_ts - _suppliers_cache["at"]) < _SUPPLIERS_TTL_SECONDS:
+        return _suppliers_cache["data"]
+
+    try:
+        resp = _client().table("app_settings").select("value").eq(
+            "key", "suppliers"
+        ).limit(1).execute()
+        suppliers = (resp.data[0].get("value") if resp.data else []) or []
+        _suppliers_cache["data"] = suppliers
+        _suppliers_cache["at"] = now_ts
+        return suppliers
+    except Exception as e:
+        logger.warning(f"⚠️ [Supabase] قراءة الموردين فشلت: {str(e)[:80]}")
+        return None
+
+
+def save_suppliers(suppliers):
+    if _client() is None:
+        return False
+    try:
+        _client().table("app_settings").upsert({
+            "key": "suppliers",
+            "value": suppliers,
+            "updated_at": _now_iso(),
+        }, on_conflict="key").execute()
+        _suppliers_cache["data"] = suppliers
+        _suppliers_cache["at"] = time.time()
+        return True
+    except Exception as e:
+        logger.warning(f"⚠️ [Supabase] حفظ الموردين فشل: {str(e)[:80]}")
+        return False
+
+
+# ============================================================
 # 🩺 أدلة صحة الأدوات -- عشان المراقبة متبقاش عمياء وقت أعطال Firestore
 # ============================================================
 # حادثة 2026-08-05 مساءً: تقرير الصحة طلع "0 سليمة، 13 غير معروفة، 49 غير

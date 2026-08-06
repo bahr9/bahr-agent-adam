@@ -74,6 +74,8 @@ def build_system_prompt_parts(pending_tasks=None, memory_summary=None):
 - save_price / get_prices: قاعدة أسعار بحر (خامات/تشطيبات/مصنعيات) -- أسعار أحمد الحقيقية من السوق
 
 قاعدة الأسعار (خط أحمر): قبل ما تقول أي سعر في استشارة أو تسعير، استخدم get_prices الأول -- سعر أحمد المسجل هو المرجع الوحيد. لو البند مش في القاعدة قول بصراحة "السعر ده مش في قاعدة أسعارك" واعرض عليه يسجله، وممنوع تخترع رقم من عندك. وأول ما أحمد يذكر سعر من السوق -- حتى عابرًا -- سجله فورًا بـ save_price. وأي حساب تكلفة مبني على بيانات مشروع ناقصة (فراغات من غير أبعاد مسجلة) لازم يبدأ بتحذير صريح قبل أي رقم -- مش بعده: "⚠️ دي تكلفة جزئية للفراغات المتسجلة بس -- ناقص [أسماء الفراغات الناقصة]" -- عشان الرقم الجزئي ميتقراش على إنه إجمالي.
+
+قاعدة الموردين المرجعيين (2026-08-06): أحمد عنده موردين معتمدين ليهم مواقع فيها أسعار الخامات -- هتلاقيهم في الجزء المتغير تحت. لما يسأل عن سعر خامة أو يطلب "شوف السوق"، استخدم web_search واحصر البحث في موقع المورد (زي: site:mahgoub.com بورسلين 60x60). واعرض النتيجة **جنب** سعره المعتمد من get_prices، معلّمين بوضوح: "💰 سعرك المعتمد: ..." و"🌐 مرجع السوق (اسم المورد): ...". خط أحمر: سعر المورد مرجع للمقارنة بس -- **ممنوع منعًا باتًا** تعدّل أو تسجل في price_base من سعر موقع من غير طلب صريح من أحمد، لأن أسعاره فيها هامشه ومصنعياته والمورد مالوش دعوة بيهم.
 - add_expense: تسجل مصروف جديد (مبلغ + تصنيف + وصف اختياري + مشروع اختياري)
 - list_expenses: تجيب آخر المصاريف المسجلة (فيها الـ ID لكل مصروف)
 - delete_expense: تحذف مصروف بالـ ID بتاعه (استخدم list_expenses الأول عشان تجيب الـ ID)
@@ -170,8 +172,22 @@ def build_system_prompt_parts(pending_tasks=None, memory_summary=None):
     if memory_summary:
         memory_section = "\n" + "ذاكرتك الدائمة عن أحمد (متراكمة من كل المحادثات اللي فاتت):\n" + memory_summary + "\n"
 
+    # الموردين المرجعيين -- من Supabase بكاش، وصمت تام لو مش متاحين
+    suppliers_section = ""
+    try:
+        from services.supabase_store import get_suppliers
+        suppliers = get_suppliers()
+        if suppliers:
+            lines = "\n".join(
+                f"- {s.get('name')}: {s.get('url')}" + (f" ({s.get('note')})" if s.get('note') else "")
+                for s in suppliers
+            )
+            suppliers_section = f"\n\nالموردين المرجعيين المعتمدين:\n{lines}"
+    except Exception:
+        pass
+
     dynamic_part = f"""الوقت الحالي بالظبط (توقيت القاهرة): {now.strftime('%Y-%m-%d')} - يوم {day_name} - الساعة {now.strftime('%H:%M')}
-{context}{memory_section}"""
+{context}{memory_section}{suppliers_section}"""
 
     return static_part, dynamic_part
 
