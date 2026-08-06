@@ -1903,6 +1903,17 @@ def _execute_tool(tool_name, tool_input, chat_id):
                     f"الحالة: {task.get('status')}\n"
                     f"اتسجل: {task.get('created_at')}"
                 )
+                # 2026-08-06: قبل كده كنا بنرجع الحالة بس ونرمي result.summary،
+                # فآدم كان بيعرف إن التاسك "done" من غير ما يقدر يجيب ناتجه
+                # (تقرير مداد مثلًا). الناتج جزء من العقد -- بيرجع كامل.
+                task_result = task.get("result")
+                if isinstance(task_result, str):
+                    try:
+                        task_result = json.loads(task_result)
+                    except (ValueError, TypeError):
+                        task_result = {"summary": task_result}
+                if isinstance(task_result, dict) and task_result.get("summary"):
+                    result += f"\n\nالناتج:\n{task_result['summary']}"
 
         else:
             result = f"أداة غير معروفة: {tool_name}"
