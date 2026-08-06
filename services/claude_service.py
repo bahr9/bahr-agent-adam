@@ -57,6 +57,12 @@ def _tracked_create(**kwargs):
     except Exception:
         pass
 
+    # كاش بعمر ساعة (توفير 2026-08-06): الافتراضي 5 دقايق، ورسايل أحمد
+    # الطبيعية أبعد من كده -- فكل رسالة كانت بتدفع إعادة كتابة البادئة
+    # الثابتة كاملة (~14.5K توكن × 1.25). بعمر ساعة: كتابة واحدة (×2)
+    # كل ساعة نشاط، والباقي قراءات بـ 0.1× -- وفر ~3-4x على أكبر بند تكلفة.
+    kwargs.setdefault("extra_headers", {}).setdefault(
+        "anthropic-beta", "extended-cache-ttl-2025-04-11")
     response = claude_client.messages.create(**kwargs)
 
     try:
@@ -495,7 +501,7 @@ TOOLS = [
             },
             "required": ["program_name", "month_key", "paid", "reason"]
         },
-        "cache_control": {"type": "ephemeral"}
+        "cache_control": {"type": "ephemeral", "ttl": "1h"}
     },
     {
         "name": "save_memory_note",
@@ -907,7 +913,7 @@ TOOLS = [
         "type": "web_search_20250305",
         "name": "web_search",
         "max_uses": 3,
-        "cache_control": {"type": "ephemeral"}
+        "cache_control": {"type": "ephemeral", "ttl": "1h"}
     },
     {
         "name": "save_decision",
@@ -1996,7 +2002,7 @@ def ask_claude_agentic(user_message, chat_id, conversation_history=None, memory_
         static_part, dynamic_part = build_system_prompt_parts(memory_summary=memory_summary)
         dynamic_part += extra_instruction
         system_blocks = [
-            {"type": "text", "text": static_part, "cache_control": {"type": "ephemeral"}},
+            {"type": "text", "text": static_part, "cache_control": {"type": "ephemeral", "ttl": "1h"}},
             {"type": "text", "text": dynamic_part}
         ]
 
@@ -2182,7 +2188,7 @@ def analyze_with_vision(image_base64, caption, media_type="image/jpeg", memory_s
     try:
         static_part, dynamic_part = build_system_prompt_parts(memory_summary=memory_summary)
         system_blocks = [
-            {"type": "text", "text": static_part, "cache_control": {"type": "ephemeral"}},
+            {"type": "text", "text": static_part, "cache_control": {"type": "ephemeral", "ttl": "1h"}},
             {"type": "text", "text": dynamic_part}
         ]
         
