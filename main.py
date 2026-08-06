@@ -882,7 +882,13 @@ if __name__ == "__main__":
                          id='morning', timezone='Africa/Cairo', misfire_grace_time=60)
         scheduler.add_job(weekly_report_job, 'cron', day_of_week='fri', hour=13, minute=0,
                          id='weekly_report', timezone='Africa/Cairo', misfire_grace_time=300)
-        scheduler.add_job(backup_job, 'cron', hour=2, minute=0,
+        # 10:30 مش 02:00 (حادثة نسخة 2026-08-06): كوتا Firestore بتترجع
+        # منتصف الليل باسيفيك = 10:00 صباحًا بتوقيت القاهرة. النسخة اللي
+        # كانت بتشتغل 02:00 بتقع في **آخر** يوم الكوتا -- يعني في أي يوم
+        # استهلاك عالي بتلاقي الكوتا خلصانة وتفشل (نسخة 2026-08-06 فشلت
+        # 26/32 وحدة بالظبط كده). 10:30 بتضمن إن النسخة دايمًا أول مستهلك
+        # في يوم كوتا جديد -- صامدة حتى لو حصلت حادثة استنزاف تاني.
+        scheduler.add_job(backup_job, 'cron', hour=10, minute=30,
                          id='daily_backup', timezone='Africa/Cairo', misfire_grace_time=300)
 
         scheduler_service.set_scheduler(scheduler)
