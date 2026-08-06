@@ -155,12 +155,202 @@ def import_graph_nodes(client, docs):
     return len(rows)
 
 
+
+
+# ============================================================
+# المستوردون الماليون (جولة 2026-08-06 -- بعد التصدير الكامل)
+# ============================================================
+
+def import_loans(client, docs):
+    """مستند paid_status الواحد -> صف لكل قسط.
+
+    ملحوظة حفريات (اتلقت في التصدير الفعلي): المستند فيه مفتاح حرفي
+    "paid.ca_71" جنب خريطة paid الصحيحة -- ده أثر باگ الـ dotted-key
+    القديم اللي التعليق في loan_commands.py بيحذر منه. بنقرا من
+    الخريطة المتداخلة **بس**، والمفاتيح الشاردة بتتسجل بصوت عالي.
+    """
+    if not docs:
+        return 0
+    doc = docs[0]
+    paid_map = doc.get("paid") or {}
+
+    strays = [k for k in doc if k.startswith("paid.")]
+    for stray in strays:
+        log("   ⚠️ مفتاح شارد من الباگ القديم اتطنش: %r = %r (الخريطة بتقول: %r)" % (
+            stray, doc[stray], paid_map.get(stray[5:], "مش موجود")))
+
+    rows = []
+    for identity_key, paid in paid_map.items():
+        program_id, _, index_str = identity_key.rpartition("_")
+        if not program_id or not index_str.isdigit():
+            raise TransformError("identity_key مش مفهوم: %r" % identity_key)
+        rows.append({
+            "identity_key": identity_key,
+            "program_id": program_id,
+            "installment_index": int(index_str),
+            "paid": bool(paid),
+        })
+    if rows:
+        client.table("loan_installment_status").upsert(
+            rows, on_conflict="identity_key"
+        ).execute()
+    return len(rows)
+
+
+def import_expenses(client, docs):
+    """مع تصحيح انحراف التوقيت: حقل date اتكتب بساعة الحاوية (UTC)."""
+    from migration_transform import correct_server_naive_time
+    rows = []
+    for d in docs:
+        occurred = correct_server_naive_time(d.get("date"), "expenses.date")
+        created = to_timestamptz(d.get("created_at"), "expenses.created_at")
+        rows.append({
+            "firestore_id": d["_doc_id"],
+            "amount": float(d.get("amount") or 0),
+            "category": d.get("category") or "أخرى",
+            "description": blank_to_none(d.get("description")),
+            "project": blank_to_none(d.get("project")),
+            "occurred_at": (occurred or created).isoformat(),
+            "created_at": (created or occurred).isoformat(),
+        })
+    if rows:
+        client.table("expenses").upsert(rows, on_conflict="firestore_id").execute()
+    return len(rows)
+
+
+def import_decisions(client, docs):
+    from migration_transform import correct_server_naive_time
+    rows = []
+    for d in docs:
+        occurred = correct_server_naive_time(d.get("date"), "decision.date")
+        created = to_timestamptz(d.get("created_at"), "decision.created_at")
+        status = d.get("status") or "accepted"
+        if status not in ("accepted", "rejected", "pending"):
+            raise TransformError("status مش معروف في قرار: %r" % status)
+        rows.append({
+            "firestore_id": d["_doc_id"],
+            "decision": d.get("decision") or "",
+            "project": blank_to_none(d.get("project")),
+            "status": status,
+            "reason": blank_to_none(d.get("reason")),
+            "source": d.get("source") or "conversation",
+            "occurred_at": (occurred or created).isoformat(),
+            "created_at": (created or occurred).isoformat(),
+        })
+    for i in range(0, len(rows), 50):
+        client.table("decision_ledger").upsert(
+            rows[i:i+50], on_conflict="firestore_id"
+        ).execute()
+    return len(rows)
+
+
+def import_price_base(client, docs):
+    """السعر بيتحول numeric بصرامة -- قيمة مش مفهومة توقف الاستيراد."""
+    from datetime import datetime as _dt, timezone as _tz
+    from migration_transform import to_numeric
+    count = 0
+    for d in docs:
+        price = to_numeric(d.get("price"), "price_base[%s].price" % d.get("item"))
+        base_row = {
+            "firestore_id": d["_doc_id"],
+            "item": d.get("item") or "",
+            "normalized": d["_doc_id"].replace("price-", ""),
+            "price": price,
+            "unit": blank_to_none(d.get("unit")),
+            "note": blank_to_none(d.get("note")),
+            "source": d.get("source") or "ahmed",
+            "updated_at": (to_timestamptz(d.get("updated_at"), "price.updated_at")
+                           or _dt.now(_tz.utc)).isoformat(),
+        }
+        resp = client.table("price_base").upsert(
+            base_row, on_conflict="firestore_id"
+        ).execute()
+        price_id = resp.data[0]["id"]
+
+        history = d.get("history") or []
+        if history:
+            existing = client.table("price_base_history").select(
+                "id", count="exact"
+            ).eq("price_base_id", price_id).limit(1).execute()
+            if (existing.count or 0) == 0:
+                hist_rows = []
+                for h in history:
+                    h_price = to_numeric(h.get("price"), "history.price", allow_empty=True)
+                    h_at = to_timestamptz(h.get("recorded_at") or None, "history.recorded_at")
+                    hist_rows.append({
+                        "price_base_id": price_id,
+                        "price": h_price,
+                        "recorded_at": h_at.isoformat() if h_at else None,
+                    })
+                client.table("price_base_history").insert(hist_rows).execute()
+        count += 1
+    return count
+
+
+def import_adam_events(client, docs):
+    """4629 حدث -- العمود الفقري. دفعات 200، upsert على firestore_id."""
+    rows = []
+    for d in docs:
+        entity = d.get("entity") or {}
+        chat_id = d.get("chat_id")
+        rows.append({
+            "firestore_id": d["_doc_id"],
+            "event_id": d.get("event_id") or d["_doc_id"],
+            "entity_type": entity.get("type") or "",
+            "entity_id": str(entity.get("id") or ""),
+            "attribute": d.get("attribute") or "",
+            "previous_value": d.get("previous_value"),
+            "new_value": d.get("new_value"),
+            "source": d.get("source") or "unknown",
+            "actor": d.get("actor") or "",
+            "chat_id": str(chat_id) if chat_id is not None else None,
+            "raw_context": d.get("raw_context") or {},
+            "metadata": d.get("metadata") or {},
+            "occurred_at": to_timestamptz(d.get("occurred_at"), "event.occurred_at").isoformat(),
+        })
+    total = 0
+    for i in range(0, len(rows), 200):
+        client.table("adam_events").upsert(
+            rows[i:i+200], on_conflict="firestore_id"
+        ).execute()
+        total += len(rows[i:i+200])
+        log("   ... adam_events: %d/%d" % (total, len(rows)))
+    return total
+
+
+def import_eye_expert_prompt(client, docs):
+    """المستند الواحد -> أول صف في جدول الإصدارات (append-only من هنا ورايح)."""
+    from datetime import datetime as _dt, timezone as _tz
+    if not docs:
+        return 0
+    d = docs[0]
+    existing = client.table("eye_expert_prompt").select("id", count="exact").limit(1).execute()
+    if (existing.count or 0) > 0:
+        log("   ⏭️  eye_expert_prompt فيه إصدارات خلاص -- اتخطى")
+        return 0
+    client.table("eye_expert_prompt").insert({
+        "content": d.get("content") or "",
+        "updated_at": (to_timestamptz(d.get("updated_at"), "eye.updated_at")
+                       or _dt.now(_tz.utc)).isoformat(),
+        "updated_by": "migration_import",
+    }).execute()
+    return 1
+
 IMPORTERS = [
     ("user_memory",       "user_memory",           import_user_memory),
     ("adam_human_model",  "human_model",           import_human_model),
     ("memory_notes",      "memory_notes",          import_memory_notes),
     ("conversations",     "conversation_messages", import_conversations),
     ("bahr_graph_nodes",  "bahr_graph_nodes",      import_graph_nodes),
+
+    # الجولة المالية (2026-08-06)
+    ("loans",             "loan_installment_status", import_loans),
+    ("expenses",          "expenses",               import_expenses),
+    ("decision_ledger",   "decision_ledger",        import_decisions),
+    ("adam_events",       "adam_events",            import_adam_events),
+    ("eye_expert_config", "eye_expert_prompt",      import_eye_expert_prompt),
+    # price_base آخر واحدة: فيها قيمة مدى "850-1200" مستنية قرار أحمد
+    ("price_base",        "price_base",             import_price_base),
 ]
 
 
@@ -178,6 +368,8 @@ def run_verify(client, backup_dir):
 
         if source == "conversations":
             expected = sum(len(d.get("messages") or []) for d in docs)
+        elif source == "loans":
+            expected = len((docs[0].get("paid") or {})) if docs else 0
         else:
             expected = len(docs)
 
