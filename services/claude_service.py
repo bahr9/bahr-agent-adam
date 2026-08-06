@@ -42,6 +42,51 @@ def _extract_json(raw_text):
     
     return None
 
+def _tracked_create(**kwargs):
+    """غلاف حول messages.create بيسجّل الاستهلاك -- الإجابة الحقيقية لسؤال
+    "الرصيد بيروح فين؟" (2026-08-06، بعد ما الرصيد خلص فجأة).
+
+    بيسجل لكل نداء: الدالة المنادية، الموديل، توكنز الدخل/الخرج/الكاش --
+    في Supabase (جدول api_usage) بأفضل جهد، وفي اللوج دايمًا. لو الجدول
+    لسه متعملش بيتخطى بصمت -- التتبع ميعطلش الشغل أبدًا.
+    """
+    import inspect
+    caller = "unknown"
+    try:
+        caller = inspect.stack()[1].function
+    except Exception:
+        pass
+
+    response = claude_client.messages.create(**kwargs)
+
+    try:
+        u = response.usage
+        cache_read = getattr(u, "cache_read_input_tokens", 0) or 0
+        cache_write = getattr(u, "cache_creation_input_tokens", 0) or 0
+        logger.info(
+            f"💸 [{caller}] {kwargs.get('model','?')}: in={u.input_tokens} out={u.output_tokens} "
+            f"cache_r={cache_read} cache_w={cache_write}"
+        )
+        from services import supabase_store
+        client = supabase_store._client()
+        if client is not None:
+            try:
+                client.table("api_usage").insert({
+                    "caller": caller,
+                    "model": kwargs.get("model", "?"),
+                    "input_tokens": u.input_tokens,
+                    "output_tokens": u.output_tokens,
+                    "cache_read_tokens": cache_read,
+                    "cache_write_tokens": cache_write,
+                }).execute()
+            except Exception:
+                pass    # الجدول لسه متعملش -- التتبع اختياري
+    except Exception:
+        pass
+
+    return response
+
+
 def build_system_prompt_parts(pending_tasks=None, memory_summary=None):
     """
     بناء system prompt مقسّم لجزئين:
@@ -1972,7 +2017,7 @@ def ask_claude_agentic(user_message, chat_id, conversation_history=None, memory_
             if forced_tool_choice and round_index == 0:
                 create_kwargs["tool_choice"] = forced_tool_choice
 
-            response = claude_client.messages.create(**create_kwargs)
+            response = _tracked_create(**create_kwargs)
 
             stop_reason = response.stop_reason
             logger.info(f"🧭 stop_reason: {stop_reason}")
@@ -2116,7 +2161,7 @@ def analyze_plan_pdf(pdf_base64, caption, memory_summary=None):
     if system_text:
         kwargs["system"] = system_text
 
-    response = claude_client.messages.create(**kwargs)
+    response = _tracked_create(**kwargs)
     parts = [block.text for block in response.content if block.type == "text"]
     return "\n".join(parts).strip()
 
@@ -2141,7 +2186,7 @@ def analyze_with_vision(image_base64, caption, media_type="image/jpeg", memory_s
             {"type": "text", "text": dynamic_part}
         ]
         
-        response = claude_client.messages.create(
+        response = _tracked_create(
             model=CLAUDE_MODEL,
             max_tokens=800,
             thinking={"type": "disabled"},
@@ -2202,7 +2247,7 @@ def ask_claude(user_message, conversation_history=None, memory_summary=None, pen
         # استدعاء Claude
         # ملحوظة: Claude Sonnet 5 مش بيدعم thinking.type=enabled + budget_tokens (بترجع خطأ 400)
         # بنستخدم adaptive thinking بمجهود منخفض عشان تفكير أعمق شوية من غير تأخير كبير
-        response = claude_client.messages.create(
+        response = _tracked_create(
             model=CLAUDE_MODEL,
             max_tokens=2048,
             thinking={"type": "adaptive"},
@@ -2250,6 +2295,15 @@ def should_store_in_memory(user_message, assistant_reply):
     بيرجع True أو False بس -- مش بيعدل الذاكرة.
     Prompt صغير (~50 token input) عشان التكلفة تفضل زهيدة.
     """
+    # فلتر حتمي قبل أي API (توفير 2026-08-06): الردود القصيرة الواضحة --
+    # "تمام"، "اوك"، "شكرا" -- مفيهاش معلومة تتحفظ بالتعريف، ومفيش داعي
+    # ندفع نداء Haiku عشان نعرف ده. صفر تكلفة، صفر خسارة دقة.
+    trivial = str(user_message or "").strip()
+    _ACK_WORDS = {"تمام", "اوك", "ok", "okay", "شكرا", "شكرًا", "تسلم", "ماشي",
+                  "حاضر", "اه", "آه", "لا", "نعم", "👍", "❤️", "جميل", "ممتاز", "برافو"}
+    if len(trivial) <= 3 or trivial.replace("!", "").replace(".", "").strip() in _ACK_WORDS:
+        return False
+
     try:
         prompt = (
             "أحمد: " + user_message + "\n"
@@ -2259,7 +2313,7 @@ def should_store_in_memory(user_message, assistant_reply):
             "رجّع كلمة واحدة بس: نعم أو لا"
         )
 
-        response = claude_client.messages.create(
+        response = _tracked_create(
             model=CLAUDE_HAIKU_MODEL,
             max_tokens=10,
             thinking={"type": "disabled"},
@@ -2339,7 +2393,7 @@ def summarize_memory(old_summary, user_message, assistant_reply):
 خلي الذاكرة مختصرة (أقصى حاجة 20 نقطة bullet points كاملة المعنى)، وبالعربي، وركّز على المعلومات الدايمة مش التفاصيل اليومية العابرة.
 رجّع الذاكرة المحدّثة فقط، بدون أي شرح أو مقدمة أو Markdown."""
 
-        response = claude_client.messages.create(
+        response = _tracked_create(
             model=CLAUDE_HAIKU_MODEL,
             max_tokens=900,
             thinking={"type": "disabled"},
@@ -2370,7 +2424,7 @@ def summarize_memory(old_summary, user_message, assistant_reply):
         التحليل من Claude
     """
     try:
-        response = claude_client.messages.create(
+        response = _tracked_create(
             model=CLAUDE_MODEL,
             max_tokens=400,
             thinking={"type": "disabled"},
@@ -2443,7 +2497,7 @@ JSON فقط، بدون أي كلام تاني."""
             messages.extend(conversation_history[-6:])  # آخر 3 تبادلات كسياق بس، يكفي للإشارات
         messages.append({"role": "user", "content": user_message})
 
-        response = claude_client.messages.create(
+        response = _tracked_create(
             model=CLAUDE_HAIKU_MODEL,
             max_tokens=200,
             thinking={"type": "disabled"},
@@ -2510,7 +2564,7 @@ JSON فقط."""
             messages.extend(conversation_history[-6:])
         messages.append({"role": "user", "content": user_message})
 
-        response = claude_client.messages.create(
+        response = _tracked_create(
             model=CLAUDE_HAIKU_MODEL,
             max_tokens=250,
             thinking={"type": "disabled"},

@@ -134,7 +134,21 @@ class AdamMind:
         if fast:
             return fast
 
-        return self._deep_analyze(message, context or {})
+        # توفير 2026-08-06 (بند M6 من الأوديت): المسار البطيء كان نداء Haiku
+        # كامل لكل رسالة غامضة -- وناتجه **بيترمي**: _stage_plan في
+        # executive_brain بيرجع claude_agentic دايمًا مهما كانت النية،
+        # وcontext["intent"] محدش بيقراه. يعني فلوس بتتصرف على إجابة
+        # مبتتستخدمش. لحد ما حد يبني استخدام حقيقي للنية، الرسالة الغامضة
+        # بتاخد تصنيف افتراضي ببلاش وClaude الأساسي (اللي بيشوف الرسالة
+        # كاملة بسياقها) هو اللي بيفهمها فعليًا زي ما كان بيحصل أصلًا.
+        return IntentAnalysis(
+            intent="general",
+            goal="رسالة عامة -- الفهم الفعلي عند Claude الأساسي",
+            confidence=Confidence.UNCERTAIN,
+            missing_info="",
+            entities={},
+            requires_clarification=False,
+        )
 
     def _fast_path(self, message: str) -> Optional[IntentAnalysis]:
         """
