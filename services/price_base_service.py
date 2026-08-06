@@ -81,6 +81,15 @@ def _collection():
     return firestore_db.collection(PRICE_BASE_COLLECTION)
 
 
+def _all_docs_supabase_first():
+    """Supabase الأول (هجرة 2026-08-06) -- fallback للمسار القديم تحت."""
+    from services import supabase_store
+    docs = supabase_store.all_price_docs()
+    if docs is not None:
+        return docs
+    return _all_docs()
+
+
 def _all_docs():
     try:
         return [doc.to_dict() or {} for doc in _collection().stream()]
@@ -113,6 +122,25 @@ def save_price(item, price, unit="", note=""):
         "updated_at": str(now_cairo()),
     })
     ref.set(doc)
+
+    # Supabase الأول (هجرة 2026-08-06): السعر بيتخزن مدى حقيقي (من/إلى)
+    # حسب قرار أحمد -- "300:800" بترجع رقمين مش نص. الكتابة القديمة فوق
+    # بقت mirror، والقراية بتيجي من Supabase.
+    try:
+        from migration_transform import parse_price_range, TransformError
+        from services import supabase_store
+        try:
+            price_min, price_max = parse_price_range(price, "save_price")
+            supabase_store.save_price_row(
+                item, price_id_for_item(item).replace("price-", ""),
+                price_min, price_max,
+                str(unit or "").strip(), str(note or "").strip(),
+            )
+        except TransformError:
+            logger.warning("⚠️ سعر مش مفهوم كرقم/مدى -- اتسجل في Firestore بس: " + str(price))
+    except Exception as e:
+        logger.warning("⚠️ mirror السعر لـ Supabase فشل (مش حرج): " + str(e)[:80])
+
     logger.info("💰 سعر اتسجل: " + item + " = " + str(price))
     result = "اتسجل في قاعدة الأسعار: " + item + " = " + str(price).strip()
     if str(unit or "").strip():
@@ -124,7 +152,7 @@ def save_price(item, price, unit="", note=""):
 
 def get_prices(query=""):
     """يجيب أسعار بنود بتطابق الطلب -- أو القاعدة كلها لو الطلب فاضي."""
-    docs = _all_docs()
+    docs = _all_docs_supabase_first()
     by_item = {d.get("item", ""): d for d in docs if d.get("item")}
     matched = search_items(query, list(by_item))
     if not matched and str(query or "").strip():

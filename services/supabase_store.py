@@ -341,6 +341,89 @@ def search_conversations(user_id, keyword, limit=10):
 
 
 # ============================================================
+# 💰 قاعدة الأسعار -- price_base (+ المدى من/إلى، قرار أحمد 2026-08-06)
+# ============================================================
+
+def _price_display(price, price_max):
+    """300.0, 800.0 -> "300-800" | 75.0, None -> "75" -- نفس شكل النص القديم."""
+    def trim(x):
+        f = float(x)
+        return str(int(f)) if f == int(f) else str(f)
+    if price_max is not None:
+        return f"{trim(price)}-{trim(price_max)}"
+    return trim(price)
+
+
+def all_price_docs():
+    """كل الأسعار بالشكل القديم اللي format_price_entries متعودة عليه.
+    None عند أي فشل -- fallback لـ Firestore."""
+    if _client() is None:
+        return None
+    try:
+        resp = _client().table("price_base").select("*").execute()
+        docs = []
+        for r in resp.data or []:
+            docs.append({
+                "item": r.get("item") or "",
+                "price": _price_display(r.get("price"), r.get("price_max")),
+                "unit": r.get("unit") or "",
+                "note": r.get("note") or "",
+                "source": r.get("source") or "ahmed",
+                "updated_at": r.get("updated_at") or "",
+                "history": [],
+            })
+        return docs
+    except Exception as e:
+        logger.warning(f"⚠️ [Supabase] قراءة الأسعار فشلت: {str(e)[:80]}")
+        return None
+
+
+def save_price_row(item, normalized, price_min, price_max, unit, note):
+    """حفظ/تحديث سعر مع أرشفة القيمة القديمة في price_base_history.
+
+    بيرجع (نجح؟، نص_السعر_القديم_أو_None).
+    """
+    if _client() is None:
+        return False, None
+    try:
+        existing = _client().table("price_base").select("*").eq(
+            "normalized", normalized
+        ).limit(1).execute()
+
+        old_display = None
+        row = {
+            "normalized": normalized,
+            "item": item,
+            "price": price_min,
+            "price_max": price_max,
+            "unit": unit or None,
+            "note": note or None,
+            "source": "ahmed",
+            "updated_at": _now_iso(),
+        }
+
+        if existing.data:
+            current = existing.data[0]
+            changed = (float(current.get("price") or 0) != float(price_min)
+                       or (current.get("price_max") or None) != (price_max or None))
+            if changed:
+                old_display = _price_display(current.get("price"), current.get("price_max"))
+                _client().table("price_base_history").insert({
+                    "price_base_id": current["id"],
+                    "price": current.get("price"),
+                    "recorded_at": current.get("updated_at"),
+                }).execute()
+            _client().table("price_base").update(row).eq("id", current["id"]).execute()
+        else:
+            _client().table("price_base").insert(row).execute()
+
+        return True, old_display
+    except Exception as e:
+        logger.warning(f"⚠️ [Supabase] حفظ السعر فشل: {str(e)[:80]}")
+        return False, None
+
+
+# ============================================================
 # 🏪 الموردين المرجعيين -- app_settings['suppliers']
 # ============================================================
 # طلب أحمد (2026-08-06): موردين معتمدين ليهم مواقع فيها أسعار الخامات،

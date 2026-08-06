@@ -188,6 +188,34 @@ def to_numeric(value, field_name="", allow_empty=False):
         raise TransformError(f"{field_name}: مش قابل للتحويل لرقم -- {value!r}")
 
 
+_RANGE_RE = re.compile(r"^\s*(\d[\d,٠-٩]*(?:\.\d+)?)\s*[-:–]\s*(\d[\d,٠-٩]*(?:\.\d+)?)\s*$")
+
+
+def parse_price_range(value, field_name=""):
+    """سعر ممكن يكون رقم واحد أو مدى -- بيرجع (من، إلى_أو_None).
+
+    قرار أحمد (2026-08-06): أسعار الخامات في السوق مدى مش رقم --
+    "البورسيلين 60×60 من 300:800". الأشكال المقبولة:
+      "75"        -> (75.0, None)      سعر ثابت
+      "850-1200"  -> (850.0, 1200.0)   مدى بشرطة
+      "300:800"   -> (300.0, 800.0)    مدى بنقطتين (طريقة كتابة أحمد)
+    ولو المدى مقلوب (أكبر قبل أصغر) بيترتب -- مش بيرمي.
+    """
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return float(value), None
+
+    text = str(value or "").strip().translate(_ARABIC_DIGITS)
+    match = _RANGE_RE.match(text)
+    if match:
+        low = float(match.group(1).replace(",", ""))
+        high = float(match.group(2).replace(",", ""))
+        if low > high:
+            low, high = high, low
+        return low, high
+
+    return to_numeric(value, field_name), None
+
+
 # ============================================================
 # 4. الإحداثيات المتخزنة كنص واحد
 # ============================================================

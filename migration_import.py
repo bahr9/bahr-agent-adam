@@ -247,15 +247,16 @@ def import_decisions(client, docs):
 def import_price_base(client, docs):
     """السعر بيتحول numeric بصرامة -- قيمة مش مفهومة توقف الاستيراد."""
     from datetime import datetime as _dt, timezone as _tz
-    from migration_transform import to_numeric
+    from migration_transform import parse_price_range
     count = 0
     for d in docs:
-        price = to_numeric(d.get("price"), "price_base[%s].price" % d.get("item"))
+        price, price_max = parse_price_range(d.get("price"), "price_base[%s].price" % d.get("item"))
         base_row = {
             "firestore_id": d["_doc_id"],
             "item": d.get("item") or "",
             "normalized": d["_doc_id"].replace("price-", ""),
             "price": price,
+            "price_max": price_max,
             "unit": blank_to_none(d.get("unit")),
             "note": blank_to_none(d.get("note")),
             "source": d.get("source") or "ahmed",
