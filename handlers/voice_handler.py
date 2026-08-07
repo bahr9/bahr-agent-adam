@@ -53,9 +53,10 @@ def handle_voice_message(message):
         logger.info(f"🎤 اتحوّلت الرسالة الصوتية لنص: {transcribed_text[:50]}...")
 
         # عالج النص المحوّل زي أي رسالة عادية (نفس الأدوات والذاكرة)
-        from config import MAX_CONVERSATION_HISTORY, CONVERSATION_CONTEXT_WINDOW
-        stored_history = get_conversation_history(chat_id, limit=MAX_CONVERSATION_HISTORY)
-        recent_history = format_history_for_claude(stored_history, limit=CONVERSATION_CONTEXT_WINDOW)
+        from config import CONVERSATION_CONTEXT_WINDOW
+        # نافذة بمرساة ثابتة من المخزن -- بدون قص إضافي (اقتصاد الكاش 2026-08-06)
+        stored_history = get_conversation_history(chat_id, limit=CONVERSATION_CONTEXT_WINDOW)
+        recent_history = format_history_for_claude(stored_history)
         memory_summary = get_memory(chat_id)
 
         reply = ask_claude_agentic(

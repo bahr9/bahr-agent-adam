@@ -281,18 +281,34 @@ def save_conversation(user_id, user_message, assistant_response):
         return False
 
 
-def get_conversation_history(user_id, limit=50):
-    """بيرجع نفس شكل عناصر الـ messages القديمة: {user, assistant, timestamp}."""
+def get_conversation_history(user_id, limit=50, stride=10):
+    """بيرجع نفس شكل عناصر الـ messages القديمة: {user, assistant, timestamp}.
+
+    اقتصاد الكاش (2026-08-06): "آخر N رسالة" الساذجة بتزحزح النافذة مع كل
+    رسالة جديدة -- أول رسالة في الـ prefix بتتغير، فكاش الرسايل بيتكسر كل
+    مرة وبيتدفع تمن الكتابة (2x) بدل القراءة (0.1x). الحل: بداية النافذة
+    مثبّتة على مضاعفات stride -- بتتحرك مرة كل stride تبادلات مش كل تبادل،
+    فالـ prefix بيفضل هو هو والكاش بيضرب. التمن: النافذة بتكبر لغاية
+    limit+stride-1 قبل ما تقص -- توكنز زيادة بس بسعر كاش، أرخص بكتير.
+    """
     if _client() is None:
         return None
     try:
+        cnt = _client().table("conversation_messages").select(
+            "id", count="exact"
+        ).eq("user_id", str(user_id)).limit(1).execute()
+        total = cnt.count or 0
+        if total == 0:
+            return []
+        start = max(0, total - int(limit))
+        start -= start % max(1, int(stride))
         resp = _client().table("conversation_messages").select(
             "user_text, assistant_text, occurred_at"
         ).eq("user_id", str(user_id)).order(
-            "occurred_at", desc=True
-        ).limit(limit).execute()
+            "occurred_at", desc=False
+        ).range(start, total - 1).execute()
 
-        rows = list(reversed(resp.data or []))
+        rows = resp.data or []
         return [
             {
                 "user": r.get("user_text") or "",

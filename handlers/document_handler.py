@@ -247,9 +247,10 @@ def handle_document_message(message):
     full_prompt = "\n".join(prompt_parts)
 
     # ===== جيب السياق والذاكرة =====
-    from config import MAX_CONVERSATION_HISTORY, CONVERSATION_CONTEXT_WINDOW
-    stored_history = get_conversation_history(chat_id, limit=MAX_CONVERSATION_HISTORY)
-    recent_history = format_history_for_claude(stored_history, limit=CONVERSATION_CONTEXT_WINDOW)
+    from config import CONVERSATION_CONTEXT_WINDOW
+    # نافذة بمرساة ثابتة من المخزن -- بدون قص إضافي (اقتصاد الكاش 2026-08-06)
+    stored_history = get_conversation_history(chat_id, limit=CONVERSATION_CONTEXT_WINDOW)
+    recent_history = format_history_for_claude(stored_history)
     memory_summary = get_memory(chat_id)
 
     # ===== ارسل لـ Claude =====

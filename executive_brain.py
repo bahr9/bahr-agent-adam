@@ -223,10 +223,12 @@ class ExecutiveBrain:
                 from services.firebase_service import get_conversation_history
                 from services.memory_service import get_memory
                 from services.claude_service import format_history_for_claude
-                from config import MAX_CONVERSATION_HISTORY, CONVERSATION_CONTEXT_WINDOW
+                from config import CONVERSATION_CONTEXT_WINDOW
 
-                stored = get_conversation_history(event.chat_id, limit=MAX_CONVERSATION_HISTORY)
-                context["history"] = format_history_for_claude(stored, limit=CONVERSATION_CONTEXT_WINDOW)
+                # النافذة جاية بمرساة ثابتة من المخزن (اقتصاد الكاش) --
+                # ممنوع قصها تاني هنا وإلا الزحزحة ترجع
+                stored = get_conversation_history(event.chat_id, limit=CONVERSATION_CONTEXT_WINDOW)
+                context["history"] = format_history_for_claude(stored)
                 context["memory"] = get_memory(event.chat_id)
 
             return context

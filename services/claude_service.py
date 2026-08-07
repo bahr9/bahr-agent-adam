@@ -502,8 +502,10 @@ TOOLS = [
                 "reason": {"type": "string", "description": "سبب القرار -- إجباري، ومينفعش يبقى فاضي"}
             },
             "required": ["program_name", "month_key", "paid", "reason"]
-        },
-        "cache_control": {"type": "ephemeral", "ttl": "1h"}
+        }
+        # علامة الكاش اتشالت 2026-08-06: علامة الـ system الثابت بتغطي كل
+        # اللي قبلها (الأدوات كلها) -- العلامتين هنا كانوا بيحرقوا ميزانية
+        # الـ 4 علامات اللي بقينا محتاجينها لكاش الرسايل (مرساة التاريخ + الديل)
     },
     {
         "name": "save_memory_note",
@@ -914,8 +916,8 @@ TOOLS = [
     {
         "type": "web_search_20250305",
         "name": "web_search",
-        "max_uses": 3,
-        "cache_control": {"type": "ephemeral", "ttl": "1h"}
+        "max_uses": 3
+        # علامة الكاش اتشالت 2026-08-06 -- شوف التعليق عند loan_resolve_conflict
     },
     {
         "name": "save_decision",
@@ -1945,6 +1947,46 @@ def _execute_tool(tool_name, tool_input, chat_id):
 
         return f"حصل خطأ أثناء التنفيذ: {str(e)}"
 
+def _mark_message_cached(message):
+    """يحط علامة كاش على آخر بلوك في رسالة واحدة (dict فقط -- بلوكات SDK بتتساب)."""
+    marker = {"type": "ephemeral", "ttl": "1h"}
+    if not isinstance(message, dict):
+        return
+    c = message.get("content")
+    if isinstance(c, str):
+        message["content"] = [{"type": "text", "text": c, "cache_control": marker}]
+    elif isinstance(c, list) and c and isinstance(c[-1], dict):
+        c[-1]["cache_control"] = marker
+
+
+def _refresh_messages_cache_markers(messages, history_anchor_index):
+    """يظبط علامتين كاش على الرسايل قبل كل نداء.
+
+    ليه (2026-08-06): العدّاد كشف إن تاريخ المحادثة (~23K توكن) كان بيتبعت
+    بسعر كامل مع كل نداء -- ده كان معظم الـ 42M توكن/6 أيام.
+
+    العلامتين ودورهم مختلف:
+    - مرساة التاريخ (index ثابت = آخر رسالة من history المحمّل): دي اللي
+      بتخلي *الرسالة الجاية من أحمد* تلاقي نقطة مطابقة ثابتة فتقرا التاريخ
+      كله بـ 10% بدل ما تكتبه تاني. مجرّب: من غيرها النداء التاني كتب 31K
+      من أول وجديد رغم إن التاريخ متطابق.
+    - الديل (آخر رسالة حالية، بتتحرك كل جولة): دي اللي بتخلي *جولات
+      الأدوات* جوه نفس الرد تقرا كل اللي فات بدل ما تعيد إرساله.
+
+    ميزانية العلامات (الحد 4 للطلب كله): 1 system ثابت (بيغطي الأدوات
+    اللي قبله) + 2 دول = 3.
+    """
+    for m in messages:
+        c = m.get("content") if isinstance(m, dict) else None
+        if isinstance(c, list):
+            for block in c:
+                if isinstance(block, dict):
+                    block.pop("cache_control", None)
+    if 0 <= history_anchor_index < len(messages) - 1:
+        _mark_message_cached(messages[history_anchor_index])
+    _mark_message_cached(messages[-1])
+
+
 def ask_claude_agentic(user_message, chat_id, conversation_history=None, memory_summary=None, max_tool_rounds=5):
     """
     نسخة "وكيلة" (agentic) من الرد — البوت بيقرر بنفسه إمتى يستخدم الأدوات
@@ -1966,8 +2008,11 @@ def ask_claude_agentic(user_message, chat_id, conversation_history=None, memory_
         messages = []
         if conversation_history:
             messages.extend(conversation_history)
+        # مرساة كاش التاريخ: آخر رسالة من الـ history المحمّل -- index ثابت
+        # طول الرد مهما اتضافت رسايل أدوات بعده (شوف _refresh_messages_cache_markers)
+        history_anchor_index = len(messages) - 1
         messages.append({"role": "user", "content": user_message})
-        
+
         from services.tool_lifecycle_diagnostics import (
             record_payload_snapshot, record_model_selection, detect_explicit_tool_request,
         )
@@ -2021,6 +2066,7 @@ def ask_claude_agentic(user_message, chat_id, conversation_history=None, memory_
 
         for round_index in range(max_tool_rounds):
             record_payload_snapshot([t["name"] for t in TOOLS])
+            _refresh_messages_cache_markers(messages, history_anchor_index)
 
             create_kwargs = dict(
                 model=CLAUDE_MODEL,
@@ -2293,13 +2339,18 @@ def ask_claude(user_message, conversation_history=None, memory_summary=None, pen
         logger.error(f"❌ خطأ في Claude: {e}")
         return f"❌ حصلت مشكلة: {str(e)}"
 
-def format_history_for_claude(stored_messages, limit=20):
+def format_history_for_claude(stored_messages, limit=None):
     """
-    يحوّل السجل المخزّن في Firestore (قائمة {"user":.., "assistant":..}) 
-    لصيغة رسائل Claude API القياسية
+    يحوّل السجل المخزّن (قائمة {"user":.., "assistant":..}) لصيغة رسائل
+    Claude API القياسية.
+
+    limit=None (الافتراضي من 2026-08-06): من غير قص -- القص بقى مسؤولية
+    get_conversation_history اللي بترجع نافذة بمرساة ثابتة لصالح الكاش؛
+    أي قص إضافي هنا بيرجّع الزحزحة اللي المرساة اتعملت عشان تمنعها.
     """
     history = []
-    for m in stored_messages[-limit:]:
+    window = stored_messages if limit is None else stored_messages[-limit:]
+    for m in window:
         if m.get("user"):
             history.append({"role": "user", "content": m["user"]})
         if m.get("assistant"):
