@@ -40,6 +40,7 @@ import hmac
 import json
 import os
 import queue
+import re
 import threading
 import uuid
 import time
@@ -329,6 +330,97 @@ def _chunks(text, size=None):
     return [text[i:i + size] for i in range(0, len(text), size)]
 
 
+# ============================================================
+# تحويل نص تليجرام لنص واجهة
+# ============================================================
+#
+# الرد بيتولد لتليجرام، وتليجرام بيرندر Markdown. الواجهة لأ: العقد بيقول
+# إن الـ delta "تُلحق كما هي" (قسم 3.2)، يعني أي `**` أو `|` بيوصل بيتعرض
+# للمستخدم حرف بحرف. لازم النص يتنضف هنا -- عند حدود القناة -- مش في
+# مولّد الرد، عشان مسار تليجرام ميتلمسش خالص.
+
+_MD_PIPE_ROW = re.compile(r"^\s*\|.*\|\s*$")
+_MD_PIPE_SEP = re.compile(r"^\s*\|[\s:\-|]+\|\s*$")
+_MD_HEADING = re.compile(r"^\s{0,3}#{1,6}\s+")
+_MD_FENCE = re.compile(r"^\s*```")
+_MD_LINK = re.compile(r"\[([^\]\n]+)\]\((?:[^)\s]+)(?:\s+\"[^\"]*\")?\)")
+_MD_BOLD_ITALIC = re.compile(r"(\*{1,3}|_{2,3})(?=\S)(.+?)(?<=\S)\1", re.S)
+_MD_INLINE_CODE = re.compile(r"`([^`\n]+)`")
+_MD_BULLET = re.compile(r"^(\s*)[*+-]\s+")
+
+
+def _drop_markdown_tables(text):
+    """شيل بلوكات جداول الماركداون بالكامل.
+
+    الجدول بيتبعت أصلاً كبطاقة evidence عبر stage.push (عرف التأليف في
+    قسم 6). لو سيبناه في النص كمان، المستخدم بيشوف نفس البيانات مرتين --
+    مرة بطاقة مرتبة ومرة أنابيب وشرط خام. البطاقة هي النسخة الصحيحة.
+
+    بنشيل البلوك **بس** لو فيه سطر فاصل (|---|---|) -- ده اللي بيفرّق
+    الجدول الحقيقي عن سطر عادي صادف إنه بادئ ومنتهي بـ |.
+    """
+    lines = text.split("\n")
+    out, block = [], []
+
+    def _flush():
+        if block and any(_MD_PIPE_SEP.match(b) for b in block):
+            return                      # جدول حقيقي -- بيتشال بالكامل
+        out.extend(block)
+
+    for line in lines:
+        if _MD_PIPE_ROW.match(line):
+            block.append(line)
+            continue
+        _flush()
+        block = []
+        out.append(line)
+    _flush()
+
+    return "\n".join(out)
+
+
+def _to_plain_text(text):
+    """نص تليجرام (Markdown) -> نص عادي للواجهة.
+
+    بيشيل التنسيق ويسيب المحتوى: النجوم والشرط السفلي والباك-تِك وعناوين #
+    والروابط بتتحول لنصها. الجداول بتتشال خالص (بطاقة evidence بتغطيها).
+    """
+    if not text:
+        return text
+
+    text = _drop_markdown_tables(text)
+
+    lines = []
+    in_fence = False
+    for line in text.split("\n"):
+        if _MD_FENCE.match(line):
+            in_fence = not in_fence
+            continue                    # سور الكود نفسه مش محتوى
+        if in_fence:
+            lines.append(line)          # جوه الكود: النص زي ما هو بالظبط
+            continue
+        line = _MD_HEADING.sub("", line)
+        line = _MD_BULLET.sub(r"\1• ", line)
+        line = _MD_LINK.sub(r"\1", line)
+        line = _MD_INLINE_CODE.sub(r"\1", line)
+        line = _MD_BOLD_ITALIC.sub(r"\2", line)
+        lines.append(line)
+
+    # الجداول المشالة بتسيب فراغات -- بنلم أكتر من سطرين فاضيين في واحد
+    cleaned = re.sub(r"\n{3,}", "\n\n", "\n".join(lines))
+    return cleaned.strip()
+
+
+def _new_message_id():
+    """معرّف فريد لكل رد.
+
+    كان ثابتًا "m-1"، فكل رد في كل جولة كان بيوصل بنفس المعرّف والواجهة
+    اضطرت تركّب مفتاح محلي من turnId/messageId عشان تفرّق بينهم. العقد
+    (قسم 3.2) بيلزم بوجود الحقل ومبيقيّدش قيمته -- فبناخد نفس شكل turnId.
+    """
+    return "m-" + uuid.uuid4().hex[:8]
+
+
 def _aborted(turn):
     with turn.lock:
         return not turn.active
@@ -354,7 +446,10 @@ def _run_turn(turn, text):
                 logger.warning("UI channel: chat_id getter فشل -- الجولة بتكمّل من غيره: " + str(e))
 
         reply = _runtime_call(text, chat_id)
-        reply = (reply or "").strip() or "تمام."
+        # الرد اتولد لتليجرام (Markdown). الواجهة بتعرض الـ delta حرفيًا،
+        # فبنحوّله لنص عادي هنا عند حدود القناة -- مسار تليجرام ميتلمسش.
+        reply = _to_plain_text(reply or "")
+        reply = reply.strip() or "تمام."
 
         if _aborted(turn):
             return
@@ -374,7 +469,7 @@ def _run_turn(turn, text):
                 })
 
         turn.emit({"type": "orb.state", "state": "speaking", "turnId": turn.id})
-        message_id = "m-1"
+        message_id = _new_message_id()
         turn.emit({"type": "stream.start", "turnId": turn.id, "messageId": message_id})
         for chunk in _chunks(reply):
             if _aborted(turn):
