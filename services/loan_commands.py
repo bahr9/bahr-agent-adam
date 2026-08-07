@@ -99,13 +99,21 @@ def _commit(program, index, inst, paid, source, actor, chat_id, raw_context, met
     # بيتعمله mirror جوه record_event_with_write؛ الحالة هنا لأن شكلها
     # معرفة domain بتاعة الملف ده. فشل الـ mirror بيتسجل **بصوت عالي جدًا**:
     # معناه القراء هيشوفوا حالة أقدم لحد ما يتصلح -- مش مقبول يعدي صامت.
+    # الإنذار بيدق **بس** لما Supabase يكون متصل فعلاً وترفض الكتابة. لو
+    # مش متصل أصلاً (تشغيلة اختبار مثلاً) مفيش قراء بيقروا منه ومفيش انحراف،
+    # فالإنذار وقتها كذب -- و347 إنذار كاذب بيدفنوا الإنذار الحقيقي.
     from services import supabase_store
     if not supabase_store.save_loan_status(identity_key, paid):
         from utils.logger import logger as _logger
-        _logger.error(
-            f"❌❌ حالة القسط {identity_key} اتكتبت في Firestore بس -- Supabase فشل! "
-            f"القراء شايفين حالة قديمة. الحدث: {event_id}"
-        )
+        if supabase_store.is_configured():
+            _logger.error(
+                f"❌❌ حالة القسط {identity_key} اتكتبت في Firestore بس -- Supabase فشل! "
+                f"القراء شايفين حالة قديمة. الحدث: {event_id}"
+            )
+        else:
+            _logger.debug(
+                f"mirror حالة القسط {identity_key} اتخطى -- Supabase مش متصل في التشغيلة دي"
+            )
 
     status = "مدفوع" if paid else "غير مدفوع"
     msg = f"تم تحديث قسط {program['name']} لشهر {inst['date']} ({inst['amount']} جنيه) → {status}"

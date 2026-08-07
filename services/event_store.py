@@ -193,12 +193,19 @@ def record_event_with_write(
         # الالتزام الذري الأساسي لسه (حدث + كتابة domain سوا). Supabase بياخد
         # نسخة الحدث هنا، وكتابة الـ domain بيتولاها المنادي (loan_commands)
         # لأنه صاحب معرفة الشكل. فشل الـ mirror بيتسجل بصوت عالي -- مش بيكسر.
+        # الإنذار بيدق **بس** لما Supabase يكون متصل وترفض الكتابة. مش متصل
+        # أصلاً = مفيش قراء بيقروا منه = مفيش انحراف = الإنذار كذب.
         from services import supabase_store as _sb_store
         if not _sb_store.insert_event(event):
-            logger.error(
-                f"❌ mirror حدث الالتزام الذري لـ Supabase فشل -- القراء هيشوفوا "
-                f"نسخة أقدم لحد ما يتصلح: {event['event_id']}"
-            )
+            if _sb_store.is_configured():
+                logger.error(
+                    f"❌ mirror حدث الالتزام الذري لـ Supabase فشل -- القراء هيشوفوا "
+                    f"نسخة أقدم لحد ما يتصلح: {event['event_id']}"
+                )
+            else:
+                logger.debug(
+                    f"mirror الحدث اتخطى -- Supabase مش متصل: {event['event_id']}"
+                )
 
         logger.info(
             f"📒 event+write atomic commit: [{event['entity_key']}].{attribute} "

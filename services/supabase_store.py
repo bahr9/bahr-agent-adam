@@ -40,6 +40,20 @@ def _client():
     return supabase_service.supabase_client
 
 
+def is_configured():
+    """Supabase متصل فعلاً ولا لأ.
+
+    كل دالة كتابة هنا بترجع False في حالتين مختلفتين تمامًا: الكتابة فشلت
+    فعلاً (استثناء)، أو Supabase مش متصل أصلاً (init_supabase مانداهش --
+    زي أي تشغيلة اختبار). المنادي مش قادر يفرّق بين الاتنين من قيمة الرجوع
+    لوحدها، فكان بيدق إنذار "القراء شايفين حالة قديمة" في الحالتين.
+
+    الفرق مهم: لو مفيش Supabase أصلاً، مفيش قراء بيقروا منه، ومفيش انحراف.
+    استخدم الدالة دي قبل ما تدق الإنذار.
+    """
+    return _client() is not None
+
+
 def _now_iso():
     return datetime.now(timezone.utc).isoformat()
 
