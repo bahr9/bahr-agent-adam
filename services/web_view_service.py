@@ -69,6 +69,21 @@ def _normalize_url(url: str) -> str:
     return url
 
 
+def _cache_bust(url: str) -> str:
+    """يضيف باراميتر فريد للرابط عشان Microlink يرجّع رندر جديد مش متخزن.
+
+    اتأكد حيًا (2026-08-07): Microlink بيكاش السكرين شوت بالرابط -- بعد ما
+    صلّحنا باج تسريب نص في موقع Bahr Designs، آدم لسه شاف نسخة قديمة فيها
+    الباج القديم لأن الرابط اتطلب قبل كده بنفس الشكل بالظبط. لازم نضمن كل
+    نداء بيشوف حالة الموقع دلوقتي مش وقت أي طلب سابق لنفس الرابط.
+    """
+    import time
+    base, _, fragment = url.partition("#")
+    sep = "&" if "?" in base else "?"
+    busted = f"{base}{sep}_adamts={int(time.time())}"
+    return f"{busted}#{fragment}" if fragment else busted
+
+
 def capture_screenshot(url: str):
     """يرجع (bytes, media_type, الرابط بعد التطبيع) أو يرفع WebsiteViewError.
 
@@ -77,7 +92,7 @@ def capture_screenshot(url: str):
     الملف) -- لو الرابط فيه #anchor، اللقطة بتبقى للقسم ده مش الهيرو.
     """
     norm_url = _normalize_url(url)
-    params = {"url": norm_url, "screenshot": "true", "meta": "false",
+    params = {"url": _cache_bust(norm_url), "screenshot": "true", "meta": "false",
               "embed": "screenshot.url"}
     if MICROLINK_API_KEY:
         params["apiKey"] = MICROLINK_API_KEY

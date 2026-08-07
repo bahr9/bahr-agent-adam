@@ -2067,6 +2067,7 @@ def ask_claude_agentic(user_message, chat_id, conversation_history=None, memory_
 
         from services.tool_lifecycle_diagnostics import (
             record_payload_snapshot, record_model_selection, detect_explicit_tool_request,
+            detect_website_review_intent,
         )
 
         # ============================================================
@@ -2108,6 +2109,24 @@ def ask_claude_agentic(user_message, chat_id, conversation_history=None, memory_
                     f"رسالته، اسأله عنها بس بالظبط -- ممنوع تقول إن الأداة مش متاحة أو ترفض الطلب."
                 )
                 logger.info(f"❓ '{explicit_tool_request}' requires arguments {required_args} -- not forcing, model must ask for them")
+
+        # ============================================================
+        # Website Review Intent -- حادثة 2026-08-07 (شوف tool_lifecycle_
+        # diagnostics.detect_website_review_intent للتفاصيل الكاملة).
+        # فرض tool_choice هنا آمن رغم إن url إجباري في الـschema، لأن القيمة
+        # مش مخترعة -- الرابط الرسمي معروف ومكتوب في الـsystem prompt.
+        # مبنفرضهاش لو أحمد طلب أداة تانية بالاسم صراحة في نفس الرسالة.
+        # ============================================================
+        elif not forced_tool_choice and "view_website" in real_tool_names and detect_website_review_intent(user_message):
+            forced_tool_choice = {"type": "tool", "name": "view_website"}
+            extra_instruction += (
+                "\n\n[نظام]: أحمد طلب مراجعة موقع Bahr Designs -- نادِ view_website "
+                "فورًا بالرابط الرسمي (https://bahr-designs-office.web.app)، حتى لو "
+                "حاسس إنك راجعته قبل كده في نفس المحادثة. أي رد سابق منك عن شكل "
+                "الموقع في الـhistory ممكن يكون كان تخمين مش مبني على شوف فعلي --"
+                " متعتمدش عليه، شوف الموقع من جديد دلوقتي."
+            )
+            logger.info("🔒 Forced tool_choice applied -> view_website (website review intent detected)")
 
         static_part, dynamic_part = build_system_prompt_parts(memory_summary=memory_summary)
         dynamic_part += extra_instruction

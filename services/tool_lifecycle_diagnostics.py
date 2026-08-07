@@ -49,6 +49,39 @@ EXPLICIT_TOOL_TRIGGER_WORDS = [
     "use", "call", "execute", "run",
 ]
 
+# ============================================================
+# Website Review Intent -- حادثة 2026-08-07
+# =====================================================
+# نفس نمط حادثة 2026-07-27، لكن أخطر: أحمد ميكتبش "view_website" بالاسم
+# أبدًا (طلب طبيعي "شوف موقعنا وقولي رأيك")، فـdetect_explicit_tool_request
+# فوق ماكانش هيمسكها أصلًا. وأخطر من كده: بعد أول رد ملفّق واحد ("شفت
+# الموقع...")، كل رد تالي في نفس المحادثة كان بيبني على كذبته القديمة في
+# الـhistory بدل ما يتحقق تاني -- أربع ردود متتالية بالدليل من Supabase
+# (conversation_messages)، رغم تعليمة نصية صريحة في الـsystem prompt تقول
+# "ناديها الأداة قبل أي رأي". التعليمات النصية وحدها مش كفاية لما الموديل
+# عنده precedent قوي من رده هو نفسه في نفس المحادثة -- الحل زي 2026-07-27
+# بالظبط: تصنيف حتمي (صفر LLM) بيفرض tool_choice، مش بيعتمد على "الموديل
+# هيقرر صح المرة دي".
+_WEBSITE_NOUNS = ["موقعنا", "الموقع", "موقعي", "موقع بحر", "bahr-designs-office"]
+_WEBSITE_REVIEW_VERBS = [
+    "شوف", "شوفي", "قيّم", "قيم", "راجع", "عاين", "افتح", "رأيك", "رايك",
+]
+
+
+def detect_website_review_intent(user_message: str) -> bool:
+    """كشف حتمي لطلب "شوف الموقع وقولي رأيك" -- بدون اسم أداة صريح.
+
+    شرطين: (1) كلمة تشاور على موقع Bahr Designs تحديدًا (مش أي موقع
+    عمومًا -- عشان ميتفرضش على "شوف موقع المورد ده https://...")،
+    (2) فعل مراجعة/رأي في نفس الرسالة. القصد: الحالة الضيقة اللي أحمد
+    بيقصد بيها موقعه هو من غير ما يديله رابط -- ده اللي كان بيتلخبط.
+    """
+    if not user_message:
+        return False
+    has_noun = any(n in user_message for n in _WEBSITE_NOUNS)
+    has_verb = any(v in user_message for v in _WEBSITE_REVIEW_VERBS)
+    return has_noun and has_verb
+
 
 def detect_explicit_tool_request(user_message: str, tool_names) -> str:
     """
