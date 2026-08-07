@@ -857,7 +857,9 @@ if __name__ == "__main__":
                          id='recurring', misfire_grace_time=60)
         scheduler.add_job(check_loans_job, 'cron', hour=9, minute=0,
                          id='loans_check', timezone='Africa/Cairo', misfire_grace_time=60)
-        scheduler.add_job(self_state_active_check_job, 'interval', hours=1,
+        # كل 6 ساعات بدل كل ساعة (قرار أحمد 2026-08-07، جولة خفض التكلفة):
+        # الفحص ده اطمئنان داخلي مش خدمة لأحمد مباشرة -- 4 مرات في اليوم كفاية.
+        scheduler.add_job(self_state_active_check_job, 'interval', hours=6,
                          id='self_state_active_check', timezone='Africa/Cairo', misfire_grace_time=300)
         # next_run_time (أوديت صحة الأدوات 2026-08-05): job الـ interval في
         # APScheduler أول تشغيلة ليه بتيجي بعد الفاصل كامل -- يعني بعد أي
