@@ -80,7 +80,15 @@ logger.info("OK ADAM Runtime")
 
 def _detect_running_commit() -> str:
     import os
-    commit = os.getenv("HEROKU_SLUG_COMMIT") or os.getenv("SOURCE_VERSION")
+    # RAILWAY_GIT_COMMIT_SHA بيتحقن أوتوماتيك من Railway لأي سيرفس متوصلة
+    # بـ GitHub (زي آدم) -- من غير ما نضيف Variable يدوي. أوديت 2026-08-07:
+    # قبل كده كان بيدور بس على أسماء Heroku القديمة (SOURCE_VERSION) وعلى
+    # .git محلي (مش موجود بعد بناء nixpacks)، فكان دايمًا "unknown" فعليًا.
+    commit = (
+        os.getenv("RAILWAY_GIT_COMMIT_SHA")
+        or os.getenv("HEROKU_SLUG_COMMIT")
+        or os.getenv("SOURCE_VERSION")
+    )
     if commit:
         return commit[:12]
     try:
@@ -866,10 +874,20 @@ if __name__ == "__main__":
         # deploy/restart الـ heartbeat كان بيستنى 6 ساعات قبل أول فحص.
         # يوم فيه كذا deploy (زي النهاردة) = صفر فحوصات طول اليوم، وكل
         # الأدوات المفحوصة بتطلع UNKNOWN. أول فحص بقى بعد البداية بـ 3 دقايق.
-        from datetime import datetime as _dt, timedelta as _td
+        #
+        # باج مكتشف 2026-08-07: الإصلاح فوق كان بيستخدم datetime.now() ساذج
+        # (وقت السيرفر، UTC على Railway) بينما الـ trigger مضبوط بتوقيت
+        # Africa/Cairo -- APScheduler بيتعامل مع next_run_time الساذج كأنه
+        # أصلًا بتوقيت القاهرة من غير تحويل، فبيبان "في الماضي" بمقدار فرق
+        # التوقيت (~3 ساعات) ويتخطاه الـ misfire (رأيناه حي: "was missed by
+        # 2:57:00" فورًا عند كل إقلاع). النتيجة: أول فحص السريع كان بيتقفل
+        # صامت والفحص الحقيقي بيرجع يستنى 6 ساعات كاملة -- نفس الباج الأصلي
+        # اللي الإصلاح ده اتعمل عشانه، رجع من غير ما حد يلاحظ. now_cairo()
+        # بترجع datetime واعي بالـ timezone فيتطابق مع الـ trigger صح.
+        from datetime import timedelta as _td
         scheduler.add_job(tool_health_check_job, 'interval', hours=6,
                          id='tool_health_check', timezone='Africa/Cairo', misfire_grace_time=300,
-                         next_run_time=_dt.now() + _td(minutes=3))
+                         next_run_time=now_cairo() + _td(minutes=3))
         scheduler.add_job(project_status_check_job, 'interval', hours=1,
                          id='project_status_check', timezone='Africa/Cairo', misfire_grace_time=300)
         scheduler.add_job(urgent_deadlines_check_job, 'interval', hours=1,
