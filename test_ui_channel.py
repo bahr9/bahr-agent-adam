@@ -343,6 +343,13 @@ def main():
             ui_channel.unsubscribe(q)
 
     def intent_and_confirm_fail_politely():
+        """الـ intents **غير المدعومة** وconfirm بيفضلوا يرفضوا بأدب.
+
+        بعد شريحة الـ intents، الـ intents القرائية المعروفة بقت بتشتغل
+        (test_ui_channel_intents.py). الاختبار ده بيحرس الناحية التانية:
+        installments.pay فعل كتابة مؤجل عن قصد، فلازم يفضل يفشل بـ
+        retryable: false -- مش يعدي بالغلط مع اللي اتفعّل.
+        """
         os.environ["ADAM_TOKEN"] = TOKEN
         q = ui_channel.subscribe()
         try:
@@ -385,6 +392,14 @@ def main():
 
         first = read_chunk()
         assert first.startswith("retry:"), f"أول سطر مش retry: {first!r}"
+
+        # بعد retry على طول: الطقم الابتدائي للعميل ده هو بس (شريحة الـ
+        # intents). ده جزء من شكل السلك دلوقتي، مش حدث عابر.
+        initial = read_chunk()
+        assert initial.startswith("data: "), f"الطقم الابتدائي شكله: {initial!r}"
+        initial_payload = json.loads(initial[len("data: "):].strip())
+        assert initial_payload["type"] == "suggestions", initial_payload
+        assert initial_payload["suggestions"], "طقم ابتدائي فاضي"
 
         ui_channel.publish({"type": "orb.state", "state": "idle", "label": "اختبار عربي"})
         data_line = read_chunk()

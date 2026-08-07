@@ -411,6 +411,102 @@ def _to_plain_text(text):
     return cleaned.strip()
 
 
+# ============================================================
+# الـ intents: نص معتم من الواجهة -> نص زي ما أحمد كتبه
+# ============================================================
+#
+# الواجهة بتبعت الـ intent كنص معتم ومبتفسرهوش (العقد، قسم 4). آدم هو
+# اللي بيحوّله، والتحويل **لنص** مش استدعاء أداة مباشر: الزرار لازم يعدي
+# على فهم آدم زي أي كلام، عشان السياق (مشروع مختلف، وقت مختلف) يأثر على
+# الرد. التنوع الصادق أأمن من الثبات المزيف هنا.
+#
+# ملحوظة تثبّت الاختيار ده: مفيش أداة اسمها today.attention أصلًا -- لو
+# كنا رحنا للأداة مباشرة، الـ intent ده مكانش ليه حاجة يروح لها.
+#
+# كل النصوص دي **قراءة بس**. أي فعل كتابة (تسجيل دفعة، حل تعارض) مؤجل
+# لشريحة الـ confirmation، فممنوع أي نص هنا يوعد بكتابة.
+
+_INTENT_TEXT = {
+    "today.attention":       "إيه اللي محتاج انتباهي النهاردة؟",
+    "expenses.month":        "اعرض ملخص مصاريف الشهر ده",
+    "installments.overdue":  "اعرض الأقساط المتأخرة",
+    # عرض التعارضات مش حلها: الحل (loan_resolve_conflict) كتابة خطرة
+    # مؤجلة، وزرار بيوعد بحاجة الشريحة مش بتعملها هو نفس العطل اللي
+    # الشريحة دي موجودة عشان تشيله.
+    "installments.conflict": "اعرض التعارضات المعلّقة في الأقساط",
+}
+
+_SUGGESTION_ATTENTION    = {"id": "s-attention",    "label": "إيه اللي محتاج انتباهي؟", "intent": "today.attention"}
+_SUGGESTION_EXPENSES     = {"id": "s-expenses",     "label": "ملخص مصاريف الشهر",      "intent": "expenses.month"}
+_SUGGESTION_INSTALLMENTS = {"id": "s-installments", "label": "الأقساط المتأخرة",       "intent": "installments.overdue"}
+_SUGGESTION_CONFLICTS    = {"id": "s-conflicts",    "label": "التعارضات المعلّقة",      "intent": "installments.conflict"}
+
+# الطقم الابتدائي. brief.morning **مش** هنا عن عمد: مؤجل لحد ما دورته
+# تتصمم لوحدها، وزرار بيفشل أسوأ من زرار مش موجود.
+_INITIAL_SUGGESTIONS = [
+    _SUGGESTION_ATTENTION,
+    _SUGGESTION_EXPENSES,
+    _SUGGESTION_INSTALLMENTS,
+]
+
+
+def _pending_conflict_count():
+    """عدد التعارضات المعلّقة -- من الحالة الباقية مش من الجولة.
+
+    التعارض حالة بتفضل عايشة لحد ما loan_resolve_conflict يقفلها، وممكن
+    يكون اتولد في تليجرام وميعديش على القناة دي خالص. فحقل مربوط بالجولة
+    عمره ما هيشوفه. المصدر ده هو نفسه اللي محرك الحالة الذاتية بيستخدمه،
+    فالشريحة مستحيل تقول حاجة تخالف اللي آدم بيقوله لو اتسأل مباشرة.
+
+    فشل القراءة مبيكسرش الجولة -- بنرجع صفر ونسجّل.
+    """
+    try:
+        from services import self_state_engine
+        return int(self_state_engine.compute_unresolved_conflict().get("count", 0) or 0)
+    except Exception as e:
+        logger.warning("UI channel: قراءة التعارضات المعلّقة فشلت -- الطقم هيكمل من غيرها: " + str(e)[:90])
+        return 0
+
+
+def _build_suggestions(tools_seen=None):
+    """الطقم اللي آدم بيقترحه: طبقة حالة باقية + طبقة سياق الجولة.
+
+    **ممنوع يرجع ليستة فاضية.** الواجهة بترجع لليستة المكتوبة عندها لو
+    الطقم فاضي (fromRuntime.length > 0 ? fromRuntime : fallback)، يعني
+    باگ هنا بيرجّع الأزرار الشبح بدل ما يبان كعطل -- الفشل هيبقى شكله
+    نجاح بالظبط. فلو الطبقتين مطلعوش حاجة، بنرجع الطقم الابتدائي.
+    """
+    chips = []
+
+    # طبقة ١ -- حالة باقية: التعارض المعلّق يسبق أي حاجة تانية
+    if _pending_conflict_count() > 0:
+        chips.append(_SUGGESTION_CONFLICTS)
+
+    # طبقة ٢ -- سياق الجولة: اللي اتلمس يقترح متابعاته
+    names = list(tools_seen or [])
+    if any(n.startswith(_LOAN_TOOL_PREFIX) for n in names):
+        chips.append(_SUGGESTION_INSTALLMENTS)
+
+    for chip in _INITIAL_SUGGESTIONS:
+        if not any(c["intent"] == chip["intent"] for c in chips):
+            chips.append(chip)
+
+    if not chips:
+        logger.warning("UI channel: طقم الاقتراحات طلع فاضي -- بنرجع الابتدائي (ده باگ مش حالة)")
+        return list(_INITIAL_SUGGESTIONS)
+
+    return chips
+
+
+def _publish_suggestions(tools_seen=None):
+    """نشر الطقم. الحدث ده **مش** تابع لجولة (مفيش turnId في العقد)،
+    فبيتنشر بـ publish مش turn.emit -- turn.emit بيتسقط بعد قفل الجولة."""
+    try:
+        publish({"type": "suggestions", "suggestions": _build_suggestions(tools_seen)})
+    except Exception as e:
+        logger.error("UI channel: نشر الاقتراحات فشل: " + str(e)[:90])
+
+
 def _new_message_id():
     """معرّف فريد لكل رد.
 
@@ -484,6 +580,10 @@ def _run_turn(turn, text):
         final_state = "warning" if has_overdue else "success"
         turn.emit({"type": "orb.state", "state": final_state, "turnId": turn.id})
         turn.close({"type": "turn.completed", "turnId": turn.id})
+
+        # الاقتراحات بعد القفل عن قصد: الحدث مش تابع للجولة، وturn.emit
+        # كان هيسقطه. الطقم بيتبني من أدوات الجولة دي + الحالة الباقية.
+        _publish_suggestions(turn.tools_seen)
 
     except Exception as e:
         # عطل تقني فعلي بس هو اللي بيتقال error (قاعدة العقد الصلبة)
@@ -574,6 +674,14 @@ def ui_events():
         try:
             # إعادة الاتصال مسؤولية الواجهة (backoff) -- بنقترح فاصل أولي بس
             yield "retry: 3000\n\n"
+
+            # الطقم الابتدائي للعميل ده هو بس -- مش publish. النشر بيوصل
+            # كل المشتركين، فاتصال جديد كان هيبعت طقم لعملاء تانيين
+            # وسط جولاتهم من غير سبب.
+            yield "data: " + json.dumps(
+                {"type": "suggestions", "suggestions": _build_suggestions()},
+                ensure_ascii=False,
+            ) + "\n\n"
             while True:
                 try:
                     event = q.get(timeout=SSE_KEEPALIVE_SECONDS)
@@ -623,17 +731,42 @@ def ui_command():
             _cancel_turn(data.get("turnId"))
             return jsonify({"status": "accepted"}), 202
 
-        if cmd_type in ("intent", "confirm"):
-            # معرّفين بالعقد -- تنفيذهم في الشريحة الجاية. بنرد بأحداث
-            # حقيقية مش صمت: جولة بتفشل فورًا بسبب واضح وretryable: false
-            # (الواجهة مش هتعرض "حاول تاني" لحاجة مش هتنجح).
+        if cmd_type == "intent":
+            intent = (data.get("intent") or "").strip()
+            text = _INTENT_TEXT.get(intent)
+            if text is None:
+                # intent مش في الجدول: نفس رد أي حاجة مش مفهومة -- فشل
+                # واضح وretryable: false (مفيش "حاول تاني" لحاجة مش هتنجح).
+                # brief.morning بيقع هنا عن قصد -- مؤجل لشريحته.
+                turn_id = "t-" + uuid.uuid4().hex[:8]
+                publish({
+                    "type": "turn.failed", "turnId": turn_id,
+                    "reason": "intent مش مدعوم في جانب آدم: " + (intent or "(فاضي)"),
+                    "retryable": False,
+                })
+                logger.info("UI channel: intent مش معروف اترفض: " + (intent or "(فاضي)"))
+                return jsonify({"status": "accepted", "turnId": turn_id}), 202
+
+            if _runtime_call is None:
+                logger.error("UI channel: أمر intent وصل قبل تهيئة runtime_call")
+                return jsonify({"status": "unavailable", "message": "ui channel not initialized"}), 503
+
+            # نفس مسار النص بالظبط: _start_turn بيتولى الاستبدال والـ
+            # thread والـ turnId. مفيش مسار تنفيذ تاني للأزرار.
+            turn_id = _start_turn(text)
+            logger.info("UI channel: intent " + intent + " -> نص: " + text)
+            return jsonify({"status": "accepted", "turnId": turn_id}), 202
+
+        if cmd_type == "confirm":
+            # دورة التأكيد مؤجلة لشريحتها. confirm أصلًا مبيوصلش غير ردًا
+            # على بطاقة confirmation آدم بعتها -- وآدم لسه مبيبعتش ولا واحدة.
             turn_id = "t-" + uuid.uuid4().hex[:8]
             publish({
                 "type": "turn.failed", "turnId": turn_id,
-                "reason": "أوامر " + cmd_type + " لسه مش مدعومة في جانب آدم (الشريحة الأولى من V1)",
+                "reason": "أوامر confirm لسه مش مدعومة في جانب آدم (دورة التأكيد في شريحة جاية)",
                 "retryable": False,
             })
-            logger.info("UI channel: أمر " + cmd_type + " وصل -- مرفوض بأدب (مش مدعوم في الشريحة دي)")
+            logger.info("UI channel: أمر confirm وصل -- مرفوض بأدب (مش مدعوم في الشريحة دي)")
             return jsonify({"status": "accepted", "turnId": turn_id}), 202
 
         if cmd_type == "voice":
