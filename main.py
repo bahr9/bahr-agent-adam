@@ -838,6 +838,44 @@ def health():
     """Health check"""
     return jsonify({"status": "ok", "service": "ADAM"}), 200
 
+
+# ============================================================
+# UI Channel (adam-ui) -- CONTRACT_V1 (contract-v1-freeze 2026-08-07)
+# ============================================================
+# قناة إضافية جنب تليجرام: GET /ui/events (SSE) + POST /ui/command،
+# محمية بـ ADAM_TOKEN (Bearer). التسجيل كله جوه try عشان أي عطل فيها
+# ميلمسش مسار تليجرام إطلاقًا -- البوت بيكمل تشغيل عادي من غيرها.
+
+def _ui_runtime_call(text, chat_id):
+    """
+    نفس بايبلاين تليجرام بالظبط (Runtime -> EB -> verified_expression) --
+    نفس نمط الـ fake_msg المستخدم في أزرار القوايم فوق. الرد الواحد لازم
+    يفضل حاجة واحدة مهما كانت القناة.
+    """
+    fake_msg = type("M", (), {
+        "text": text,
+        "chat": type("C", (), {"id": chat_id})(),
+        "from_user": type("U", (), {"id": chat_id, "first_name": "Ahmed"})(),
+        "content_type": "text",
+        "message_id": 0,
+    })()
+    response = runtime.run(fake_msg)
+    if response and chat_id:
+        try:
+            from services import verified_expression
+            response = verified_expression.verify_and_finalize(chat_id, response)
+        except Exception as ve_err:
+            logger.warning("UI channel: verified_expression فشل -- الرد الخام بيتبعت: " + str(ve_err))
+    return response
+
+
+try:
+    from services.ui_channel import register_ui_channel
+    register_ui_channel(flask_app, runtime_call=_ui_runtime_call, chat_id_getter=get_chat_id)
+    logger.info("OK UI channel registered (/ui/events, /ui/command)")
+except Exception as _ui_err:
+    logger.error("UI channel init failed -- مسار تليجرام غير متأثر: " + str(_ui_err))
+
 def run_flask():
     """تشغيل Flask في thread منفصل"""
     flask_app.run(host="0.0.0.0", port=8080, debug=False, use_reloader=False)

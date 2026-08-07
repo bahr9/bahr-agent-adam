@@ -2039,6 +2039,30 @@ def _refresh_messages_cache_markers(messages, history_anchor_index):
     _mark_message_cached(messages[-1])
 
 
+def _ui_notify_tool_started(tool_name):
+    """
+    خطاف قناة adam-ui (CONTRACT_V1) -- إشعار بدء تنفيذ أداة.
+
+    لمسار تليجرام ده no-op تام: ui_channel بيفحص thread-local ومفيش
+    جولة UI على ثريدات تليجرام أبدًا. وأي فشل جوه القناة ممنوع يلمس
+    تنفيذ الأداة نفسه -- عشان كده الاستيراد lazy وكله جوه try.
+    """
+    try:
+        from services import ui_channel
+        return ui_channel.on_tool_started(tool_name)
+    except Exception:
+        return None
+
+
+def _ui_notify_tool_finished(ui_call_id, tool_name, result_text):
+    """خطاف قناة adam-ui -- إشعار انتهاء الأداة بنتيجتها. نفس ضمانات الخطاف اللي فوق."""
+    try:
+        from services import ui_channel
+        ui_channel.on_tool_finished(ui_call_id, tool_name, result_text)
+    except Exception:
+        pass
+
+
 def ask_claude_agentic(user_message, chat_id, conversation_history=None, memory_summary=None, max_tool_rounds=5):
     """
     نسخة "وكيلة" (agentic) من الرد — البوت بيقرر بنفسه إمتى يستخدم الأدوات
@@ -2213,7 +2237,9 @@ def ask_claude_agentic(user_message, chat_id, conversation_history=None, memory_
             tool_results = []
             for content in response.content:
                 if content.type == "tool_use":
+                    _ui_call_id = _ui_notify_tool_started(content.name)
                     result_text = _execute_tool(content.name, content.input, chat_id)
+                    _ui_notify_tool_finished(_ui_call_id, content.name, result_text)
                     tool_results.append({
                         "type": "tool_result",
                         "tool_use_id": content.id,
