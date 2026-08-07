@@ -2120,11 +2120,16 @@ def ask_claude_agentic(user_message, chat_id, conversation_history=None, memory_
         elif not forced_tool_choice and "view_website" in real_tool_names and detect_website_review_intent(user_message):
             forced_tool_choice = {"type": "tool", "name": "view_website"}
             extra_instruction += (
-                "\n\n[نظام]: أحمد طلب مراجعة موقع Bahr Designs -- نادِ view_website "
-                "فورًا بالرابط الرسمي (https://bahr-designs-office.web.app)، حتى لو "
-                "حاسس إنك راجعته قبل كده في نفس المحادثة. أي رد سابق منك عن شكل "
-                "الموقع في الـhistory ممكن يكون كان تخمين مش مبني على شوف فعلي --"
-                " متعتمدش عليه، شوف الموقع من جديد دلوقتي."
+                "\n\n[نظام]: أحمد طلب مراجعة موقع Bahr Designs (أو قسم منه) -- نادِ "
+                "view_website فورًا بالرابط الرسمي (https://bahr-designs-office.web.app)، "
+                "حتى لو حاسس إنك راجعته قبل كده في نفس المحادثة. أي رد سابق منك عن "
+                "شكل الموقع في الـhistory ممكن يكون كان تخمين مش مبني على شوف فعلي "
+                "-- متعتمدش عليه، شوف الموقع من جديد دلوقتي. لو أحمد بيشاور على "
+                "قسم/أقسام بعينها، حطها في باراميتر sections بالأسماء الحقيقية دي "
+                "(دي الـ anchors الفعلية الموجودة في الموقع): services (الخدمات)، "
+                "specialties (التخصصات)، process (المراحل الخمس)، livecam (قسم "
+                "الكاميرات/البث المباشر)، styles (الستايلات)، about (من نحن)، "
+                "contact (التواصل) -- متخترعش اسم anchor من دماغك."
             )
             logger.info("🔒 Forced tool_choice applied -> view_website (website review intent detected)")
 
