@@ -21,6 +21,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 FIREBASE_CREDENTIALS_JSON = os.getenv("FIREBASE_CREDENTIALS_JSON")
 SUPABASE_URL = os.getenv("SUPABASE_URL")  # Pilot: Firestore -> Supabase migration (recurring reminders)
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")  # service_role key
+MICROLINK_API_KEY = os.getenv("MICROLINK_API_KEY")  # اختياري -- بيرفع حد سكرين شوت المواقع من 25/يوم لأعلى
 
 # التحقق من المفاتيح الأساسية
 if not TELEGRAM_TOKEN:
