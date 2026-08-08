@@ -13,6 +13,22 @@ ADAM يبادر كل يوم الساعة 8.
 from utils.logger import logger
 from utils.time_utils import now_cairo
 
+# التصنيفات اللي تستاهل تتقال في بداية يوم شغل (قرار أحمد 2026-08-08).
+#
+# «مشروع» **مستبعد عن قصد** رغم إن اسمه يوحي بالعكس: جرد الـ183 ملاحظة لقى
+# 146 منهم مصنّفين «مشروع» و**كلهم عن بناء آدم ومداد وهوب** -- «مراجعة
+# تصميم Truth→Meaning»، «تنظيف طابور مداد»، «ADR 0002»، «مشكلة /start في
+# تيليجرام». الخانة دي بقت بحكم الأمر الواقع سلة ملاحظات النظام، فأحمد كان
+# بيفتح يومه على تفاصيل تنفيذ داخلية بدل عميل أو مشروع.
+#
+# ده مش حكم على المحتوى -- الملاحظات دي بتتسجل وبتترد لما تتطلب. الحكم على
+# «هل ده مناسب لبداية يوم شغل».
+#
+# ملحوظة صادقة: «مالي» نفسها مخلوطة (قاعدة التسعير 20% وحد المصاريف الشهري
+# شغل حقيقي، وتقارير صحة الأدوات مش). مفيش فصل مثالي في البيانات الحالية،
+# والنسبة هنا أحسن بكتير من صفر مفيد من 146.
+BRIEF_NOTE_CATEGORIES = ("عميل", "مالي", "شخصي")
+
 
 def build_morning_context(chat_id: str) -> dict:
     """
@@ -57,8 +73,13 @@ def build_morning_context(chat_id: str) -> dict:
     # 3. Recent Memory Notes
     try:
         from services.firebase_service import list_memory_notes
-        notes = list_memory_notes(str(chat_id), limit=10)
-        context["recent_notes"] = notes
+        notes = list_memory_notes(str(chat_id), limit=30)
+        # الفلترة هنا مش عند العرض: لو اتفلترت بعدين، الـlimit بياخد
+        # آخر 10 (وكلهم غالبًا ملاحظات نظام) ويرجّع صفر ملاحظة شغل.
+        context["recent_notes"] = [
+            n for n in notes
+            if (n or {}).get("category") in BRIEF_NOTE_CATEGORIES
+        ]
     except Exception as e:
         logger.error(f"❌ Notes error: {e}")
         context["recent_notes"] = []
@@ -161,6 +182,25 @@ def generate_morning_brief(chat_id: str) -> str:
         if mood_data.get("needs_attention"):
             mood_text = f"⚠️ تنبيه مزاج: أحمد عنده {mood_data['negative_count']} حالات سلبية في الأسبوع الأخير — ذكره بدفء إنه يهتم بنفسه"
 
+        # المشاريع كانت بتتجاب وتتحط في السياق و**مبتوصلش للبرومبت أبدًا**
+        # (2026-08-08): السطور اللي بتنده get_bahr_projects كانت المرة الوحيدة
+        # اللي كلمة projects بتظهر فيها في الملف. يعني آدم كان ماسك كل صبح
+        # مشروع عصام فرج وحالته "delayed" وبيرمي المعلومة قبل ما يكتب حرف.
+        # مش قسم فاضي -- قسم بيتجاب ويتزقّ.
+        projects_text = ""
+        active = [p for p in (ctx.get("projects") or []) if p.get("client")]
+        if active:
+            lines = []
+            for p in active[:4]:
+                bits = [str(p.get("client"))]
+                if p.get("area"):
+                    bits.append(str(p["area"]) + " م²")
+                status = str(p.get("status") or "").strip()
+                if status:
+                    bits.append("⚠️ " + status if status == "delayed" else status)
+                lines.append("  - " + " · ".join(bits))
+            projects_text = "مشاريع بحر الشغالة:\n" + "\n".join(lines)
+
         weather_text = ctx.get("weather", "")
 
         attention_text = ""
@@ -178,6 +218,7 @@ def generate_morning_brief(chat_id: str) -> str:
 
 السياق الحقيقي دلوقتي:
 {attention_text}
+{projects_text}
 {weather_text}
 {deadlines_text}
 {overdue_text}
