@@ -18,12 +18,26 @@ CLOSED_VOCABULARY = {
     ("unresolved_conflict", "elevated", "passive"): "عندي {count} تعارض غير محلول محتاج مراجعتك.",
     ("unresolved_conflict", "high", "passive"): "عندي {count} تعارضات غير محلولة، وده رفع حالة المراجعة.",
     ("unresolved_conflict", "high", "active"): "تنبيه: ظهر تعارض غير محلول يحتاج مراجعتك.",
+    # الوضعين دول بيتقالوا وآدم **لسه** على أسوأ درجة، يعني هو اتكلم قبل كده.
+    # سببهم إن "بلّغ مرة وسكت للأبد" مش متابعة (قرار أحمد 2026-08-08).
+    ("unresolved_conflict", "high", "active_changed"):
+        "العدد اتغيّر: بقى عندك {count} تعارضات معلّقة.",
+    # {days} بتتحسب من `since` المخزّن -- عمرها ما تتقدّر. لو مش موجود،
+    # decision_engine مبيوصلش للوضع ده أصلًا (نفس قاعدة المساحات والأسعار).
+    ("unresolved_conflict", "high", "active_stalled"):
+        "{count} تعارضات معلّقة من {days} يوم من غير أي حركة. "
+        "الثبات ده مش استقرار -- معناه إنها متسابة.",
 
     # --- pending_obligation_load ---
     ("pending_obligation_load", "none", "passive"): "مفيش أي قسط متأخر عن ميعاده دلوقتي.",
     ("pending_obligation_load", "light", "passive"): "فيه {count} قسط متأخر عن ميعاده، محتاج مراجعة.",
     ("pending_obligation_load", "concern", "passive"): "فيه {count} أقساط متأخرة عن ميعادها، محتاجة متابعة قريبة.",
     ("pending_obligation_load", "concern", "active"): "تنبيه: {count} أقساط متأخرة عن ميعادها.",
+    ("pending_obligation_load", "concern", "active_changed"):
+        "العدد اتغيّر: بقى فيه {count} أقساط متأخرة عن ميعادها.",
+    ("pending_obligation_load", "concern", "active_stalled"):
+        "{count} أقساط متأخرة من {days} يوم من غير أي حركة. "
+        "الثبات ده مش استقرار -- معناه إنها متسابة.",
 
     # --- tracking_stability ---
     # مفيش entry بـ mode="active" هنا خالص -- قرار Stage 5.1 مقفول: البُعد

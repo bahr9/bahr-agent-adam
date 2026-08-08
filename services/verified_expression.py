@@ -285,10 +285,20 @@ def _record_verbatim_mismatch_diagnosis(dimension: str, expression_id: str) -> N
         )
 
 
-def send_active_expression(dimension: str, level: str, chat_id) -> Optional[str]:
+def send_active_expression(dimension: str, level: str, chat_id,
+                           mode: str = "active", days=None) -> Optional[str]:
     """
     Active Expression -- بتتنادى من scheduled job بس (main.py)، أبدًا من
     الموديل. صفر LLM في المسار: render مباشر من القاموس المقفول وإرسال.
+
+    `mode` بيفرّق بين تلات لحظات كلها Active (قرار أحمد 2026-08-08):
+      - "active":         أول وصول لأسوأ درجة
+      - "active_changed": لسه على أسوأ درجة والعدد اتحرك
+      - "active_stalled": ثبات تام طويل -- السكوت نفسه بقى المؤشر
+
+    `days` مطلوبة لـ active_stalled بس، وبتيجي محسوبة من `since` المخزّن.
+    **لو مبعتتش، الإرسال بيترفض** -- ممنوع رقم يوم يتخترع، نفس قاعدة
+    المساحات والأسعار بالظبط.
 
     شروط الإرسال (كل الشروط دي، مش أي واحدة -- من المسودة المعتمدة):
       1. Severity: level لازم يطابق أعلى مستوى للبُعد (بيتحقق منها الـ caller
@@ -315,18 +325,30 @@ def send_active_expression(dimension: str, level: str, chat_id) -> Optional[str]
             logger.warning(f"⚠️ Active expression اترفضت -- evidence event {eid} مش موجود وقت الإرسال")
             return None
 
-    template = expression_vocabulary.get_template(dimension, level, "active")
+    template = expression_vocabulary.get_template(dimension, level, mode)
     if template is None:
-        logger.warning(f"⚠️ Active expression اترفضت -- مفيش قالب active لـ {dimension}={level}")
+        logger.warning(f"⚠️ Active expression اترفضت -- مفيش قالب {mode} لـ {dimension}={level}")
         return None
 
-    text = template.format(count=dim_state.get("count", 0))
+    # خانة {days} خانة ادعاء زي {count} بالظبط: بتتحسب أو متتقالش. لو القالب
+    # محتاجها ومفيش رقم متحسب، بنرفض الإرسال بدل ما نبعت رقم مخترع.
+    if "{days}" in template and days is None:
+        logger.warning(
+            f"⚠️ Active expression اترفضت -- قالب {mode} محتاج days ومفيش رقم متحسب "
+            f"({dimension}). ممنوع نخترع مدة."
+        )
+        return None
+
+    text = template.format(count=dim_state.get("count", 0), days=days)
     state_id = _save_state_snapshot(self_state)
     expression_id = _save_expression(
-        state_id, dimension, level, "active", f"{dimension}:{level}:active", text, True, chat_id
+        state_id, dimension, level, mode, f"{dimension}:{level}:{mode}", text, True, chat_id
     )
 
     from bot import bot
     bot.send_message(chat_id, text)
-    logger.info(f"📢 Active expression sent: {dimension}={level} (expression_id={expression_id})")
+    logger.info(
+        f"📢 Active expression sent: {dimension}={level} mode={mode} "
+        f"(expression_id={expression_id})"
+    )
     return expression_id

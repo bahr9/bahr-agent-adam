@@ -425,8 +425,11 @@ def self_state_active_check_job():
         decisions = decision_engine.decide_expression(self_state)
 
         for dimension, decision in decisions.items():
-            if decision["mode"] == "active":
-                verified_expression.send_active_expression(dimension, decision["level"], chat_id)
+            if decision["mode"].startswith("active"):
+                verified_expression.send_active_expression(
+                    dimension, decision["level"], chat_id,
+                    mode=decision["mode"], days=decision.get("days"),
+                )
 
     except Exception as e:
         logger.error("Self-State active check error: " + str(e))

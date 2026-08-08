@@ -34,6 +34,52 @@ HIGHEST_TIER = {
     "pending_obligation_load": "concern",
 }
 
+# كام يوم ثبات تام على أسوأ درجة يعتبر "متسابة" مش "مستقرة".
+#
+# الرقم ده هو الحد الوحيد اللي بيقرر إمتى آدم يرجع يتكلم عن حاجة قال عنها
+# قبل كده. لو صغير أوي بيبقى زن، لو كبير أوي بيبقى إهمال. أحمد قال "زي
+# أسبوع" كمثال -- متحطّش هنا كرقم نهائي، وده المكان الوحيد اللي بيتغير منه.
+STALE_DAYS = 7
+
+
+def _normalize_record(raw):
+    """قراءة سجل بُعد واحد بالشكل الجديد، مع احترام الشكل القديم.
+
+    الشكل القديم كان نص واحد بس ("high"). البيانات دي **موجودة فعلًا في
+    الإنتاج**، فقراءتها لازم تعدي من غير كسر -- بترجع بمستوى معروف وعدد
+    ووقت مجهولين، وده بالظبط اللي المفروض يحصل: مش عارفين، مش بنخترع.
+    """
+    if isinstance(raw, str):
+        return {"level": raw, "count": None, "since": None}
+    if isinstance(raw, dict):
+        return {
+            "level": raw.get("level"),
+            "count": raw.get("count"),
+            "since": raw.get("since"),
+        }
+    return {"level": None, "count": None, "since": None}
+
+
+def _days_since(since_iso):
+    """عدد الأيام الكاملة من `since` -- أو None لو مش متسجل/مش مقروء.
+
+    None هنا معناها "مش عارف"، ومحدش مسموح له يحوّلها لرقم. القاعدة اللي
+    بتحكم المساحات والأسعار بتحكم الوقت بنفس الصرامة: لو `since` مش موجود،
+    الجملة اللي محتاجة رقم أيام **متتقالش** أصلًا.
+    """
+    if not since_iso:
+        return None
+    try:
+        from datetime import datetime, timezone
+
+        parsed = datetime.fromisoformat(str(since_iso).replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return max(0, (datetime.now(timezone.utc) - parsed).days)
+    except Exception as e:
+        logger.warning(f"⚠️ since مش مقروء ({since_iso!r}) -- بنتعامل معاه كمجهول: {e}")
+        return None
+
 
 def _get_last_levels() -> dict:
     from services.firebase_service import firestore_db
@@ -67,24 +113,70 @@ def decide_expression(self_state: dict) -> dict:
     عمل الدالة (مش أثر جانبي عرضي) -- ده اللي بيمنع تكرار التبليغ، وده
     اللي بيخلي انتقال جديد (لو المستوى نزل وبعدين رجع طلع تاني) يتلاحظ صح.
     """
+    from utils.time_utils import now_cairo
+
     last_levels = _get_last_levels()
     decisions = {}
     updated_levels = dict(last_levels)
+    now_iso = now_cairo().isoformat()
 
     for dimension, highest in HIGHEST_TIER.items():
         dim_state = self_state.get(dimension)
         if not dim_state:
             continue
-        current_level = dim_state["level"]
-        previous_level = last_levels.get(dimension)
 
-        is_active = current_level == highest and previous_level != highest
+        current_level = dim_state["level"]
+        current_count = dim_state.get("count")
+        previous = _normalize_record(last_levels.get(dimension))
+        previous_level = previous["level"]
+
+        at_worst = current_level == highest
+        days = None
+
+        if at_worst and previous_level != highest:
+            # وصل لأسوأ درجة لأول مرة -- السلوك الأصلي زي ما هو، والساعة تبدأ
+            mode = "active"
+            since = now_iso
+        elif at_worst:
+            # قاعد على أسوأ درجة. سببين بس يخلوه يتكلم تاني:
+            elapsed = _days_since(previous["since"])
+            count_moved = (
+                current_count is not None
+                and previous["count"] is not None
+                and current_count != previous["count"]
+            )
+            if count_moved:
+                # ١) الحالة اتحركت -- ده حدث جديد فعلًا مش تكرار لنفس الجملة
+                mode = "active_changed"
+                since = now_iso                      # الوضع اتغيّر، الساعة تبدأ من جديد
+            elif elapsed is not None and elapsed >= STALE_DAYS:
+                # ٢) ثبات تام طويل. السكوت هنا مش معناه إنها استقرت --
+                #    معناه إن محدش لمسها. ده المكان اللي المفروض يرجع يسأل فيه.
+                mode = "active_stalled"
+                days = elapsed
+                since = now_iso                      # اتكلم -> الساعة تصفّر، فمبيكررش كل فحص
+            else:
+                # لسه على نفس الحالة ومحصلش الحد -- ساكت، والساعة الأصلية شغالة.
+                # ملحوظة: elapsed=None (مفيش since متسجل، أو بيانات قديمة)
+                # بتقع هنا عن قصد -- **ممنوع** نخترع رقم أيام.
+                mode = "passive"
+                since = previous["since"] or now_iso
+        else:
+            mode = "passive"
+            since = now_iso if current_level != previous_level else (previous["since"] or now_iso)
+
         decisions[dimension] = {
-            "mode": "active" if is_active else "passive",
+            "mode": mode,
             "level": current_level,
             "transitioned": current_level != previous_level,
+            "days": days,
+            "count": current_count,
         }
-        updated_levels[dimension] = current_level
+        updated_levels[dimension] = {
+            "level": current_level,
+            "count": current_count,
+            "since": since,
+        }
 
     _save_last_levels(updated_levels)
     return decisions
