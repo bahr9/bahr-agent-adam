@@ -270,6 +270,40 @@ def build_system_prompt(pending_tasks=None, memory_summary=None):
 
 GRAPH_CATEGORIES = ["project", "team", "task", "issue", "topic", "hub", "client", "site", "office"]
 
+
+def _automated_actions_line():
+    """وصف أكشنات dispatch_agent_task -- **مولّد** من السجل مش مكتوب بالإيد.
+
+    قاعدة المزامنة في `agent_orchestration` بتقول إن الليستة لازم تطابق في
+    أربع أماكن. تلاتة منهم كانوا مظبوطين والرابع (الوصف ده) كان ناقصه
+    `website_readiness_report` و`echo_test_marker` -- يعني الموديل بيقرا
+    ليستة أقصر من الحقيقة وبيقول لأحمد "الأكشن مش معروف" عن أكشن منفَّذ
+    فعلًا. ودي **نفس الحادثة المسجّلة في تعليق السجل** بتترجع تاني.
+
+    الحل مش إني أزامن الرابع -- الحل إني أشيله. الوصف بيتبنى من
+    AUTOMATED_ACTIONS_BY_TARGET وقت تعريف TOOLS، فالانحراف بقى مستحيل
+    بنيويًا بدل ما يبقى ممنوع بتعليق (2026-08-08).
+    """
+    try:
+        from services.agent_orchestration import AUTOMATED_ACTIONS_BY_TARGET
+    except Exception:
+        return ("الأكشن المطلوب. اكتب الـ action string بالظبط زي ما هو معرّف "
+                "في السجل -- أي action تاني هيتسجل pending للمراجعة اليدوية.")
+
+    parts = []
+    for target, actions in AUTOMATED_ACTIONS_BY_TARGET.items():
+        if actions:
+            parts.append("target='" + target + "' -> "
+                         + "، ".join("'" + a + "'" for a in sorted(actions)))
+    return (
+        "الأكشن المطلوب. الأكشنز اللي عندها تنفيذ آلي حقيقي دلوقتي: "
+        + "؛ ".join(parts)
+        + ". لازم تنسخ الـ string ده حرفيًا، من غير أي تعديل أو صياغة تانية. "
+        "أي action تاني (وصف حر) هيتسجل pending للمراجعة اليدوية بس، "
+        "من غير تنفيذ آلي."
+    )
+
+
 TOOLS = [
     {
         "name": "list_graph_nodes",
@@ -1121,7 +1155,7 @@ TOOLS = [
             "type": "object",
             "properties": {
                 "target": {"type": "string", "enum": ["Hope", "مداد", "عين_الخبير"], "description": "النظام المستهدف"},
-                "action": {"type": "string", "description": "الأكشن المطلوب. الأكشنز اللي عندها تنفيذ آلي حقيقي دلوقتي: target='مداد' -> action بالظبط 'generate_marketing_post_from_eye_expert'، target='عين_الخبير' -> action بالظبط 'retry_failed_eye_expert_reply'. لازم تنسخ الـ string ده حرفيًا، من غير أي تعديل أو صياغة تانية. أي action تاني (وصف حر) هيتسجل pending للمراجعة اليدوية بس، من غير تنفيذ آلي."},
+                "action": {"type": "string", "description": _automated_actions_line()},
                 "payload": {"type": "object", "description": "لـ generate_marketing_post_from_eye_expert: {keyword?: string, category?: string}. غير كده، أي تفاصيل إضافية (اختياري)"}
             },
             "required": ["target", "action"]
