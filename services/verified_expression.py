@@ -62,12 +62,50 @@ def _shadow_run_pipeline(dimension: str, old_text: str) -> None:
         meaning_packet = meaning_layer.compute_meaning_packet(truth_packet, dimension, fired)
         result = companionship_layer.generate_message(meaning_packet)
 
+        matched = old_text == result["text"]
         logger.info(
             f"[shadow] {dimension}: old={old_text!r} new={result['text']!r} "
-            f"source={result['source']} match={old_text == result['text']}"
+            f"source={result['source']} match={matched}"
         )
+
+        # الدليل لازم يعيش. اللوج لوحده مش مخزن: الملف على قرص الكونتينر،
+        # وقرص Railway مؤقت -- كل نشر بيمسحه. يعني القياس اللي المفروض
+        # يغذّي الـ Decision Gate (§6.2 شرط 2) كان بينتج صفر دليل باقي:
+        # كل مقارنة اتعملت من 24 يوليو اتبخّرت عند أول نشر بعدها.
+        # بيتسجل **بعد** اللوج عشان فشل الكتابة ميضيّعش السطر برضه.
+        _record_shadow_comparison(dimension, old_text, result, matched)
     except Exception as e:
         logger.warning(f"[shadow] {dimension}: pipeline error (non-fatal, old path unaffected): {e}")
+
+
+def _record_shadow_comparison(dimension: str, old_text: str, result: dict, matched: bool) -> None:
+    """حفظ مقارنة الظل كحدث دائم -- ده الدليل اللي الـ Decision Gate بيستناه.
+
+    مسار منفصل تمامًا عن أي قرار: الحدث ده **مبيأثرش** على أي حاجة بتتبعت
+    لأحمد، زي الظل نفسه بالظبط. الغرض الوحيد إن القرار المستقبلي يتاخد من
+    بيانات مخزّنة مش من ملف بيتمسح.
+
+    الفشل هنا غير حرج: بيتسجل ومبيتصعّدش (المنادي كمان لافّه try/except).
+    """
+    try:
+        event_store.record_event(
+            entity_type="self_diagnosis",
+            entity_id=dimension,
+            attribute="shadow_comparison",
+            new_value={
+                "old": old_text,
+                "new": result.get("text"),
+                "source": result.get("source"),
+                "match": matched,
+            },
+            source="shadow",
+            actor="verified_expression",
+        )
+    except Exception as e:
+        logger.warning(
+            f"[shadow] {dimension}: تسجيل المقارنة كحدث فشل "
+            f"(مش حرج -- الظل والمسار الحقيقي الاتنين كملوا): {str(e)[:90]}"
+        )
 
 # سجل مؤقت في الذاكرة: لكل chat_id، التعبيرات (passive) اللي اتطلبت في
 # الدورة الحالية ولسه محتاجة تتفحص وقت الإرسال الفعلي (verify_and_finalize).
