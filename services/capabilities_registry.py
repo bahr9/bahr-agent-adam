@@ -235,6 +235,9 @@ _TOOL_METADATA = {
     # قراءة خارجية بحتة -- بتعتمد على موقع مورد، فتعطّلها مزعج مش خطر
     "check_supplier_price":         {"domain": "external", "operation_type": "read", "criticality": "low",
                                      "source_owner": "services/supplier_prices.py"},
+    # قراءة بس، بس ناتجها بيروح لعميل -- غلطة هنا بتخرج من بحر كعرض سعر
+    "estimate_project_cost":        {"domain": "price_base", "operation_type": "read", "criticality": "high",
+                                     "source_owner": "services/estimate_service.py"},
     "get_prices":                   {"domain": "price_base", "operation_type": "read", "criticality": "low",
                                      "health_check_supported": True, "safe_probe": _probe_get_prices,
                                      "source_owner": "services/price_base_service.py"},
