@@ -1999,9 +1999,40 @@ def _execute_tool(tool_name, tool_input, chat_id):
 
         return f"حصل خطأ أثناء التنفيذ: {str(e)}"
 
+# ============================================================
+# مدة صلاحية الكاش -- مصدر واحد للحقيقة
+# ============================================================
+#
+# اتغيرت من ساعة لـ 5 دقايق في 2026-08-08، بناءً على قياس مش تقدير:
+#
+#   من 197 فجوة بين نداءات متتالية في الإنتاج:
+#     92%  خلال 5 دقايق   -> كاش الـ 5 دقايق لسه عايش
+#      5%  بين 5 و 60 دقيقة -> دي الحالة الوحيدة اللي الساعة بتفيد فيها
+#      3%  فوق الساعة      -> الاتنين ميتين، إعادة كتابة كاملة في الحالتين
+#
+# وكتابة الكاش كانت **74%** من الفاتورة كلها (من جدول api_usage)، وتمن
+# الساعة 2× مقابل 1.25× للخمس دقايق. يعني كنا بندفع العلاوة على 100% من
+# الكتابات عشان نخدم 5% منها. الصافي المتوقع: توفير ~20%.
+#
+# المقايضة الوحيدة: رسالة بعد أكتر من 5 دقايق سكوت هتاخد ثانية زيادة في
+# الرد الأول (بناء الكاش من جديد). ده بيحصل في ~8% من الرسايل.
+#
+# **صفر أثر على سلوك آدم** -- ده إعداد تخزين، مش إعداد موديل. مفيش تغيير
+# في اللي بيقوله ولا الأدوات اللي بينادها ولا دقته.
+#
+# لو رجعت لـ "1h": الهيدر `extended-cache-ttl-2025-04-11` لسه متبعوت في
+# `_call_claude`، فالتغيير سطر واحد هنا وبس.
+CACHE_TTL = "5m"
+
+
+def _cache_marker():
+    """علامة الكاش الموحدة. كل مكان بيكاش لازم يستخدم دي مش يكتب dict بإيده."""
+    return {"type": "ephemeral", "ttl": CACHE_TTL}
+
+
 def _mark_message_cached(message):
     """يحط علامة كاش على آخر بلوك في رسالة واحدة (dict فقط -- بلوكات SDK بتتساب)."""
-    marker = {"type": "ephemeral", "ttl": "1h"}
+    marker = _cache_marker()
     if not isinstance(message, dict):
         return
     c = message.get("content")
@@ -2160,7 +2191,7 @@ def ask_claude_agentic(user_message, chat_id, conversation_history=None, memory_
         static_part, dynamic_part = build_system_prompt_parts(memory_summary=memory_summary)
         dynamic_part += extra_instruction
         system_blocks = [
-            {"type": "text", "text": static_part, "cache_control": {"type": "ephemeral", "ttl": "1h"}},
+            {"type": "text", "text": static_part, "cache_control": _cache_marker()},
             {"type": "text", "text": dynamic_part}
         ]
 
@@ -2349,7 +2380,7 @@ def analyze_with_vision(image_base64, caption, media_type="image/jpeg", memory_s
     try:
         static_part, dynamic_part = build_system_prompt_parts(memory_summary=memory_summary)
         system_blocks = [
-            {"type": "text", "text": static_part, "cache_control": {"type": "ephemeral", "ttl": "1h"}},
+            {"type": "text", "text": static_part, "cache_control": _cache_marker()},
             {"type": "text", "text": dynamic_part}
         ]
         
