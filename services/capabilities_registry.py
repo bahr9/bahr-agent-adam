@@ -228,6 +228,10 @@ _TOOL_METADATA = {
                                      "source_owner": "services/project_file_service.py"},
     "save_price":                   {"domain": "price_base", "operation_type": "write", "criticality": "medium",
                                      "source_owner": "services/price_base_service.py"},
+    # criticality أعلى من save_price عن قصد: نداء واحد بيلمس عشرات البنود،
+    # فغلطة فيه بتتضاعف بعدد الليستة قبل ما حد ياخد باله (2026-08-08)
+    "save_prices_bulk":             {"domain": "price_base", "operation_type": "write", "criticality": "high",
+                                     "source_owner": "services/price_capture.py"},
     "get_prices":                   {"domain": "price_base", "operation_type": "read", "criticality": "low",
                                      "health_check_supported": True, "safe_probe": _probe_get_prices,
                                      "source_owner": "services/price_base_service.py"},
