@@ -202,6 +202,8 @@ def handle_document_message(message):
             bot.reply_to(message, "حصلت مشكلة وأنا بقرا البلان — جرب تبعته تاني أو ابعته كصورة.")
             return
 
+        plan_reading = reply          # النص الخام قبل أي تعديل -- ده اللي بيتمسك
+
         try:
             from services import verified_expression
             reply = verified_expression.verify_and_finalize(chat_id, reply)
@@ -210,6 +212,18 @@ def handle_document_message(message):
 
         bot.reply_to(message, reply)
         logger.info("✅ تم قراءة البلان والرد على " + str(chat_id))
+
+        # ===== إمساك البلان (2026-08-08): اللي اتقرا يفضل موجود =====
+        # بيجي **بعد** ما الرد يتبعت عن قصد: الحفظ فيه نداء وكتابة، ومحصلش
+        # إنه يأخّر القراءة اللي أحمد مستنيها. ومعزول في try عشان أي عطل في
+        # المسك ميمسّش القراءة اللي وصلت خلاص.
+        try:
+            from services import plan_capture
+            note = plan_capture.capture_plan(plan_reading, user_caption)
+            if note:
+                bot.send_message(chat_id, note)
+        except Exception as e:
+            logger.error("❌ إمساك البلان فشل (القراءة وصلت عادي): " + str(e)[:100])
 
         conversation_text = "[بلان PDF] " + file_name
         if user_caption:

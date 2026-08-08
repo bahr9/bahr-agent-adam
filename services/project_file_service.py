@@ -138,6 +138,10 @@ def format_project_file(doc):
             area = computed_area(value)
             if area is not None:
                 line += " (المساحة: " + f"{area:g}" + " م² -- محسوبة من الأبعاد المكتوبة)"
+            # حقيقة مستخرجة من رسمة مش حاجة أحمد قالها. العلامة دي هي
+            # اللي بتمنع آدم إنه يستشهد بيها بعد أسابيع كأنها مؤكدة.
+            if isinstance(entry, dict) and entry.get("source") == "plan":
+                line += " [من البلان -- لسه مش مراجَع]"
             lines.append(line)
     if len(lines) == 1:
         lines.append("(الملف موجود لكن لسه مفيهوش حقائق مسجلة)")
@@ -169,8 +173,14 @@ def list_project_names():
         return []
 
 
-def save_project_fact(project_name, category, key, value):
+def save_project_fact(project_name, category, key, value, source="ahmed"):
     """يسجل حقيقة في ملف المشروع (وينشئ الملف لو أول مرة).
+
+    `source` بيقول الحقيقة دي جت منين، والافتراضي "ahmed" عشان كل
+    النداءات القديمة تفضل زي ما هي. القيمة التانية دلوقتي "plan" --
+    حاجة موديل استخرجها من رسمة، مش حاجة أحمد قالها. الفرق ده بيتعرض
+    لأحمد في `format_project_file` عشان مايبقاش فيه حقيقة مستخرجة
+    بتتقري كأنها مؤكدة (2026-08-08، مسار إمساك البلانات).
 
     بيرجع نص نتيجة جاهز للموديل.
     """
@@ -201,7 +211,7 @@ def save_project_fact(project_name, category, key, value):
     facts = doc.setdefault("facts", {})
     entry = {
         "value": str(value).strip(),
-        "source": "ahmed",
+        "source": str(source or "ahmed"),
         "updated_at": str(now_cairo()),
     }
     # حقل منفصل للمساحة المحسوبة حتميًا -- موجود بس لما فيه أبعاد
