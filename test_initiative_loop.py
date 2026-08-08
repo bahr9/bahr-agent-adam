@@ -39,17 +39,43 @@ def run_test(name, fn):
 
 
 class _FakeTable:
+    """بديل جدول Supabase -- بيحاكي `order` و`limit` مش بيتجاهلهم.
+
+    قبل كده كان `select().execute()` بس، فلما الكود الحقيقي بقى بيعمل
+    `.order(...).limit(...)` الاختبارات فشلت. تجاهل الاتنين هنا كان هيخلي
+    الاختبار **يعدي على كود مش بيحد فعلًا** -- وده أسوأ من الفشل، فالمحاكاة
+    بتنفّذهم بجد (مراجعة 2026-08-08).
+    """
+
     def __init__(self, rows):
-        self._rows = rows
+        self._rows = list(rows)
+        self._order = None
+        self._desc = False
+        self._limit = None
 
     def select(self, *_a, **_k):
         return self
 
+    def order(self, column, desc=False, **_k):
+        self._order, self._desc = column, desc
+        return self
+
+    def limit(self, n):
+        self._limit = n
+        return self
+
     def execute(self):
+        rows = self._rows
+        if self._order:
+            rows = sorted(rows, key=lambda r: str(r.get(self._order) or ""),
+                          reverse=self._desc)
+        if self._limit is not None:
+            rows = rows[:self._limit]
+
         class R:
             pass
         r = R()
-        r.data = self._rows
+        r.data = rows
         return r
 
 

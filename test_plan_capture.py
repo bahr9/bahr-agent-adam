@@ -153,6 +153,24 @@ def main():
         assert not bad, "بنود اتسجلت كأن أحمد قالها: " + str(bad[:2])
         assert note and "مش مراجعة" in note, note
 
+    def الفشل_الكامل_بيتقال_مش_بيتبلع():
+        """كان بيرجع None، و None معناها "مفيش حاجة تتقال" -- فأحمد بياخد
+        قراءة البلان ومايعرفش إن ولا حرف اتحفظ (مراجعة 2026-08-08)."""
+        class _Ambiguous(_Recorder):
+            def __call__(self, project_name, category, key, value, source="ahmed"):
+                self.calls.append({"item": key})
+                return "فيه أكتر من مشروع ممكن تقصده: أ، ب -- قول الاسم كامل."
+        note, rec = _with_mocks(PLAN, recorder=_Ambiguous())
+        assert note is not None, "الفشل الكامل اتبلع ورجع None"
+        assert "محفظتوش" in note and "أكتر من مشروع" in note, note
+
+    def فشل_الحفظ_بيتقال_بسببه():
+        class _Broken(_Recorder):
+            def __call__(self, project_name, category, key, value, source="ahmed"):
+                raise RuntimeError("Firestore واقع")
+        note, _ = _with_mocks(PLAN, recorder=_Broken())
+        assert note is not None and "مقدرتش أحفظ منه حاجة" in note, note
+
     def التهيكِل_لما_يفشل_مفيش_كتابة():
         note, rec = _with_mocks(None)
         assert note is None
@@ -218,6 +236,8 @@ def main():
         ("فراغ من غير اسم بيتتخطى", فراغ_من_غير_اسم_بيتتخطى),
         ("مفيش فراغات يبقى مفيش كلام", مفيش_فراغات_يبقى_مفيش_كلام),
         ("المصدر بيوصل plan مش ahmed", المصدر_بيوصل_plan_مش_ahmed),
+        ("الفشل الكامل بيتقال", الفشل_الكامل_بيتقال_مش_بيتبلع),
+        ("فشل الحفظ بيتقال بسببه", فشل_الحفظ_بيتقال_بسببه),
         ("التهيكِل لما يفشل مفيش كتابة", التهيكِل_لما_يفشل_مفيش_كتابة),
         ("مفيش اسم يبقى سؤال مش كتابة", مفيش_اسم_يبقى_سؤال_مش_كتابة),
         ("الملخص بيعد مش بيوصف", الملخص_بيعد_مش_بيوصف),

@@ -86,6 +86,16 @@ def boxes_needed(area, coverage):
 
     التغطية **مبتتخمنش من اسم البند**: مقاس البلاطة مش هو محتوى الصندوق،
     والمصانع بتختلف. من غير رقم مسجّل بترجع None والكمية بتفضل بالمتر.
+
+    ⚠️ **الدالة دي مش بتشتغل في الإنتاج دلوقتي.** مفيش مسار كتابة بيخزّن
+    `box_coverage_m2`: لا `save_price` ولا `save_prices_bulk` فيهم الحقل،
+    و`all_price_docs` بتعيد بناء السجل من حقول محددة فبتشيله حتى لو
+    اتخزن. يعني `boxes` دايمًا None والكمية دايمًا بالمتر (مراجعة
+    2026-08-08 -- كانت الوثيقة بتوصف سلوك مش بيحصل).
+
+    عشان تشتغل: الحقل يتضاف لسكيمة `save_prices_bulk` ولـ`save_price`
+    ويعدّي في `all_price_docs`. سيبتها هنا لأن الحساب نفسه صح ومتحقق،
+    والناقص هو مصدر الرقم مش المنطق.
     """
     if not coverage or coverage <= 0 or not area or area <= 0:
         return None
@@ -93,17 +103,37 @@ def boxes_needed(area, coverage):
     return math.ceil(area / float(coverage))
 
 
+_AREA_UNITS = ("متر مسطح", "م2", "م²", "متر مربع", "meter", "sqm", "m2")
+
+
+def _is_area_unit(unit):
+    u = str(unit or "").casefold()
+    return any(a.casefold() in u for a in _AREA_UNITS)
+
+
 def _price_range(entry):
-    """(من، إلى) بالأرقام من سجل السعر، أو (None, None) لو مش مفهوم."""
+    """(من، إلى) بالأرقام من سجل السعر، أو (None, None) لو مش مفهوم.
+
+    صفر أو سالب **مش سعر**. سعر صفر بيضرب في الكمية ويدخل الإجمالي
+    كمساهمة حقيقية بصفر، وده بالظبط "مش عارف بقى صفر" -- الفخ اللي
+    النظام كله متبني على تفاديه. صفر مقروء غلط من صورة ليستة بيصفّر
+    بند في عرض سعر عميل من غير ما حد ياخد باله.
+    """
     if not entry:
         return None, None
+    def _clean(lo, hi):
+        if lo is None or float(lo) <= 0:
+            return None, None
+        hi = float(hi) if (hi is not None and float(hi) > 0) else None
+        return float(lo), hi
+
     for lo_key, hi_key in (("price_min", "price_max"), ("min", "max")):
         lo, hi = entry.get(lo_key), entry.get(hi_key)
         if isinstance(lo, (int, float)):
-            return float(lo), (float(hi) if isinstance(hi, (int, float)) else None)
+            return _clean(lo, hi if isinstance(hi, (int, float)) else None)
     try:
         from migration_transform import parse_price_range
-        return parse_price_range(entry.get("price"), "estimate")
+        return _clean(*parse_price_range(entry.get("price"), "estimate"))
     except Exception:
         return None, None
 
@@ -129,11 +159,22 @@ def build_line(spec, area, price_entry):
         return {"item": item, "quantity": quantity, "unit": unit,
                 "skipped": "السعر مش في قاعدة أسعارك"}
 
+    # وحدة السعر لازم تكون وحدة الكمية. "يومية" أو "قطعة" مضروبة في مساحة
+    # بتطلع رقم غلط بمراتب -- وكان بيتخزن في price_unit ومايتعرضش، فأحمد
+    # مكانش يقدر يشوف عدم التطابق أصلًا (مراجعة 2026-08-08).
+    price_unit = " ".join(str(price_entry.get("unit") or "").split())
+    if basis in _AREA_BASES and price_unit and not _is_area_unit(price_unit):
+        return {"item": item, "quantity": quantity, "unit": unit,
+                "skipped": 'وحدة السعر "' + price_unit + '" مش وحدة مساحة -- '
+                           "ابعته basis=manual بكميته الصح"}
+
     low, high = _price_range(price_entry)
     if low is None:
         return {"item": item, "quantity": quantity, "unit": unit,
                 "skipped": "السعر المسجّل مش مفهوم كرقم"}
 
+    # ملحوظة: بيرجع None دايمًا حاليًا -- مفيش مسار بيخزّن box_coverage_m2.
+    # شوف تحذير boxes_needed فوق.
     boxes = boxes_needed(quantity, price_entry.get("box_coverage_m2")) if basis in _AREA_BASES else None
     billed = quantity
     if boxes is not None:
@@ -263,7 +304,8 @@ def estimate_project_cost(project_name, lines=None):
 
     total_area = sum(a for _, a in measured)
 
-    specs = list(lines or [])[:MAX_LINES]
+    all_specs = list(lines or [])
+    specs = all_specs[:MAX_LINES]
     if not specs:
         return (format_estimate(resolved, measured, unmeasured, [])
                 + "\n\nقوللي البنود اللي عايزها في المقايسة (خامات ومصنعيات) وأنا أحسبها.")
@@ -277,9 +319,23 @@ def estimate_project_cost(project_name, lines=None):
             if (d or {}).get("item"):
                 by_item[d["item"]] = d
     except Exception as e:
-        logger.warning("⚠️ قراءة الأسعار للمقايسة فشلت: " + str(e)[:80])
+        # كانت بتكمّل بقاعدة فاضية، فكل بند يترجع "مش في قاعدة أسعارك"
+        # والتقرير يقول لأحمد يسجّل أسعار **هو مسجّلها فعلًا**. وأسوأ: لو
+        # الاستثناء وقع في نص اللف، الإجمالي بيتحسب على نص القاعدة من غير
+        # ما حد يعرف (مراجعة 2026-08-08).
+        logger.error("❌ قراءة الأسعار للمقايسة فشلت: " + str(e)[:90])
+        return ("⚠️ مقدرتش أقرا قاعدة أسعارك دلوقتي، فمش هعمل مقايسة على "
+                "قاعدة ناقصة -- الرقم كان هيطلع غلط وأنت مش واخد بالك. "
+                "جرّب تاني كمان شوية.")
 
     built = []
+    # بند مقصوص بصمت = رقم ناقص في مقايسة محدش واخد باله منه. price_capture
+    # بيبلّغ عن الزيادة بتاعته من أول يوم؛ هنا كانت بتتقص ساكت والإجمالي
+    # يتقري كأنه شامل كل اللي اتطلب (مراجعة 2026-08-08).
+    overflow = len(all_specs) - len(specs)
+    if overflow > 0:
+        built.append({"item": "(" + str(overflow) + " بند)",
+                      "skipped": "زيادة عن حد الـ" + str(MAX_LINES) + " في المقايسة الواحدة"})
     for spec in specs:
         wanted = str(spec.get("item") or "").strip()
         entry = by_item.get(wanted)

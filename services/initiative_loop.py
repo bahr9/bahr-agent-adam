@@ -30,6 +30,10 @@ from typing import Optional
 from config import EXPRESSIONS_COLLECTION
 from utils.logger import logger
 
+# أوسع نافذة رد بنقيسها أيام، فآخر بضع مئات من الرسايل بتغطيها بفارق أمان
+# كبير. الرقم موجود كسقف مش كاختيار دلالي.
+MAX_MESSAGES_SCANNED = 1500
+
 # بعد قد إيه نعتبر الرسالة مش رد على المبادرة. اليوم اختيار محافظ: أبعد من
 # كده والربط الزمني بيبقى ضعيف لدرجة إنه يضلل أكتر ما يفيد.
 RESPONSE_WINDOW_HOURS = 24
@@ -90,8 +94,15 @@ def _load_messages():
         logger.warning("🔁 حلقة المبادرة: Supabase مش متصل -- مفيش رسايل")
         return []
     try:
-        rows = client.table("conversation_messages").select(
-            "user_text,occurred_at").execute().data or []
+        # حد صريح: من غيره ده بيسحب **كل رسالة أحمد بعتها في حياته** بنصها
+        # الكامل عشان يحسب بوليان عن نافذة ساعات. وأخطر من الحجم: من غير
+        # ORDER BY، أي قص من جهة PostgREST بيبقى عشوائي -- فمبادرة أحمد رد
+        # عليها فعلًا ترجع responded=False، وبريف الصبح يتهمه بإنه مردش
+        # (مراجعة 2026-08-08).
+        rows = (client.table("conversation_messages")
+                .select("user_text,occurred_at")
+                .order("occurred_at", desc=True)
+                .limit(MAX_MESSAGES_SCANNED).execute().data) or []
     except Exception as e:
         logger.error(f"🔁 حلقة المبادرة: قراءة المحادثات فشلت: {str(e)[:90]}")
         return []

@@ -40,6 +40,15 @@ STALLED_TASK_HOURS = 1
 # فشل أقدم من كده بقى تاريخ مش حاجة محتاجة انتباه دلوقتي.
 RECENT_FAILURE_DAYS = 7
 
+# سقف على المسح وعلى العرض. مداد بيسيب التاسك pending للأبد لو الأكشن مش
+# في allowlist بتاعته، فالمجموعة دي **بتكبر ولا بتصغر أبدًا**. والخيط ده
+# دخل مسار بريف الساعة ٨ (كوميت 9abe558)، يعني كل تاسك قديم بقى سطر في
+# برومبت بيتبعت كل يوم تحت قاعدة بتقول إنه "أهم حاجة في الرسالة".
+# الجار stale_agent_tasks_check_job بيحد بـ[:10] من زمان؛ ده مكانش بيحد
+# بحاجة (مراجعة 2026-08-08).
+MAX_TASKS_SCANNED = 200
+MAX_THREAD_LINES = 12
+
 
 def _parse(ts) -> Optional[datetime]:
     if not ts:
@@ -87,7 +96,9 @@ def _load_limb_threads(now: datetime) -> list:
         logger.warning("🧵 خيط الانتباه: Firestore مش متصل -- مفيش أطراف")
         return []
     try:
-        docs = [d.to_dict() for d in firestore_db.collection(AGENT_TASKS_COLLECTION).stream()]
+        docs = [d.to_dict() for d in firestore_db
+                .collection(AGENT_TASKS_COLLECTION)
+                .limit(MAX_TASKS_SCANNED).stream()]
     except Exception as e:
         logger.error(f"🧵 خيط الانتباه: قراءة تاسكات الأنظمة فشلت: {str(e)[:90]}")
         return []
@@ -228,7 +239,8 @@ def describe_open_threads() -> str:
         return "مفيش حاجة مفتوحة محتاجة متابعة دلوقتي."
 
     lines = []
-    for t in threads:
+    hidden = max(0, len(threads) - MAX_THREAD_LINES)
+    for t in threads[:MAX_THREAD_LINES]:
         if t.get("kind") == "agent_task":
             age = f" من {t['days_open']} يوم" if t.get("days_open") is not None else ""
             # الأكشن نص حر وممكن يبقى فقرة كاملة. النص ده بيدخل سياق آدم في

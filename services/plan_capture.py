@@ -258,16 +258,30 @@ def capture_plan(plan_text, caption=""):
     from services import project_file_service as pfs
 
     saved = 0
+    reasons = []
     for category, key, value in facts:
         try:
             result = pfs.save_project_fact(project_name, category, key, value, source="plan")
             if str(result).startswith("اتسجلت"):
                 saved += 1
+            else:
+                reasons.append(str(result))
         except Exception as e:
             logger.error("❌ حفظ حقيقة من البلان فشل (" + str(key) + "): " + str(e)[:90])
+            reasons.append("الحفظ فشل: " + str(e)[:60])
 
     if saved == 0:
-        return None
+        # كان بيرجع None، و None معناها "مفيش حاجة تتقال" -- فأحمد كان
+        # بياخد قراءة البلان ومايعرفش إن **ولا حرف اتحفظ**. وأشهر سبب هو
+        # فرع متوقع أصلًا: اسم المشروع بيطابق أكتر من ملف، فكل حقيقة
+        # بترجع سؤال الالتباس. الفشل الكامل لازم يتقال (مراجعة 2026-08-08).
+        if not reasons:
+            return None
+        first = reasons[0]
+        if "أكتر من مشروع" in first:
+            return "📐 قريت البلان بس **محفظتوش**: " + first
+        return ("📐 قريت البلان بس **مقدرتش أحفظ منه حاجة** — " + first[:120]
+                + "\nابعته تاني كمان شوية أو قوللي أسجّل الأبعاد بإيدي.")
 
     logger.info("📐➜📁 بلان اتمسك: " + project_name + " -- " + str(saved) + " بند")
     return summarize_capture(project_name, facts, saved) + "قول «ملف " + project_name + "» أي وقت تشوفه."
