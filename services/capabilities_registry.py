@@ -198,6 +198,12 @@ _TOOL_METADATA = {
     "request_verified_expression": {"domain": "system_health", "operation_type": "analysis", "criticality": "high", "source_owner": "services/verified_expression.py"},
     "web_search":                   {"domain": "external", "operation_type": "analysis", "criticality": "low",
                                      "runtime_handler": "anthropic_native_tool", "source_owner": "Anthropic (server-side tool)"},
+    # قراءة مواقع خارجية. صفر health_check_supported عن قصد: أي فحص صحة
+    # هيضرب موقع طرف تالت على جدول دوري -- مش سلوك مقبول تجاه سيرفر مش بتاعنا.
+    "view_website":                 {"domain": "external", "operation_type": "read", "criticality": "low",
+                                     "source_owner": "services/web_view_service.py"},
+    "read_website":                 {"domain": "external", "operation_type": "read", "criticality": "low",
+                                     "source_owner": "services/web_view_service.py"},
     "save_decision":                {"domain": "decisions", "operation_type": "write", "criticality": "medium", "source_owner": "services/firebase_service.py"},
     "list_decisions":               {"domain": "decisions", "operation_type": "read", "criticality": "low", "source_owner": "services/firebase_service.py"},
     "dispatch_agent_task":          {"domain": "agent_orchestration", "operation_type": "write", "criticality": "medium", "source_owner": "services/agent_orchestration.py"},
