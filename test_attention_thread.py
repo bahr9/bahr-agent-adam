@@ -35,6 +35,11 @@ def run_test(name, fn):
 
 
 def main():
+    # الأطراف بتتقرا من Firestore حقيقي (مش مصدر ينفع يتبدل بدالة)، فلازم
+    # الـ fake يتركّب. باقي المصادر بتتبدل مباشرة تحت.
+    from fake_firestore import install_fake_firestore
+    db = install_fake_firestore()
+
     from services import attention_thread as th
     from services import self_state_engine, decision_engine, initiative_loop
 
@@ -166,6 +171,82 @@ def main():
         t = th.get_open_threads()
         assert len(t) == 1 and t[0]["days_open"] is None, t
 
+    # ---------- الأطراف (الفجوة ٣): شغل بعته ومحدش خده ----------
+
+    def seed_tasks(tasks):
+        """tasks = [(target, action, status, age_hours)]"""
+        from config import AGENT_TASKS_COLLECTION
+        for i, (target, action, status, hours) in enumerate(tasks):
+            db.collection(AGENT_TASKS_COLLECTION).document(f"t{i}").set({
+                "task_id": f"t{i}", "target": target, "action": action,
+                "status": status,
+                "created_at": (NOW - timedelta(hours=hours)).isoformat(),
+            })
+
+    def clear_tasks():
+        from config import AGENT_TASKS_COLLECTION
+        for k in list(db.all_docs(AGENT_TASKS_COLLECTION)):
+            db.collection(AGENT_TASKS_COLLECTION).document(k).delete()
+
+    def an_unclaimed_task_becomes_a_thread():
+        setup({}, {}, [])
+        clear_tasks()
+        seed_tasks([("مداد", "حاجة مهمة", "pending", 48)])
+        t = [x for x in th.get_open_threads() if x.get("kind") == "agent_task"]
+        assert len(t) == 1, t
+        assert t[0]["task_state"] == "unclaimed" and t[0]["days_open"] == 2, t[0]
+        assert "محدش خده" in th.describe_open_threads()
+
+    def a_task_still_inside_the_poll_window_is_not_flagged():
+        """مداد بيعمل poll كل دقيقتين -- تاسك عمره دقايق لسه في الطابور مش واقف."""
+        setup({}, {}, [])
+        clear_tasks()
+        seed_tasks([("مداد", "لسه جديد", "pending", 0.1)])
+        assert [x for x in th.get_open_threads() if x.get("kind") == "agent_task"] == []
+
+    def a_done_task_is_never_a_thread():
+        setup({}, {}, [])
+        clear_tasks()
+        seed_tasks([("مداد", "خلصت", "done", 48)])
+        assert [x for x in th.get_open_threads() if x.get("kind") == "agent_task"] == []
+
+    def a_recent_failure_is_surfaced_and_an_old_one_is_not():
+        setup({}, {}, [])
+        clear_tasks()
+        seed_tasks([("مداد", "فشل قريب", "failed", 24),
+                    ("مداد", "فشل قديم", "failed", 24 * 40)])
+        t = [x for x in th.get_open_threads() if x.get("kind") == "agent_task"]
+        assert len(t) == 1 and t[0]["action"] == "فشل قريب", t
+
+    def a_long_action_is_truncated_before_it_reaches_the_context():
+        """النص بيدخل سياق آدم في كل نداء -- فقرة كاملة هنا تكلفة متكررة."""
+        setup({}, {}, [])
+        clear_tasks()
+        seed_tasks([("Hope", "ك" * 400, "pending", 48)])
+        line = th.describe_open_threads()
+        assert len(line) < 250, f"السطر طويل جدًا ({len(line)} حرف): {line[:120]}"
+        assert "…" in line, "المفروض يبان إنه مقصوص"
+
+    def a_task_with_no_timestamp_is_shown_without_an_age():
+        """معلّق من غير وقت لسه معلومة -- بنعرضه من غير مدة مش نتخطاه."""
+        from config import AGENT_TASKS_COLLECTION
+        setup({}, {}, [])
+        clear_tasks()
+        db.collection(AGENT_TASKS_COLLECTION).document("x").set({
+            "task_id": "x", "target": "مداد", "action": "من غير وقت", "status": "pending",
+        })
+        t = [x for x in th.get_open_threads() if x.get("kind") == "agent_task"]
+        assert len(t) == 1 and t[0]["days_open"] is None, t
+        assert "يوم" not in th.describe_open_threads(), "اخترع مدة لتاسك من غير وقت"
+
+    def self_state_and_limbs_share_one_thread():
+        """"إيه المفتوح" سؤال واحد -- سواء المفتوح جواه ولا في طرف منه."""
+        setup(CONFLICT_OPEN, {"unresolved_conflict": {"level": "high", "count": 3, "since": ago(2)}}, [])
+        clear_tasks()
+        seed_tasks([("مداد", "واقف", "pending", 48)])
+        kinds = {x["kind"] for x in th.get_open_threads()}
+        assert kinds == {"self_state", "agent_task"}, kinds
+
     def the_module_never_writes_anything():
         import inspect
         src = inspect.getsource(th)
@@ -188,6 +269,13 @@ def main():
         run_test("مصدر واقع بيتدهور مش بينفجر", a_failing_source_degrades_instead_of_raising),
         run_test("فشل جزئي بيسيب الخيط شغال", a_partial_source_failure_still_returns_the_thread),
         run_test("الموديول مبيكتبش أي حاجة", the_module_never_writes_anything),
+        run_test("تاسك محدش خده بيبقى خيط", an_unclaimed_task_becomes_a_thread),
+        run_test("تاسك لسه في نافذة الـ poll مش واقف", a_task_still_inside_the_poll_window_is_not_flagged),
+        run_test("التاسك الخالص مش خيط", a_done_task_is_never_a_thread),
+        run_test("الفشل القريب بيبان والقديم لأ", a_recent_failure_is_surfaced_and_an_old_one_is_not),
+        run_test("الأكشن الطويل بيتقص قبل السياق", a_long_action_is_truncated_before_it_reaches_the_context),
+        run_test("تاسك من غير وقت بيبان من غير مدة", a_task_with_no_timestamp_is_shown_without_an_age),
+        run_test("الحالة والأطراف في خيط واحد", self_state_and_limbs_share_one_thread),
     ]
 
     print()

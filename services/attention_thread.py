@@ -32,6 +32,14 @@ from utils.logger import logger
 _NOT_OPEN_LEVELS = {"none"}
 _EXCLUDED_DIMENSIONS = {"tracking_stability"}
 
+# تاسك قاعد pending أكتر من كده = محدش خده. الرقم محافظ عن قصد: أبطأ نظام
+# بيعمل poll كل 20 دقيقة (عين الخبير)، فساعة كاملة معناها إنه فات كل دورات
+# الـ poll المتوقعة -- مش إنه لسه في الطابور.
+STALLED_TASK_HOURS = 1
+
+# فشل أقدم من كده بقى تاريخ مش حاجة محتاجة انتباه دلوقتي.
+RECENT_FAILURE_DAYS = 7
+
 
 def _parse(ts) -> Optional[datetime]:
     if not ts:
@@ -43,11 +51,78 @@ def _parse(ts) -> Optional[datetime]:
         return None
 
 
+# الأكشن نص حر يكتبه أحمد، وممكن يبقى فقرة. النص بيدخل سياق آدم في كل نداء
+# بيستعمل الأداة، فبيتقص عند حد واضح.
+_ACTION_MAX_CHARS = 80
+
+
+def _short(text) -> str:
+    t = (str(text or "")).strip().replace("\n", " ")
+    return t if len(t) <= _ACTION_MAX_CHARS else t[:_ACTION_MAX_CHARS - 1].rstrip() + "…"
+
+
 def _days_between(earlier: Optional[datetime], later: datetime) -> Optional[int]:
     """أيام كاملة، أو None لو الوقت مش معروف. None معناها مش عارف."""
     if earlier is None:
         return None
     return max(0, (later - earlier).days)
+
+
+def _load_limb_threads(now: datetime) -> list:
+    """الأطراف: تاسكات آدم بعتها لأنظمة تانية ومحدش خدها، أو فشلت.
+
+    الفجوة رقم ٣: آدم بيوزّع شغل على مداد وعين الخبير كويس، بس مبيحسّش
+    بيهم. `dispatch_agent_task` بيكتب التاسك ويمشي، ومفيش حاجة بترجعله
+    تقول "بعته من يوم ومحدش خده".
+
+    ملحوظة على `pending`: مداد بيسيب التاسك pending عن قصد لو الأكشن مش في
+    `ALLOWLISTED_ACTIONS` بتاعته (قاعدة "skip مش failed" -- عشان تاسك حقيقي
+    مايتقفلش بفشل زائف). فـ pending قديم مش عطل بالضرورة، هو **"لسه محدش
+    بنى له تنفيذ"** -- وده بالظبط اللي أحمد محتاج يعرفه.
+    """
+    from services.firebase_service import firestore_db
+    from config import AGENT_TASKS_COLLECTION
+
+    if firestore_db is None:
+        logger.warning("🧵 خيط الانتباه: Firestore مش متصل -- مفيش أطراف")
+        return []
+    try:
+        docs = [d.to_dict() for d in firestore_db.collection(AGENT_TASKS_COLLECTION).stream()]
+    except Exception as e:
+        logger.error(f"🧵 خيط الانتباه: قراءة تاسكات الأنظمة فشلت: {str(e)[:90]}")
+        return []
+
+    out = []
+    for d in docs or []:
+        status = d.get("status")
+        created = _parse(d.get("created_at"))
+        age_hours = ((now - created).total_seconds() / 3600) if created else None
+        age_days = _days_between(created, now)
+
+        if status == "pending":
+            # من غير وقت مقدرش أقول "قاعد من كذا" -- بنعرضه من غير مدة بدل
+            # ما نتخطاه (تاسك معلّق معلومة مهمة حتى لو عمره مجهول)
+            if age_hours is not None and age_hours < STALLED_TASK_HOURS:
+                continue          # لسه في نافذة الـ poll الطبيعية
+            out.append({
+                "kind": "agent_task",
+                "task_state": "unclaimed",
+                "target": d.get("target"),
+                "action": d.get("action"),
+                "days_open": age_days,
+            })
+        elif status == "failed":
+            if age_days is not None and age_days > RECENT_FAILURE_DAYS:
+                continue
+            out.append({
+                "kind": "agent_task",
+                "task_state": "failed",
+                "target": d.get("target"),
+                "action": d.get("action"),
+                "days_open": age_days,
+            })
+
+    return out
 
 
 def get_open_threads() -> list:
@@ -111,6 +186,7 @@ def get_open_threads() -> list:
         answered = spoken.get("responded") if spoken else None
 
         threads.append({
+            "kind": "self_state",
             "dimension": dim,
             "level": level,
             "count": dim_state.get("count"),
@@ -126,6 +202,13 @@ def get_open_threads() -> list:
                 days_since_spoken if (spoken is not None and answered is False) else None
             ),
         })
+
+    # الأطراف: شغل آدم بعته لأنظمة تانية ومحدش خده أو فشل. بيتحط في نفس
+    # الخيط عن قصد -- "إيه المفتوح" واحدة، سواء المفتوح جواه ولا في طرف منه.
+    try:
+        threads.extend(_load_limb_threads(now))
+    except Exception as e:
+        logger.warning(f"🧵 خيط الانتباه: الأطراف فشلت -- الخيط بيكمّل من غيرها: {str(e)[:90]}")
 
     # الأقدم مفتوحًا الأول؛ اللي مدته مجهولة في الآخر (مش الأول -- عشان
     # مايتصدرش الترتيب بناءً على معلومة إحنا مش عارفينها)
@@ -146,6 +229,18 @@ def describe_open_threads() -> str:
 
     lines = []
     for t in threads:
+        if t.get("kind") == "agent_task":
+            age = f" من {t['days_open']} يوم" if t.get("days_open") is not None else ""
+            # الأكشن نص حر وممكن يبقى فقرة كاملة. النص ده بيدخل سياق آدم في
+            # كل نداء بيستخدم الأداة، فبيتقص -- الغرض إنه يعرف إن فيه حاجة
+            # واقفة ويقدر يميزها، مش إنه يقرا التاسك كامل.
+            what = f"{t.get('target')}: {_short(t.get('action'))}"
+            if t.get("task_state") == "unclaimed":
+                lines.append(f"- شغل بعته{age} ومحدش خده — {what}")
+            else:
+                lines.append(f"- شغل بعته{age} وفشل — {what}")
+            continue
+
         count = t.get("count")
         head = f"{t['dimension']}: {count}" if count is not None else t["dimension"]
         if t["days_open"] is not None:
