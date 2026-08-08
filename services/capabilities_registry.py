@@ -182,6 +182,11 @@ _TOOL_METADATA = {
     "get_adam_self_state":          {"domain": "system_health", "operation_type": "analysis", "criticality": "low",
                                      "health_check_supported": True, "safe_probe": _probe_get_adam_self_state,
                                      "source_owner": "services/self_state_core.py"},
+    # قراءة بحتة بتجمّع مصادر موجودة (حالة + مدد + مبادرات). صفر
+    # health_check_supported عن قصد: الفحص الدوري هيقرا الحالة والمحادثات
+    # على جدول منتظم من غير سبب حقيقي، والفشل بيبان من مسار real_use.
+    "get_open_threads":             {"domain": "system_health", "operation_type": "read", "criticality": "low",
+                                     "source_owner": "services/attention_thread.py"},
     "add_client_followup":         {"domain": "clients", "operation_type": "write", "criticality": "medium", "source_owner": "services/claude_service.py (raw Firestore)"},
     "update_client_followup":      {"domain": "clients", "operation_type": "write", "criticality": "medium", "source_owner": "services/claude_service.py (raw Firestore)"},
     "get_client_followups":         {"domain": "clients", "operation_type": "read", "criticality": "low", "source_owner": "services/claude_service.py (raw Firestore)"},
