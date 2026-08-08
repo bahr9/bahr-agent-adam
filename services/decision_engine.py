@@ -60,6 +60,16 @@ def _normalize_record(raw):
     return {"level": None, "count": None, "since": None}
 
 
+def get_tracked_levels() -> dict:
+    """آخر حالة ملاحظة لكل بُعد، بالشكل الموحد {level, count, since}.
+
+    قراءة عامة على المخزون اللي `decide_expression` بيحدّثه. موجودة عشان
+    اللي محتاج يعرف "بقالها قد إيه" (خيط الانتباه) ميمدش إيده على `_get_last_levels`
+    ولا يتعامل مع الشكل القديم (نص) بنفسه.
+    """
+    return {dim: _normalize_record(raw) for dim, raw in _get_last_levels().items()}
+
+
 def _days_since(since_iso):
     """عدد الأيام الكاملة من `since` -- أو None لو مش متسجل/مش مقروء.
 
