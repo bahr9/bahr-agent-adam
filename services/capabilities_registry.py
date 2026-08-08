@@ -232,6 +232,9 @@ _TOOL_METADATA = {
     # فغلطة فيه بتتضاعف بعدد الليستة قبل ما حد ياخد باله (2026-08-08)
     "save_prices_bulk":             {"domain": "price_base", "operation_type": "write", "criticality": "high",
                                      "source_owner": "services/price_capture.py"},
+    # قراءة خارجية بحتة -- بتعتمد على موقع مورد، فتعطّلها مزعج مش خطر
+    "check_supplier_price":         {"domain": "external", "operation_type": "read", "criticality": "low",
+                                     "source_owner": "services/supplier_prices.py"},
     "get_prices":                   {"domain": "price_base", "operation_type": "read", "criticality": "low",
                                      "health_check_supported": True, "safe_probe": _probe_get_prices,
                                      "source_owner": "services/price_base_service.py"},
