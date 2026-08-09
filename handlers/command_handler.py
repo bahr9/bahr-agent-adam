@@ -128,6 +128,43 @@ def show_ideas_command(message):
         send_error_message(message, str(e))
 
 # ============================================================
+# 📋 أوامر استبيانات العملاء (brief.html → Supabase)
+# ============================================================
+
+@bot.message_handler(commands=['briefs'])
+def show_client_briefs_command(message):
+    """عرض الاستبيانات الجديدة وتعليمها seen.
+
+    None من الخدمة = Supabase مش قادر يجاوب (مش "مفيش استبيانات") --
+    بنقولها صراحةً بدل ما نطمّن بالغلط.
+    """
+    try:
+        from services.client_briefs_service import (
+            list_new_briefs, format_brief, mark_session_seen
+        )
+        set_chat_id(message.chat.id)
+        briefs = list_new_briefs()
+
+        if briefs is None:
+            bot.reply_to(message, "⚠️ مش قادر أقرا من Supabase دلوقتي — جرب تاني.")
+            return
+        if not briefs:
+            bot.reply_to(message, "📭 مفيش استبيانات جديدة.")
+            return
+
+        finals = [b for b in briefs if b.get("is_final")]
+        partials = [b for b in briefs if not b.get("is_final")]
+        bot.reply_to(message, f"📋 {len(finals)} استبيان مكتمل و{len(partials)} واقف في النص:")
+
+        for brief in briefs:
+            bot.send_message(message.chat.id, format_brief(brief))
+            mark_session_seen(brief.get("session_id"))
+
+    except Exception as e:
+        logger.error(f"❌ خطأ في /briefs: {e}")
+        send_error_message(message, str(e))
+
+# ============================================================
 # ⏰ أوامر التذكيرات
 # ============================================================
 
