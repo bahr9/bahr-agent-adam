@@ -930,6 +930,9 @@ def get_bahr_projects(limit=20):
             data = doc.to_dict() or {}
             projects.append({
                 "id": doc.id,
+                # الاسم بيتكتب من فرونت BAHR OS بس -- بيبان لأحمد عشان
+                # يميز المشروع، لأن الـ id لوحده (PRJ-MRE9OHLK) مبيتقريش
+                "name": data.get("name", ""),
                 "client": data.get("client", ""),
                 "area": data.get("area", ""),
                 "status": data.get("status", ""),

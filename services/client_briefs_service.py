@@ -89,6 +89,52 @@ def list_new_briefs(limit=200):
         return None
 
 
+def link_session_to_project(session_id, project_id):
+    """يوسم كل لقطات الجلسة بمعرّف مشروع BAHR OS.
+
+    **آدم مش بيعمل المشروع** -- بيربط ببروجيكت موجود اتعمل في BAHR OS
+    (قرار أحمد 2026-08-09). الدالة دي بتوسم بس؛ التحقق إن المشروع موجود
+    فعلًا مسؤولية المنادي، عشان الطبقة دي تفضل Supabase صافية زي باقي
+    الملف (صفر استيراد من firebase_service).
+    """
+    if _client() is None or not session_id or not project_id:
+        return False
+    try:
+        (
+            _client().table(CLIENT_BRIEFS_TABLE)
+            .update({"project_id": project_id})
+            .eq("session_id", session_id)
+            .execute()
+        )
+        return True
+    except Exception as e:
+        logger.error(f"❌ [client_briefs] فشل ربط الجلسة {session_id} بمشروع: {e}")
+        return False
+
+
+def list_unlinked_briefs(limit=200):
+    """البريفات المكتملة اللي لسه مش مربوطة بمشروع.
+
+    بترجع قايمة (ممكن فاضية) أو None عند الفشل -- نفس عقد باقي القراءات.
+    """
+    if _client() is None:
+        return None
+    try:
+        resp = (
+            _client().table(CLIENT_BRIEFS_TABLE)
+            .select("*")
+            .is_("project_id", "null")
+            .eq("is_final", True)
+            .order("created_at", desc=True)
+            .limit(limit)
+            .execute()
+        )
+        return _dedupe_latest(resp.data or [])
+    except Exception as e:
+        logger.error(f"❌ [client_briefs] فشل جلب البريفات غير المربوطة: {e}")
+        return None
+
+
 def mark_session_seen(session_id):
     """تعليم كل لقطات الجلسة seen عشان متطلعش تاني في الجديد."""
     if _client() is None or not session_id:

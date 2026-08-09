@@ -167,6 +167,86 @@ def show_client_briefs_command(message):
         logger.error(f"❌ خطأ في /briefs: {e}")
         send_error_message(message, str(e))
 
+@bot.message_handler(commands=['link'])
+def link_brief_to_project_command(message):
+    """ربط بريف بمشروع BAHR OS.
+
+    `/link` لوحده = يعرض الطرفين بمعرفاتهم.
+    `/link <أول 8 حروف من الجلسة> <PRJ-...>` = يربط.
+
+    **آدم مش بيعمل مشاريع** -- المشروع بيتولد في BAHR OS، وآدم بيربط بس
+    (قرار أحمد 2026-08-09). فلو المعرّف مش موجود، بيرفض بدل ما ينشئ.
+    """
+    try:
+        from services.client_briefs_service import (
+            list_unlinked_briefs, link_session_to_project
+        )
+        from services.firebase_service import get_bahr_projects, get_project_details
+        set_chat_id(message.chat.id)
+
+        args = message.text.replace('/link', '', 1).split()
+        briefs = list_unlinked_briefs()
+
+        if briefs is None:
+            bot.reply_to(message, "⚠️ مش قادر أقرا البريفات من Supabase دلوقتي.")
+            return
+
+        # عرض الطرفين
+        if len(args) < 2:
+            lines = []
+            if briefs:
+                lines.append("📋 بريفات مستنية ربط:")
+                for b in briefs:
+                    sid = (b.get("session_id") or "")[:8]
+                    a = b.get("answers") or {}
+                    name = b.get("client_name") or a.get("الاسم") or "من غير اسم"
+                    where = b.get("unit_location") or a.get("مكان الوحدة") or ""
+                    lines.append(f"• {sid} — {name}" + (f" · {where}" if where else ""))
+            else:
+                lines.append("📋 مفيش بريفات مستنية ربط.")
+
+            projects = get_bahr_projects(limit=30)
+            if projects:
+                lines.append("\n🏗️ مشاريع BAHR OS:")
+                for p in projects:
+                    label = p.get("name") or p.get("client") or "من غير اسم"
+                    lines.append(f"• {p['id']} — {label}")
+            else:
+                lines.append("\n🏗️ مفيش مشاريع في BAHR OS."
+                             "\nاعمل المشروع من BAHR OS الأول — أنا بربط مش بعمل.")
+
+            lines.append("\nللربط: /link <أول ٨ حروف> <PRJ-...>")
+            bot.reply_to(message, "\n".join(lines))
+            return
+
+        # تنفيذ الربط
+        sid_prefix, project_id = args[0], args[1]
+
+        if not get_project_details(project_id):
+            bot.reply_to(message, f"❌ مفيش مشروع بالمعرّف {project_id} في BAHR OS."
+                                  "\nاعمله من BAHR OS الأول — أنا بربط مش بعمل.")
+            return
+
+        matches = [b for b in briefs if (b.get("session_id") or "").startswith(sid_prefix)]
+        if not matches:
+            bot.reply_to(message, f"❌ مفيش بريف مستني ربط بيبدأ بـ {sid_prefix}.")
+            return
+        if len(matches) > 1:
+            bot.reply_to(message, f"⚠️ {len(matches)} بريفات بيبدأوا بـ {sid_prefix} — زود حروف.")
+            return
+
+        brief = matches[0]
+        if link_session_to_project(brief.get("session_id"), project_id):
+            a = brief.get("answers") or {}
+            name = brief.get("client_name") or a.get("الاسم") or "البريف"
+            bot.reply_to(message, f"🔗 {name} ← {project_id}")
+        else:
+            bot.reply_to(message, "❌ الربط فشل. جرب تاني.")
+
+    except Exception as e:
+        logger.error(f"❌ خطأ في /link: {e}")
+        send_error_message(message, str(e))
+
 @bot.message_handler(commands=['signature'])
 def show_signature_command(message):
     """عرض سجل التوقيع — المؤكد والمقترح."""
