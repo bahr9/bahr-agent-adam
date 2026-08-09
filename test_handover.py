@@ -103,5 +103,42 @@ class TestFormat(unittest.TestCase):
         self.assertIn("محضر التسليم", hs.format_handover({}))
 
 
+class TestObjections(unittest.TestCase):
+    """العرض بيطلب من العميل يعترض بالاسم -- المحضر لازم يشوف الرد."""
+
+    OPEN = {"said": "الأخضر تقيل", "did": "", "at": "2026-08-10T10:00:00Z"}
+    CLOSED = {"said": "الأرضية غامقة", "did": "فتّحناها درجتين",
+              "at": "2026-08-10T11:00:00Z"}
+
+    def test_silent_when_no_objections(self):
+        text = hs.format_handover({"client_name": "منى", "waivers": []})
+        self.assertNotIn("رد العميل", text)
+
+    def test_quotes_the_client_and_our_answer(self):
+        text = hs.format_handover({"client_name": "منى", "objections": [self.CLOSED]})
+        self.assertIn("الأرضية غامقة", text)
+        self.assertIn("فتّحناها درجتين", text)
+
+    def test_open_objection_blocks_a_clean_close(self):
+        text = hs.format_handover({"client_name": "منى", "objections": [self.OPEN]})
+        self.assertIn("لسه مردّيناش", text)
+        self.assertIn("المشروع مايتقفلش", text)
+
+    def test_no_warning_when_all_answered(self):
+        text = hs.format_handover({"client_name": "منى", "objections": [self.CLOSED]})
+        self.assertNotIn("مايتقفلش", text)
+
+    def test_whitespace_only_answer_counts_as_open(self):
+        o = dict(self.CLOSED, did="   ")
+        text = hs.format_handover({"client_name": "منى", "objections": [o]})
+        self.assertIn("لسه مردّيناش", text)
+
+    def test_objections_show_even_with_clean_waivers(self):
+        text = hs.format_handover({"client_name": "منى", "waivers": [],
+                                   "objections": [self.CLOSED]})
+        self.assertIn("مفيش قاعدة اتكسرت", text)
+        self.assertIn("الأرضية غامقة", text)
+
+
 if __name__ == "__main__":
     unittest.main()

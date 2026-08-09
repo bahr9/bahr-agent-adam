@@ -83,11 +83,36 @@ def record_yields(session_id, existing, yields):
         return 0
 
 
+def _objections_section(objections):
+    """رد العميل على العرض -- اللي اعترض عليه واللي عملناه.
+
+    المفتوح بيتعلّم: المحضر اللي فيه اعتراض من غير رد مش محضر تسليم،
+    ده شغل لسه شغال.
+    """
+    if not objections:
+        return []
+
+    open_ones = [o for o in objections if not (o.get("did") or "").strip()]
+    out = ["\n🗣 رد العميل على العرض — " + str(len(objections)) + ":"]
+    for o in objections:
+        out.append("\n• «" + (o.get("said") or "") + "»")
+        did = (o.get("did") or "").strip()
+        out.append("   ↳ " + (did if did else "⏳ لسه مردّيناش"))
+        at = o.get("at")
+        if at:
+            out.append("   بتاريخ: " + str(at)[:10])
+    if open_ones:
+        out.append("\n⚠️ فيه " + str(len(open_ones)) +
+                   " اعتراض من غير رد — المشروع مايتقفلش وهو مفتوح.")
+    return out
+
+
 def format_handover(row):
-    """المحضر: اللي اتكسر ومين وافق، والأرقام."""
+    """المحضر: اللي اتكسر ومين وافق، ورد العميل على العرض."""
     a = (row or {}).get("answers") or {}
     name = (row or {}).get("client_name") or a.get("الاسم") or "من غير اسم"
     waivers = (row or {}).get("waivers") or []
+    objections = (row or {}).get("objections") or []
 
     out = ["📋 محضر التسليم — " + name]
     pid = (row or {}).get("project_id")
@@ -95,20 +120,22 @@ def format_handover(row):
 
     if not waivers:
         out.append("\n✅ مفيش قاعدة اتكسرت — التنفيذ ماشي على التوقيع بالكامل.")
-        return "\n".join(out)
+    else:
+        out.append("\n🤝 قواعد اتكسرت بطلب العميل — " + str(len(waivers)) + ":")
+        for w in waivers:
+            out.append("\n• " + (w.get("text") or w.get("rule") or "قاعدة"))
+            if w.get("gave_up"):
+                out.append("   اتنزل عن: " + w["gave_up"])
+            if w.get("because"):
+                out.append("   السبب: " + w["because"])
+            out.append("   اقترحها: " + (w.get("proposed_by") or "—") +
+                       " · وافق: " + (w.get("agreed_by") or "—"))
+            at = w.get("at")
+            if at:
+                out.append("   بتاريخ: " + str(at)[:10])
 
-    out.append("\n🤝 قواعد اتكسرت بطلب العميل — " + str(len(waivers)) + ":")
-    for w in waivers:
-        out.append("\n• " + (w.get("text") or w.get("rule") or "قاعدة"))
-        if w.get("gave_up"):
-            out.append("   اتنزل عن: " + w["gave_up"])
-        if w.get("because"):
-            out.append("   السبب: " + w["because"])
-        out.append("   اقترحها: " + (w.get("proposed_by") or "—") +
-                   " · وافق: " + (w.get("agreed_by") or "—"))
-        at = w.get("at")
-        if at:
-            out.append("   بتاريخ: " + str(at)[:10])
+    out.extend(_objections_section(objections))
 
-    out.append("\nالسطور دي بتحمي الطرفين — مش اتهام لحد.")
+    if waivers or objections:
+        out.append("\nالسطور دي بتحمي الطرفين — مش اتهام لحد.")
     return "\n".join(out)

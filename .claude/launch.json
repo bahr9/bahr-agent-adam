@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "bahr-brief",
+      "runtimeExecutable": "C:/Users/gowaida/Desktop/adam-v1/.venv/Scripts/python.exe",
+      "runtimeArgs": ["-m", "http.server", "8743", "--directory", "C:/Users/gowaida/Desktop/bahr-os-hosting/public"],
+      "port": 8743
+    }
+  ]
+}
