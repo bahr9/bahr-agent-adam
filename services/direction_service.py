@@ -112,8 +112,19 @@ MATERIALS = [
     {"name": "بيت نور", "surface": "إنارة", "price_key": "بيت النور",
      "tags": {"مخفي"}, "tiers": {"متوسط", "عالي"}},
     {"name": "نحاس مطفي", "surface": "تفاصيل", "price_key": "",
-     "tags": {"معدن", "دافي"}, "tiers": {"متوسط", "عالي"}},
+     "tags": {"معدن", "دافي", "لامع"}, "tiers": {"متوسط", "عالي"},
+     "offered_by": "brass_not_steel"},
+    {"name": "استانلس مطفي", "surface": "تفاصيل", "price_key": "",
+     "tags": {"معدن", "بارد"}, "tiers": {"اقتصادي", "متوسط", "عالي"}},
 ]
+
+# ممنوعات العميل -> وسوم الخامة اللي بتتعارض معاها.
+# ده اللي بيخلي اقتراح أحمد **يتنازل** قدام كلام العميل بدل ما يتفرض.
+_BAN_TAGS = {
+    "دهبي وفضي لامع": {"لامع"},
+    "ألوان غامقة كتير": {"غامق"},
+    "رفوف مفتوحة": {"مفتوح"},
+}
 
 _SURFACE_ORDER = ["أرضيات", "حوائط", "أسقف", "وحدات", "إنارة", "تفاصيل"]
 
@@ -225,7 +236,16 @@ def build_materials(answers, price_lookup=None):
 
     heavy_use = ("أيوه" in kids) or (pets and pets != "لأ")
 
+    # ممنوعات العميل -> وسوم مرفوضة. دي **أقوى من اقتراحات أحمد** بالتصميم.
+    banned_tags = set()
+    ban_reason = {}
+    for b in bans:
+        for t in _BAN_TAGS.get(b, ()):
+            banned_tags.add(t)
+            ban_reason[t] = b
+
     picks = []
+    yielded = []          # اقتراحات أحمد اللي اتنازلت -- بتتقال بصوت عالي
     used_wood = 0
 
     for surface in _SURFACE_ORDER:
@@ -236,6 +256,24 @@ def build_materials(answers, price_lookup=None):
                 options = fit
         if not options:
             continue
+
+        # الخامة اللي بتخالف ممنوع العميل بتتشال، ولو كانت اقتراح أحمد
+        # التنازل بيتسجّل بدل ما يعدي في صمت
+        allowed = []
+        for m in options:
+            clash = m["tags"] & banned_tags
+            if clash:
+                if m.get("offered_by"):
+                    rule = _sig.get(m["offered_by"])
+                    yielded.append({
+                        "material": m["name"],
+                        "rule": rule["text"] if rule else m["offered_by"],
+                        "ban": ban_reason[sorted(clash)[0]],
+                    })
+                continue
+            allowed.append(m)
+        if allowed:
+            options = allowed
 
         chosen, why = None, []
 
@@ -257,8 +295,8 @@ def build_materials(answers, price_lookup=None):
         # "خشن جنب ناعم" **مش هنا**: دي قاعدة تركيب على المجموعة كلها،
         # وتكرارها على كل عنصر بيخليها ضوضاء بدل ما تبقى ملاحظة.
         rules = []
-        if "معدن" in chosen["tags"]:
-            r = _sig.get("brass_not_steel")
+        if chosen.get("offered_by"):
+            r = _sig.get(chosen["offered_by"])
             if r:
                 rules.append(r)
         if "مخفي" in chosen["tags"]:
@@ -269,8 +307,12 @@ def build_materials(answers, price_lookup=None):
             r = _sig.get("one_continuous_floor")
             if r:
                 rules.append(r)
+        # الطبقة بتحدد النبرة: الطريقة قاعدة، والذوق اقتراح
         for r in rules:
-            why.append({"source": "توقيعك", "text": r["text"]})
+            why.append({
+                "source": "اقتراحك" if r.get("layer") == _sig.OFFER else "طريقتك",
+                "text": r["text"],
+            })
 
         warnings = []
         # التحذير للخامة الحساسة بس -- تحذير على كل حاجة بيتساب بعد يومين
@@ -298,7 +340,7 @@ def build_materials(answers, price_lookup=None):
             if p["surface"] == "أسقف":
                 p["note"] = "المطبخ والحمامات محتاجين جبس مقاوم للرطوبة"
 
-    return picks
+    return picks, yielded
 
 
 def composition_notes(picks):
@@ -330,10 +372,11 @@ def composition_notes(picks):
 
 def build_direction(row, price_lookup=None):
     answers = (row or {}).get("answers") or {}
-    materials = build_materials(answers, price_lookup)
+    materials, yielded = build_materials(answers, price_lookup)
     return {
         "palette": build_palette(answers),
         "materials": materials,
+        "yielded": yielded,
         "composition": composition_notes(materials),
         "tier": budget_tier(answers),
     }
@@ -386,9 +429,15 @@ def format_direction(row, direction=None, price_lookup=None):
         if m.get("note"):
             out.append("   ℹ️ " + m["note"])
 
+    # التنازل بيتقال بصوت عالي: أحمد يقدر يتدخل عن قصد بدل ما يكتشف بعدين
+    for y in direction.get("yielded", []):
+        out.append("\n🤝 نزلت عن «" + y["material"] + "»")
+        out.append("   اقتراحك: «" + y["rule"] + "»")
+        out.append("   العميل منع: " + y["ban"])
+
     for note in direction.get("composition", []):
         out.append("\n🧩 " + note["text"])
-        out.append("   قاعدتك: «" + note["rule"] + "»")
+        out.append("   طريقتك: «" + note["rule"] + "»")
 
     if missing:
         out.append("\n❔ محتاج تسعّرها قبل ما تعرض رقم: " + "، ".join(missing))

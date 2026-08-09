@@ -189,15 +189,47 @@ def show_direction_command(message):
             bot.reply_to(message, "⚠️ مش قادر أقرا من Supabase دلوقتي.")
             return
         resp = (client.table("client_briefs").select("*")
-                .eq("is_final", True).neq("status", "archived")
+                .eq("is_final", True)
                 .order("created_at", desc=True).limit(200).execute())
         from services.client_briefs_service import _dedupe_latest
-        briefs = _dedupe_latest(resp.data or [])
+        all_briefs = _dedupe_latest(resp.data or [])
+        briefs = [b for b in all_briefs if b.get("status") != "archived"]
 
         if arg:
-            briefs = [b for b in briefs if (b.get("session_id") or "").startswith(arg)]
+            # بالاسم أو المكان -- المعرّف اسم للماكينة مش لأحمد
+            needle = arg.strip().lower()
+
+            def hit(b):
+                a = b.get("answers") or {}
+                hay = " ".join(str(x or "") for x in (
+                    b.get("client_name"), a.get("الاسم"),
+                    b.get("unit_location"), a.get("مكان الوحدة"),
+                    b.get("phone"), b.get("session_id"))).lower()
+                return needle in hay
+
+            archived_hits = [b for b in all_briefs
+                             if b.get("status") == "archived" and hit(b)]
+            briefs = [b for b in briefs if hit(b)]
+
+            # "مفيش" مربكة لو الاسم موجود بس مؤرشف -- السبب أنفع من النفي
+            if not briefs and archived_hits:
+                bot.reply_to(message, "📦 «" + arg + "» موجود بس مؤرشف. "
+                                      "رجّعه من صفحة الاستبيانات وجرب تاني.")
+                return
+
         if not briefs:
-            bot.reply_to(message, "📭 مفيش بريف مكتمل" + (" بالمعرّف ده." if arg else "."))
+            bot.reply_to(message, "📭 مفيش بريف" + (" باسم «" + arg + "»." if arg else " مكتمل."))
+            return
+
+        if arg and len(briefs) > 1:
+            names = []
+            for b in briefs[:8]:
+                a = b.get("answers") or {}
+                nm = b.get("client_name") or a.get("الاسم") or "من غير اسم"
+                where = b.get("unit_location") or a.get("مكان الوحدة") or ""
+                names.append("• " + nm + (" · " + where if where else ""))
+            bot.reply_to(message, "فيه " + str(len(briefs)) + " بريف بالاسم ده:\n" +
+                                  "\n".join(names) + "\n\nزود حروف عشان أعرف مين.")
             return
 
         brief = briefs[0]

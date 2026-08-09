@@ -86,52 +86,52 @@ class TestPalette(unittest.TestCase):
 
 class TestMaterials(unittest.TestCase):
     def test_covers_every_surface(self):
-        picks = ds.build_materials({"الميزانية": "800K"}, no_prices)
+        picks = ds.build_materials({"الميزانية": "800K"}, no_prices)[0]
         surfaces = [p["surface"] for p in picks]
         for s in ("أرضيات", "حوائط", "أسقف"):
             self.assertIn(s, surfaces)
 
     def test_every_pick_explains_itself(self):
-        for p in ds.build_materials({"الميزانية": "800K"}, no_prices):
+        for p in ds.build_materials({"الميزانية": "800K"}, no_prices)[0]:
             self.assertTrue(p["why"], p["surface"] + " من غير سبب")
 
     def test_economy_excludes_premium_options(self):
-        picks = ds.build_materials({"الميزانية": "300K"}, no_prices)
+        picks = ds.build_materials({"الميزانية": "300K"}, no_prices)[0]
         floor = [p for p in picks if p["surface"] == "أرضيات"][0]
         self.assertNotEqual(floor["name"], "باركيه بلوط")
 
     def test_wood_limit_from_signature(self):
-        picks = ds.build_materials({"الميزانية": "1.5M"}, no_prices)
+        picks = ds.build_materials({"الميزانية": "1.5M"}, no_prices)[0]
         woods = [p for p in picks
                  if any("خشب" in m["tags"] for m in ds.MATERIALS if m["name"] == p["name"])]
         self.assertLessEqual(len(woods), 2, "تعدى حد الأخشاب في التوقيع")
 
     def test_price_attached_when_known(self):
-        picks = ds.build_materials({"الميزانية": "800K"}, fake_prices)
+        picks = ds.build_materials({"الميزانية": "800K"}, fake_prices)[0]
         priced = [p for p in picks if p["price"]]
         self.assertTrue(priced)
 
     def test_missing_price_is_none_not_blank(self):
-        for p in ds.build_materials({"الميزانية": "800K"}, no_prices):
+        for p in ds.build_materials({"الميزانية": "800K"}, no_prices)[0]:
             self.assertIsNone(p["price"])
 
     def test_heavy_use_warns_on_delicate_material(self):
         picks = ds.build_materials(
-            {"الميزانية": "800K", "أطفال": "أيوه", "النضافة": "بنفسنا يومياً"}, no_prices)
+            {"الميزانية": "800K", "أطفال": "أيوه", "النضافة": "بنفسنا يومياً"}, no_prices)[0]
         warned = [p for p in picks if p["warnings"]]
         self.assertTrue(warned, "استعمال تقيل من غير تحذير صيانة")
 
     def test_warning_only_on_delicate_not_everything(self):
         # التحذير على كل خامة بيتساب بعد يومين -- الحساسة بس
         picks = ds.build_materials(
-            {"الميزانية": "800K", "أطفال": "أيوه", "النضافة": "بنفسنا يومياً"}, no_prices)
+            {"الميزانية": "800K", "أطفال": "أيوه", "النضافة": "بنفسنا يومياً"}, no_prices)[0]
         warned = [p["name"] for p in picks if p["warnings"]]
         delicate = {m["name"] for m in ds.MATERIALS if "حساس" in m["tags"]}
         for n in warned:
             self.assertIn(n, delicate, n + " اتحذر عليه وهو مش حساس")
 
     def test_no_warning_without_heavy_use(self):
-        picks = ds.build_materials({"الميزانية": "800K", "أطفال": "لأ", "حيوانات": "لأ"}, no_prices)
+        picks = ds.build_materials({"الميزانية": "800K", "أطفال": "لأ", "حيوانات": "لأ"}, no_prices)[0]
         self.assertEqual([p for p in picks if p["warnings"]], [])
 
 
@@ -158,7 +158,7 @@ class TestCompositionNotes(unittest.TestCase):
         self.assertEqual(len(ds.composition_notes(picks)), 1)
 
     def test_closed_kitchen_notes_moisture_ceiling(self):
-        picks = ds.build_materials({"الميزانية": "800K", "المطبخ مفتوح": "مقفول"}, no_prices)
+        picks = ds.build_materials({"الميزانية": "800K", "المطبخ مفتوح": "مقفول"}, no_prices)[0]
         ceiling = [p for p in picks if p["surface"] == "أسقف"][0]
         self.assertIn("رطوبة", ceiling.get("note", ""))
 
@@ -193,3 +193,53 @@ class TestFormatting(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestLayersChangeBehaviour(unittest.TestCase):
+    """سؤال أحمد (2026-08-10): الذوق بتاع مين؟
+
+    الطريقة بتتطبق على أي حاجة، والاقتراح بيتنازل قدام كلام العميل --
+    والتنازل بيتقال بصوت عالي عشان أحمد يقدر يتدخل عن قصد.
+    """
+
+    BANS_SHINY = {"الميزانية": "800K", "ممنوعات": ["دهبي وفضي لامع"]}
+
+    def test_offer_yields_to_client_ban(self):
+        picks, _ = ds.build_materials(self.BANS_SHINY, no_prices)
+        detail = [p for p in picks if p["surface"] == "تفاصيل"]
+        self.assertTrue(detail)
+        self.assertNotEqual(detail[0]["name"], "نحاس مطفي",
+                            "اقتراح أحمد اتفرض رغم منع العميل")
+
+    def test_yield_is_reported_not_silent(self):
+        _, yielded = ds.build_materials(self.BANS_SHINY, no_prices)
+        self.assertTrue(yielded, "التنازل عدى في صمت")
+        self.assertEqual(yielded[0]["material"], "نحاس مطفي")
+        self.assertEqual(yielded[0]["ban"], "دهبي وفضي لامع")
+
+    def test_offer_applies_when_client_silent(self):
+        picks, yielded = ds.build_materials({"الميزانية": "800K"}, no_prices)
+        detail = [p for p in picks if p["surface"] == "تفاصيل"][0]
+        self.assertEqual(detail["name"], "نحاس مطفي")
+        self.assertEqual(yielded, [])
+
+    def test_offer_labelled_as_suggestion_not_rule(self):
+        picks, _ = ds.build_materials({"الميزانية": "800K"}, no_prices)
+        detail = [p for p in picks if p["surface"] == "تفاصيل"][0]
+        sources = [w["source"] for w in detail["why"]]
+        self.assertIn("اقتراحك", sources)
+        self.assertNotIn("طريقتك", sources)
+
+    def test_method_labelled_as_method(self):
+        picks, _ = ds.build_materials({"الميزانية": "800K"}, no_prices)
+        light = [p for p in picks if p["surface"] == "إنارة"][0]
+        self.assertIn("طريقتك", [w["source"] for w in light["why"]])
+
+    def test_yield_visible_in_output(self):
+        text = ds.format_direction(brief(self.BANS_SHINY), price_lookup=no_prices)
+        self.assertIn("نزلت عن", text)
+        self.assertIn("دهبي وفضي لامع", text)
+
+    def test_every_rule_has_a_layer(self):
+        for r in ds._sig.RULES:
+            self.assertIn(r.get("layer"), (ds._sig.FIXED, ds._sig.METHOD, ds._sig.OFFER), r["id"])

@@ -17,6 +17,23 @@
 قاعدة نابعة من أحمد لو اتكسرت = استثناء مقصود؛ وقاعدة مقترحة اعتمدها لو
 اتكسرت متكرر = غالبًا الاقتراح نفسه كان غلط.
 
+## الطبقة -- وده أهم حقل في السجل
+
+سؤال أحمد (2026-08-10): "الأذواق كتير، إزاي تتعامل معاها ومتبقاش ماشي وراه أعمى؟"
+والإجابة إن التوقيع مش قايمة واحدة، ده **تلات طبقات بتتصرف مختلف**:
+
+  FIXED   -- شغل صح مش ذوق (ممر 90 سم). العميل اللي عايز أقل مش مختلف، غلط.
+             الماكينة بترفض المخالفة وتقول ليه.
+  METHOD  -- نحو مش مفردات (خشن جنب ناعم). بيشتغل في أي ستايل.
+             **هنا البصمة** -- عشان كده مشروعين مختلفين شكلًا يبقوا بتاعه.
+             بتتطبق على أي حاجة العميل اختارها، من غير ما تخانق ذوقه.
+  OFFER   -- ذوق (النحاس بدل الاستانلس). **بتاع العميل في الآخر.**
+             بتتعرض لما يبقى ساكت، وبتتنازل لما يتكلم -- والتنازل بيتقال
+             بصوت عالي عشان أحمد يقدر يتدخل عن قصد.
+
+"ماشي وراه أعمى" معناها الوحيدة التنازل عن FIXED أو METHOD.
+التنازل عن OFFER مش تنازل -- ده الشغل.
+
 ## applies_at -- القاعدة بتتفعل امتى
 
   brief      -- عند قراءة البريف
@@ -33,6 +50,10 @@ PROPOSED = "proposed"
 # القاعدة النابعة من أحمد لو اتكسرت في مشروع = استثناء مقصود.
 # القاعدة المقترحة اللي اعتمدها لو اتكسرت متكرر = غالبًا الاقتراح نفسه كان غلط.
 # الفرق ده هو اللي هيخلي التوقيع يتنقّح صح مع الوقت.
+FIXED  = "fixed"    # ثابت: شغل صح مش ذوق -- الماكينة بترفض المخالفة
+METHOD = "method"   # طريقة: نحو بيشتغل مع أي ستايل -- **هنا البصمة**
+OFFER  = "offer"    # اقتراح: بيتعرض لما العميل ساكت، وبيتنازل لما يتكلم
+
 AHMED = "ahmed"      # قالها بلسانه
 SEEDED = "seeded"    # معرفة مهنية مقترحة، راجعها واعتمدها 2026-08-09
 
@@ -43,6 +64,7 @@ RULES = [
     # ===================== الفراغ والنسب =====================
     {
         "id": "separate_genders",
+        "layer": OFFER,
         "category": "الفراغ",
         "status": CONFIRMED,
         "origin": AHMED,
@@ -53,6 +75,7 @@ RULES = [
     },
     {
         "id": "main_corridor_90",
+        "layer": FIXED,
         "category": "الفراغ",
         "status": CONFIRMED,
         "origin": SEEDED,
@@ -63,6 +86,7 @@ RULES = [
     },
     {
         "id": "dining_clearance_90",
+        "layer": FIXED,
         "category": "الفراغ",
         "status": CONFIRMED,
         "origin": SEEDED,
@@ -73,6 +97,7 @@ RULES = [
     },
     {
         "id": "sofa_table_gap",
+        "layer": FIXED,
         "category": "الفراغ",
         "status": CONFIRMED,
         "origin": SEEDED,
@@ -83,6 +108,7 @@ RULES = [
     },
     {
         "id": "one_empty_wall",
+        "layer": METHOD,
         "category": "الفراغ",
         "status": CONFIRMED,
         "origin": SEEDED,
@@ -93,6 +119,7 @@ RULES = [
     },
     {
         "id": "entrance_storage",
+        "layer": METHOD,
         "category": "الفراغ",
         "status": CONFIRMED,
         "origin": SEEDED,
@@ -103,6 +130,7 @@ RULES = [
     },
     {
         "id": "guest_path_separate",
+        "layer": METHOD,
         "category": "الفراغ",
         "status": CONFIRMED,
         "origin": SEEDED,
@@ -115,6 +143,7 @@ RULES = [
     # ===================== النور =====================
     {
         "id": "kelvin_3000",
+        "layer": OFFER,
         "category": "النور",
         "status": CONFIRMED,
         "origin": SEEDED,
@@ -125,6 +154,7 @@ RULES = [
     },
     {
         "id": "three_light_layers",
+        "layer": METHOD,
         "category": "النور",
         "status": CONFIRMED,
         "origin": SEEDED,
@@ -135,6 +165,7 @@ RULES = [
     },
     {
         "id": "hidden_source",
+        "layer": METHOD,
         "category": "النور",
         "status": CONFIRMED,
         "origin": SEEDED,
@@ -145,6 +176,7 @@ RULES = [
     },
     {
         "id": "sample_under_project_light",
+        "layer": METHOD,
         "category": "النور",
         "status": CONFIRMED,
         "origin": SEEDED,
@@ -157,6 +189,7 @@ RULES = [
     # ===================== الخامات =====================
     {
         "id": "rough_beside_smooth",
+        "layer": METHOD,
         "category": "الخامات",
         "status": CONFIRMED,
         "origin": SEEDED,
@@ -167,6 +200,7 @@ RULES = [
     },
     {
         "id": "max_three_woods",
+        "layer": OFFER,
         "category": "الخامات",
         "status": CONFIRMED,
         "origin": SEEDED,
@@ -177,6 +211,7 @@ RULES = [
     },
     {
         "id": "brass_not_steel",
+        "layer": OFFER,
         "category": "الخامات",
         "status": CONFIRMED,
         "origin": SEEDED,
@@ -187,6 +222,7 @@ RULES = [
     },
     {
         "id": "touched_beats_seen",
+        "layer": METHOD,
         "category": "الخامات",
         "status": CONFIRMED,
         "origin": SEEDED,
@@ -197,6 +233,7 @@ RULES = [
     },
     {
         "id": "maintenance_before_beauty",
+        "layer": METHOD,
         "category": "الخامات",
         "status": CONFIRMED,
         "origin": SEEDED,
@@ -209,6 +246,7 @@ RULES = [
     # ===================== الأرضيات والسقف =====================
     {
         "id": "one_continuous_floor",
+        "layer": METHOD,
         "category": "الأرضيات",
         "status": CONFIRMED,
         "origin": SEEDED,
@@ -219,6 +257,7 @@ RULES = [
     },
     {
         "id": "brass_threshold",
+        "layer": METHOD,
         "category": "الأرضيات",
         "status": CONFIRMED,
         "origin": SEEDED,
@@ -229,6 +268,7 @@ RULES = [
     },
     {
         "id": "grain_along_longest",
+        "layer": METHOD,
         "category": "الأرضيات",
         "status": CONFIRMED,
         "origin": SEEDED,
@@ -239,6 +279,7 @@ RULES = [
     },
     {
         "id": "no_full_drop_ceiling",
+        "layer": OFFER,
         "category": "السقف",
         "status": CONFIRMED,
         "origin": SEEDED,
@@ -249,6 +290,7 @@ RULES = [
     },
     {
         "id": "min_clear_height",
+        "layer": FIXED,
         "category": "السقف",
         "status": CONFIRMED,
         "origin": SEEDED,
@@ -261,6 +303,7 @@ RULES = [
     # ===================== المطبخ =====================
     {
         "id": "counter_height_from_user",
+        "layer": FIXED,
         "category": "المطبخ",
         "status": CONFIRMED,
         "origin": SEEDED,
@@ -271,6 +314,7 @@ RULES = [
     },
     {
         "id": "kitchen_before_appliances",
+        "layer": FIXED,
         "category": "المطبخ",
         "status": CONFIRMED,
         "origin": SEEDED,
@@ -283,6 +327,7 @@ RULES = [
     # ===================== الكهربا والتنفيذ =====================
     {
         "id": "no_socket_behind_fixed",
+        "layer": FIXED,
         "category": "الكهربا",
         "status": CONFIRMED,
         "origin": SEEDED,
@@ -293,6 +338,7 @@ RULES = [
     },
     {
         "id": "single_batch",
+        "layer": FIXED,
         "category": "التنفيذ",
         "status": CONFIRMED,
         "origin": SEEDED,
@@ -303,6 +349,7 @@ RULES = [
     },
     {
         "id": "long_lead_first",
+        "layer": METHOD,
         "category": "التنفيذ",
         "status": CONFIRMED,
         "origin": SEEDED,
@@ -332,6 +379,11 @@ def active():
 def by_stage(stage):
     """قواعد المرحلة دي بس -- بتتنادي من الشاشة اللي بتطبقها."""
     return [r for r in RULES if r.get("applies_at") == stage]
+
+
+def by_layer(layer):
+    """قواعد الطبقة دي -- المنادي بيتصرف مختلف حسبها (شوف الشرح فوق)."""
+    return [r for r in RULES if r.get("layer") == layer]
 
 
 def format_signature():
