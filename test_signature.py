@@ -2,9 +2,10 @@
 """
 اختبارات سجل التوقيع.
 
-الاختبار الحارس الأهم هنا: **مفيش قاعدة تبقى confirmed غير لو أحمد قالها**.
-لو حد (أنا أو موديل تاني) ضاف قاعدة مهنية وحطها confirmed، الاختبار ده
-لازم يحمرّ -- لأن ساعتها التوقيع بقى بتاع حد تاني.
+الحارس الأهم: **مفيش قاعدة تدّعي إن أحمد قالها إلا لو قالها فعلًا.**
+كل القواعد شغالة، بس اللي `origin=AHMED` نابعة منه، والباقي معرفة مهنية
+اعتمدها. لو حد (أنا أو موديل تاني) حط قاعدة جديدة بـ origin=ahmed،
+الاختبار ده بيحمرّ -- لأن ساعتها التوقيع بيدّعي أصل مش بتاعه.
 """
 
 import unittest
@@ -12,29 +13,30 @@ import unittest
 from services import signature as sig
 
 
-# قايمة بيضا: اللي أحمد أكدهم بلسانه، بتاريخ.
-AHMED_CONFIRMED = {
+# اللي أحمد قاله بلسانه، بتاريخه.
+AHMED_SAID = {
     "separate_genders": "2026-08-09",
 }
 
 
-class TestConfirmationIntegrity(unittest.TestCase):
-    def test_only_ahmed_rules_are_confirmed(self):
-        got = {r["id"] for r in sig.confirmed()}
-        self.assertEqual(got, set(AHMED_CONFIRMED),
-                         "قاعدة اتحطت confirmed من غير ما أحمد يقولها")
+class TestOriginIntegrity(unittest.TestCase):
+    def test_only_ahmed_words_claim_ahmed_origin(self):
+        got = {r["id"] for r in sig.RULES if r.get("origin") == sig.AHMED}
+        self.assertEqual(got, set(AHMED_SAID),
+                         "قاعدة بتدّعي إن أحمد قالها وهو مقالهاش")
 
-    def test_confirmed_rules_have_capture_date(self):
-        for r in sig.confirmed():
-            self.assertEqual(r.get("captured"), AHMED_CONFIRMED[r["id"]])
-
-    def test_every_rule_has_valid_status(self):
+    def test_ahmed_rules_carry_capture_date(self):
         for r in sig.RULES:
-            self.assertIn(r["status"], (sig.CONFIRMED, sig.PROPOSED), r["id"])
+            if r.get("origin") == sig.AHMED:
+                self.assertEqual(r.get("captured"), AHMED_SAID[r["id"]])
+
+    def test_every_rule_has_known_origin(self):
+        for r in sig.RULES:
+            self.assertIn(r.get("origin"), (sig.AHMED, sig.SEEDED), r["id"])
 
 
 class TestRegistryShape(unittest.TestCase):
-    REQUIRED = ("id", "category", "status", "text", "why", "applies_at")
+    REQUIRED = ("id", "category", "status", "origin", "text", "why", "applies_at")
     STAGES = ("brief", "layout", "materials", "lighting", "execution")
 
     def test_required_fields(self):
@@ -63,32 +65,34 @@ class TestLookups(unittest.TestCase):
     def test_get_unknown(self):
         self.assertIsNone(sig.get("مش موجودة"))
 
-    def test_by_stage_filters(self):
-        for r in sig.by_stage("lighting"):
-            self.assertEqual(r["applies_at"], "lighting")
+    def test_active_returns_confirmed_only(self):
+        for r in sig.active():
+            self.assertEqual(r["status"], sig.CONFIRMED)
 
-    def test_categories_are_ordered_and_unique(self):
-        cats = sig.categories()
-        self.assertEqual(len(cats), len(set(cats)))
-        self.assertIn("الفراغ", cats)
+    def test_by_stage_filters(self):
+        got = sig.by_stage("lighting")
+        self.assertTrue(got)
+        for r in got:
+            self.assertEqual(r["applies_at"], "lighting")
 
 
 class TestFormatting(unittest.TestCase):
     def setUp(self):
         self.text = sig.format_signature()
 
-    def test_confirmed_section_present(self):
-        self.assertIn("قواعدك", self.text)
+    def test_ahmed_rule_is_marked(self):
         self.assertIn(sig.get("separate_genders")["text"], self.text)
+        self.assertIn("🖋️", self.text)
 
-    def test_proposed_shown_as_question_not_verdict(self):
-        self.assertIn("مش جزء من توقيعك لحد ما تأكدها", self.text)
+    def test_counts_ahmed_rules_separately(self):
+        self.assertIn("من كلامك", self.text)
 
-    def test_proposed_ids_shown_for_confirming(self):
+    def test_ids_shown_for_editing(self):
         self.assertIn("[main_corridor_90]", self.text)
 
-    def test_tells_how_to_confirm(self):
-        self.assertIn("أكد", self.text)
+    def test_every_rule_appears(self):
+        for r in sig.active():
+            self.assertIn(r["text"], self.text, r["id"])
 
 
 if __name__ == "__main__":
