@@ -286,6 +286,16 @@ def show_direction_command(message):
         direction = build_direction(brief, price_lookup)
         bot.reply_to(message, format_direction(brief, direction))
 
+        # التخزين عشان الصفحة تعرضه من غير ما تعيد حساب القواعد بجافاسكريبت
+        try:
+            from datetime import datetime, timezone
+            client.table("client_briefs").update({
+                "direction": direction,
+                "direction_at": datetime.now(timezone.utc).isoformat(),
+            }).eq("session_id", brief.get("session_id")).execute()
+        except Exception as e:
+            logger.error(f"❌ فشل تخزين الاتجاه: {e}")
+
         # قاعدة أحمد: القاعدة المكسورة تتسجل. التسجيل تلقائي لأن اللي
         # محتاج خطوة يدوية بينتسي، واللي بينتسي مالوش لازمة.
         from services.handover_service import record_yields
