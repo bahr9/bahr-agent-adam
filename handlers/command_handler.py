@@ -140,8 +140,9 @@ def show_client_briefs_command(message):
     """
     try:
         from services.client_briefs_service import (
-            list_new_briefs, format_brief, mark_session_seen
+            list_new_briefs, mark_session_seen
         )
+        from services.brief_reader import format_read
         set_chat_id(message.chat.id)
         briefs = list_new_briefs()
 
@@ -157,11 +158,24 @@ def show_client_briefs_command(message):
         bot.reply_to(message, f"📋 {len(finals)} استبيان مكتمل و{len(partials)} واقف في النص:")
 
         for brief in briefs:
-            bot.send_message(message.chat.id, format_brief(brief))
+            # القراءة التصميمية بدل السرد الخام -- الإجابات كاملة على
+            # bahr-designs-office.web.app/briefs.html
+            bot.send_message(message.chat.id, format_read(brief))
             mark_session_seen(brief.get("session_id"))
 
     except Exception as e:
         logger.error(f"❌ خطأ في /briefs: {e}")
+        send_error_message(message, str(e))
+
+@bot.message_handler(commands=['signature'])
+def show_signature_command(message):
+    """عرض سجل التوقيع — المؤكد والمقترح."""
+    try:
+        from services.signature import format_signature
+        set_chat_id(message.chat.id)
+        bot.reply_to(message, format_signature())
+    except Exception as e:
+        logger.error(f"❌ خطأ في /signature: {e}")
         send_error_message(message, str(e))
 
 # ============================================================
