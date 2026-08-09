@@ -35,6 +35,25 @@ from utils.logger import logger
 # أدوات قراءة الإجابات
 # ============================================================
 
+def effective_answers(row):
+    """إجابات العميل بعد تصحيحات أحمد -- دي اللي القواعد بتشتغل عليها.
+
+    التصحيح **مش تعديل**: `answers` بيفضل زي ما هو للأبد (دليل)، و`corrections`
+    طبقة فوقه بتاريخها وسببها. القواعد لازم تشتغل على الصح، والعرض لازم يوري
+    الاتنين -- إن أحمد صحّح حاجة معلومة مش تفصيلة تتخبى (ميجريشن 009).
+    """
+    answers = dict((row or {}).get("answers") or {})
+    for key, fix in ((row or {}).get("corrections") or {}).items():
+        if isinstance(fix, dict) and "to" in fix:
+            answers[key] = fix["to"]
+    return answers
+
+
+def corrections_of(row):
+    c = (row or {}).get("corrections") or {}
+    return c if isinstance(c, dict) else {}
+
+
 def _get(answers, key):
     return (answers or {}).get(key)
 
@@ -363,7 +382,8 @@ def read_brief(row):
 
     بترجع dict دايمًا -- مفيش None هنا لأن ده حساب محلي مش قراءة شبكة.
     """
-    answers = (row or {}).get("answers") or {}
+    answers = effective_answers(row)
+    fixes = corrections_of(row)
 
     facts = [(k, answers[k]) for k in _FACT_KEYS if _has(answers.get(k))]
 
@@ -389,6 +409,7 @@ def read_brief(row):
         "flags": flags,
         "questions": questions,
         "missing": missing,
+        "corrections": fixes,
         "is_final": bool((row or {}).get("is_final")),
     }
 
@@ -415,6 +436,7 @@ def format_read(row, read=None):
     read = read or read_brief(row)
     a = (row or {}).get("answers") or {}
     name = (row or {}).get("client_name") or a.get("الاسم") or "من غير اسم"
+    fixes = read.get("corrections") or {}
 
     out = [f"🔍 قراءة بريف — {name}"]
 
@@ -426,7 +448,27 @@ def format_read(row, read=None):
 
     if read["facts"]:
         out.append("\n📌 اللي اتقال:")
-        out += [f"• {k}: {_fmt(v)}" for k, v in read["facts"]]
+        for k, v in read["facts"]:
+            line = f"• {k}: {_fmt(v)}"
+            # المصحَّح بيتقال بالاتنين: كلام العميل مايتخفيش، وتصحيح أحمد
+            # مايتلبّسش كلام عميل
+            if k in fixes:
+                original = a.get(k)
+                line += f"  ✎ (العميل قال: {_fmt(original)})" if _has(original) \
+                    else "  ✎ (أحمد ضافها)"
+            out.append(line)
+
+    extra_fixes = [k for k in fixes if k not in dict(read["facts"])]
+    if extra_fixes:
+        out.append("\n✎ تصحيحاتك:")
+        for k in extra_fixes:
+            fix = fixes[k]
+            line = f"• {k}: {_fmt(fix.get('to'))}"
+            if _has(a.get(k)):
+                line += f" (العميل قال: {_fmt(a.get(k))})"
+            if fix.get("why"):
+                line += f" — {fix['why']}"
+            out.append(line)
 
     if read["flags"]:
         out.append("\n🧠 استنتاج (مش كلام العميل):")
