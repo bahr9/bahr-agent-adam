@@ -353,3 +353,59 @@ class TestPaletteRules(unittest.TestCase):
             self.assertIsNotNone(r, rid)
             self.assertEqual(r["origin"], ds._sig.SEEDED, rid)
             self.assertEqual(r["layer"], ds._sig.METHOD, rid)
+
+
+class TestObjectionConflicts(unittest.TestCase):
+    """الماكينة مش بتفهم الاعتراض -- بتمنعه يعدي بصمت وهو لسه في التصميم."""
+
+    PAL = {"colors": [
+        {"name": "بيچ رملي", "hex": "#E8E2D6", "share": 0.6, "role": "سايد"},
+        {"name": "أخضر غويط", "hex": "#2E5A50", "share": 0.1, "role": "لمسة"},
+    ]}
+    MATS = [{"surface": "الأرضيات", "name": "بورسلين مطفي"}]
+
+    def _check(self, said, did=""):
+        return ds.check_objections(self.PAL, self.MATS,
+                                   [{"said": said, "did": did}])
+
+    def test_colour_still_there_is_flagged(self):
+        out = self._check("الأخضر تقيل على الريسبشن")
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]["hits"], ["أخضر غويط"])
+
+    def test_unrelated_objection_is_silent(self):
+        self.assertEqual(self._check("الميزانية عالية شوية"), [])
+
+    def test_answered_but_unchanged_is_the_loudest_case(self):
+        out = self._check("الأخضر تقيل", "نزّلناه لزيتوني فاتح")
+        self.assertTrue(out[0]["answered"])
+        self.assertIn("لسه في الاتجاه زي ما هو", out[0]["text"])
+
+    def test_unanswered_says_so(self):
+        out = self._check("الأخضر تقيل")
+        self.assertFalse(out[0]["answered"])
+        self.assertIn("مفيش رد متسجل", out[0]["text"])
+
+    def test_materials_are_checked_too(self):
+        out = self._check("البورسلين مش عاجبني")
+        self.assertEqual(out[0]["hits"], ["بورسلين مطفي"])
+
+    def test_hamza_spelling_still_matches(self):
+        # العميل بيكتب «الاخضر» من غير همزة -- ده مايعميش الفحص
+        self.assertEqual(self._check("الاخضر تقيل")[0]["hits"], ["أخضر غويط"])
+
+    def test_empty_objection_is_ignored(self):
+        self.assertEqual(ds.check_objections(self.PAL, self.MATS,
+                                             [{"said": "   ", "did": "x"}]), [])
+
+    def test_short_words_do_not_match(self):
+        # كلمات أقل من 3 حروف بتلقط أي حاجة -- متستخدمش للمطابقة
+        pal = {"colors": [{"name": "بن", "hex": "#111", "share": 0.6, "role": "سايد"}]}
+        self.assertEqual(ds.check_objections(pal, [], [{"said": "المطبخ ضيق"}]), [])
+
+    def test_no_objections_no_output(self):
+        self.assertEqual(ds.check_objections(self.PAL, self.MATS, []), [])
+
+    def test_build_direction_carries_the_conflicts(self):
+        row = {"answers": {}, "objections": [{"said": "مفيش حاجة", "did": ""}]}
+        self.assertIn("objection_conflicts", ds.build_direction(row))

@@ -482,18 +482,89 @@ def composition_notes(picks):
 
 
 # ============================================================
+# رد العميل على العرض
+# ============================================================
+
+def _norm(text):
+    """توحيد الهمزات والتاء المربوطة -- «الإستانلس» و«الاستانلس» نفس الكلمة."""
+    out = str(text or "")
+    for a, b in (("أ", "ا"), ("إ", "ا"), ("آ", "ا"), ("ى", "ي"), ("ة", "ه")):
+        out = out.replace(a, b)
+    return out
+
+
+def _name_words(name):
+    """كلمات الاسم اللي ممكن العميل يذكر واحدة منها.
+
+    بنطابق على كلمات التصميم نفسه بس -- مش على قاموس ألوان -- عشان
+    ما نلقطش كلام مالوش علاقة.
+    """
+    words = set()
+    for w in _norm(name).replace("،", " ").replace("-", " ").split():
+        w = w.strip("«».,:()")
+        if len(w) >= 3:
+            words.add(w)
+    return words
+
+
+def check_objections(palette, materials, objections):
+    """اعتراض العميل على حاجة لسه موجودة في الاتجاه.
+
+    الماكينة **مش بتفهم** الاعتراض ومش بتغيّر البالتة. «الأخضر تقيل»
+    ممكن تعني شيله، أو نزّل نسبته، أو غيّر درجته -- والتخمين هيعدّل شغل
+    أحمد من ورا ضهره، وده بالظبط اللي التوقيع موجود يمنعه.
+
+    بتعمل حاجة واحدة: **تمنع التناقض يعدي بصمت**. لو العميل اعترض على
+    الأخضر والبالتة لسه فيها أخضر، السطر ده بيقف قدام أحمد.
+
+    ولو أحمد كتب إنه غيّره والبالتة لسه زي ما هي، ده أخطر -- الوعد
+    اتقال والتصميم ما اتحركش.
+    """
+    conflicts = []
+    parts = ([("البالتة", c.get("name", "")) for c in (palette or {}).get("colors", [])] +
+             [("الخامات", m.get("name", "")) for m in materials or []])
+
+    for o in objections or []:
+        said = _norm((o or {}).get("said") or "")
+        if not said.strip():
+            continue
+        hits = sorted({name for where, name in parts
+                       if name and any(w in said for w in _name_words(name))})
+        if not hits:
+            continue
+        did = ((o or {}).get("did") or "").strip()
+        joined = "، ".join(hits)
+        if did:
+            text = ("قلت «" + did + "» — بس " + joined +
+                    " لسه في الاتجاه زي ما هو.")
+        else:
+            text = joined + " لسه في الاتجاه، ومفيش رد متسجل على الاعتراض."
+        conflicts.append({
+            "said": (o or {}).get("said") or "",
+            "did": did,
+            "hits": hits,
+            "answered": bool(did),
+            "text": text,
+        })
+    return conflicts
+
+
+# ============================================================
 # التجميع والعرض
 # ============================================================
 
 def build_direction(row, price_lookup=None):
     answers = (row or {}).get("answers") or {}
     materials, yielded = build_materials(answers, price_lookup)
+    palette = build_palette(answers)
     return {
-        "palette": build_palette(answers),
+        "palette": palette,
         "materials": materials,
         "yielded": yielded,
         "composition": composition_notes(materials),
         "material_issues": check_materials(materials),
+        "objection_conflicts": check_objections(
+            palette, materials, (row or {}).get("objections") or []),
         "tier": budget_tier(answers),
     }
 
@@ -566,6 +637,11 @@ def format_direction(row, direction=None, price_lookup=None):
     for note in direction.get("composition", []):
         out.append("\n🧩 " + note["text"])
         out.append("   طريقتك: «" + note["rule"] + "»")
+
+    # رد العميل بيتحط في الآخر بقصد: ده آخر حاجة قيلت، فهي اللي بتحكم
+    for c in direction.get("objection_conflicts", []):
+        out.append("\n🗣 العميل قال: «" + c["said"] + "»")
+        out.append("   ⚠️ " + c["text"])
 
     if missing:
         out.append("\n❔ محتاج تسعّرها قبل ما تعرض رقم: " + "، ".join(missing))
