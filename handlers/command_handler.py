@@ -167,6 +167,60 @@ def show_client_briefs_command(message):
         logger.error(f"❌ خطأ في /briefs: {e}")
         send_error_message(message, str(e))
 
+@bot.message_handler(commands=['direction'])
+def show_direction_command(message):
+    """اتجاه مقترح لبريف: بالتة وخامات مشتقة من إجاباته ومعايرة بالتوقيع.
+
+    `/direction` = آخر بريف مكتمل · `/direction <أول 8 حروف>` = بريف بعينه.
+    """
+    try:
+        from services.client_briefs_service import list_unlinked_briefs, list_new_briefs
+        from services.brief_reader import effective_answers
+        from services.direction_service import build_direction, format_direction
+        from services.price_base_service import get_prices
+        set_chat_id(message.chat.id)
+
+        arg = message.text.replace('/direction', '', 1).strip()
+
+        # كل البريفات، مش الجديدة بس -- الاتجاه بيتعمل بعد ما تكون شفته
+        from services import supabase_service
+        client = supabase_service.supabase_client
+        if client is None:
+            bot.reply_to(message, "⚠️ مش قادر أقرا من Supabase دلوقتي.")
+            return
+        resp = (client.table("client_briefs").select("*")
+                .eq("is_final", True).neq("status", "archived")
+                .order("created_at", desc=True).limit(200).execute())
+        from services.client_briefs_service import _dedupe_latest
+        briefs = _dedupe_latest(resp.data or [])
+
+        if arg:
+            briefs = [b for b in briefs if (b.get("session_id") or "").startswith(arg)]
+        if not briefs:
+            bot.reply_to(message, "📭 مفيش بريف مكتمل" + (" بالمعرّف ده." if arg else "."))
+            return
+
+        brief = briefs[0]
+        # التصحيحات بتدخل الحساب زي أي قراءة تانية
+        brief = dict(brief, answers=effective_answers(brief))
+
+        def price_lookup(key):
+            if not key:
+                return None
+            out = get_prices(key)
+            if not out or "مفيش" in out:
+                return None
+            for line in out.split("\n"):
+                if line.strip().startswith("-"):
+                    return line.strip().lstrip("- ").split("(آخر تحديث")[0].strip()
+            return None
+
+        bot.reply_to(message, format_direction(brief, build_direction(brief, price_lookup)))
+
+    except Exception as e:
+        logger.error(f"❌ خطأ في /direction: {e}")
+        send_error_message(message, str(e))
+
 @bot.message_handler(commands=['link'])
 def link_brief_to_project_command(message):
     """ربط بريف بمشروع BAHR OS.
