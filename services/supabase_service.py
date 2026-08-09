@@ -6,15 +6,35 @@
   ده كله في services/recurring_reminders_service.py
 """
 
-from utils.logger import logger
+from utils.logger import logger, _is_test_process
 from config import SUPABASE_URL, SUPABASE_KEY, RECURRING_REMINDERS_TABLE
 
 supabase_client = None
 
 
 def init_supabase():
-    """تهيئة الاتصال بـ Supabase -- soft-optional، مبيرميش لو المفاتيح مش موجودة"""
+    """تهيئة الاتصال بـ Supabase -- soft-optional، مبيرميش لو المفاتيح مش موجودة.
+
+    ممنوع من تشغيلات الاختبار (2026-08-09). الحادثة:
+    `test_endpoint_security.py` بيعمل `from main import flask_app`، واستيراد
+    `main` بينفّذ `init_supabase()` على مستوى الموديول. مع المشغّل القديم
+    (عملية لكل ملف) ده كان بيوصّل ملف واحد بالإنتاج ويخلص، وتحت pytest --
+    عملية واحدة -- العميل الحقيقي كان بيفضل مركّب لكل الـ44 ملف اللي بعده،
+    فالسويت كانت **بتقرا من Supabase الإنتاج** وهي فاكرة نفسها معزولة.
+    اتكشف بحارس تلوث، مش بفشل صريح.
+
+    المنع هنا مش في ملفات الاختبار عن قصد: نقطة الاتصال واحدة، وأي مسار
+    جديد بيستورد `main` هيتحمي تلقائيًا من غير ما حد يفتكر.
+    """
     global supabase_client
+
+    if _is_test_process():
+        logger.warning(
+            "🚫 اتصال Supabase اترفض -- العملية دي تشغيلة اختبار. "
+            "لو شايف السطر ده في الإنتاج يبقى كاشف البيئة غلط، وآدم هيشتغل "
+            "من غير قاعدة بيانات."
+        )
+        return False
 
     if not SUPABASE_URL or not SUPABASE_KEY:
         logger.warning("⚠️ SUPABASE_URL/SUPABASE_KEY مش موجودين -- التذكيرات المتكررة هتشتغل بـ Firestore بس")

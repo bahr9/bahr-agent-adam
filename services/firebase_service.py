@@ -8,7 +8,7 @@
 import json
 import firebase_admin
 from firebase_admin import credentials, firestore
-from utils.logger import logger
+from utils.logger import logger, _is_test_process
 from config import (
     FIREBASE_CREDENTIALS_JSON,
     GRAPH_COLLECTION,
@@ -33,8 +33,21 @@ import time
 firestore_db = None
 
 def init_firebase():
-    """تهيئة الاتصال بـ Firebase"""
+    """تهيئة الاتصال بـ Firebase.
+
+    ممنوع من تشغيلات الاختبار -- الشرح الكامل للحادثة في
+    `services/supabase_service.init_supabase`. باختصار: استيراد `main`
+    بيوصّل الإنتاج، وتحت pytest الاتصال ده بيعيش لباقي السويت.
+    """
     global firestore_db
+
+    if _is_test_process():
+        logger.warning(
+            "🚫 اتصال Firestore اترفض -- العملية دي تشغيلة اختبار. "
+            "لو شايف السطر ده في الإنتاج يبقى كاشف البيئة غلط، وآدم هيشتغل "
+            "من غير قاعدة بيانات."
+        )
+        return False
 
     if not FIREBASE_CREDENTIALS_JSON:
         logger.warning("⚠️ FIREBASE_CREDENTIALS_JSON مش موجود")

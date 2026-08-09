@@ -13,13 +13,28 @@ Tests First -- Runtime Capabilities & Tool Health V1.
 بس safe_probes (قراءة بحتة، مؤكدة سلفًا في capabilities_registry.py).
 """
 
-from fake_firestore import install_fake_firestore
+import pytest
+
+from fake_firestore import install_fake_firestore, use_fake_firestore
 from services import (
     capabilities_registry, tool_health_heartbeat, tool_health_engine,
     tool_health_alerts, tool_failure_observer, self_state_core, event_store,
     verified_expression,
 )
 from services.claude_service import _execute_tool
+
+
+@pytest.fixture(autouse=True)
+def _isolated_store():
+    """شوف الشرح في test_tool_lifecycle_diagnostics.py -- نفس الوصلة
+    المقطوعة: العزل جوه `main()` وpytest مبينديهاش.
+
+    هنا كان الأثر أخبث: `test_alerting_dedup_cooldown_recovery` بيقع لما
+    الملف يتشغّل لوحده، وبيعدّي في السويت الكامل لأن ملف تاني كان بيسرّب
+    له fake. أخضر معتمد على ترتيب التشغيل."""
+    with use_fake_firestore():
+        yield
+
 
 FAKE_TOOL = "test_tool_health_fake_tool"
 TEST_CHAT_ID = 999002

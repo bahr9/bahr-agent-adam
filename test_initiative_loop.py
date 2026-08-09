@@ -93,6 +93,11 @@ def main():
     from services import initiative_loop as loop
     from services import supabase_store
 
+    # `_client` بيتربّع تلات مرات تحت، ولازم يرجع في الآخر (2026-08-09):
+    # مع المشغّل القديم العملية كانت بتنتهي فتنظّف نفسها، وتحت pytest
+    # الـlambda كانت بتفضل مركّبة لباقي السويت.
+    _original_client = supabase_store._client
+
     def seed(initiatives, messages):
         """يزرع الجانبين: تعبيرات في Firestore ورسايل في Supabase."""
         for i, (dim, mode, offset_min) in enumerate(initiatives):
@@ -230,6 +235,8 @@ def main():
         run_test("الموديول مبيكتبش أي حاجة", the_module_never_writes_anything),
         run_test("مصدر واقع بيتدهور بهدوء", a_dead_datasource_degrades_quietly),
     ]
+
+    supabase_store._client = _original_client
 
     print()
     passed = sum(1 for r in results if r)

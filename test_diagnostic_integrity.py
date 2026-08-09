@@ -87,14 +87,22 @@ def main():
                 os.environ["RAILWAY_ENVIRONMENT"] = original
 
     def railway_is_detected_as_prod():
+        # المحاكاة لازم تغطي **كل** إشارات "دي تشغيلة اختبار"، ومنها
+        # `sys.modules` اللي مش ممكن نزوّره -- عشان كده بنرقّع الدالة نفسها.
+        # ده مش إضعاف: الفرع اللي بيتفحص هنا هو ترتيب الأولوية
+        # (اختبار > إنتاج > محلي)، وكاشف الاختبار نفسه بيتفحص في
+        # `a_test_run_is_labelled_test` جوه تشغيلة اختبار حقيقية.
         original_argv = sys.argv[0]
         original_pytest = os.environ.pop("PYTEST_CURRENT_TEST", None)
         original_railway = os.environ.get("RAILWAY_ENVIRONMENT")
+        original_detector = logger_module._is_test_process
+        logger_module._is_test_process = lambda: False
         sys.argv[0] = "main.py"
         os.environ["RAILWAY_ENVIRONMENT"] = "production"
         try:
             assert logger_module.detect_environment() == "prod"
         finally:
+            logger_module._is_test_process = original_detector
             sys.argv[0] = original_argv
             if original_pytest is not None:
                 os.environ["PYTEST_CURRENT_TEST"] = original_pytest
@@ -106,12 +114,15 @@ def main():
     def a_plain_local_run_is_local():
         original_argv = sys.argv[0]
         original_pytest = os.environ.pop("PYTEST_CURRENT_TEST", None)
+        original_detector = logger_module._is_test_process
+        logger_module._is_test_process = lambda: False
         for var in ("RAILWAY_ENVIRONMENT", "RAILWAY_SERVICE_NAME"):
             os.environ.pop(var, None)
         sys.argv[0] = "main.py"
         try:
             assert logger_module.detect_environment() == "local"
         finally:
+            logger_module._is_test_process = original_detector
             sys.argv[0] = original_argv
             if original_pytest is not None:
                 os.environ["PYTEST_CURRENT_TEST"] = original_pytest

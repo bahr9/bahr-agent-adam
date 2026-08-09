@@ -12,8 +12,20 @@ Confidence, Current Mode, Diagnosis Summary).
 مايلمسوش companionship_layer أصلًا، فمفيش تكلفة Anthropic هنا خالص.
 """
 
-from fake_firestore import install_fake_firestore
+import pytest
+
+from fake_firestore import install_fake_firestore, use_fake_firestore
 from services import event_store, self_diagnosis, self_state_core, self_state_engine, verified_expression
+
+
+@pytest.fixture(autouse=True)
+def _isolated_store():
+    """شوف الشرح في test_tool_lifecycle_diagnostics.py -- نفس الوصلة
+    المقطوعة: العزل جوه `main()` وpytest مبينديهاش. الملف ده كان بيعدّي
+    بالصدفة، بس كان بيعتمد على fake مسرّب من ملف تاني زي أخوه."""
+    with use_fake_firestore():
+        yield
+
 
 TEST_ENTITY_ID = "test_self_state_core"
 TEST_CHAT_ID = 999001

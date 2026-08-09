@@ -10,9 +10,24 @@ expression بس" -- مكتوبة قبل ما get_adam_self_state يتبنى) ا�
 الاختبار ده هيفشل فورًا بدليل حقيقي، مش هيسيب حد يكتشفها بالصدفة زي ما حصل.
 """
 
-from fake_firestore import install_fake_firestore
+import pytest
+
+from fake_firestore import install_fake_firestore, use_fake_firestore
 from services import event_store, tool_lifecycle_diagnostics
 from services.claude_service import ask_claude_agentic
+
+
+@pytest.fixture(autouse=True)
+def _isolated_store():
+    """العزل كان متركّب جوه `main()` بس -- وpytest بيجمّع دوال `test_`
+    ومبينديش `main()` أبدًا، فالاختبارات كانت بتشتغل من غير أي fake
+    (2026-08-09). النتيجة كانت فشل مربك: `payload_included` بترجع None
+    لأن تسجيل الحدث بيفشل، مش لأن فيه عيب في التسجيل.
+
+    نفس النمط المتكرر: العزل مبني وشغال، ومقطوع عند الوصلة بينه وبين
+    المشغّل. `main()` بيفضل بينده نسخته عشان التشغيل المباشر يفضل شغال."""
+    with use_fake_firestore():
+        yield
 
 FAKE_TOOL = "test_lifecycle_fake_tool_does_not_exist"
 TEST_CHAT_ID = 999003

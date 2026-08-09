@@ -43,6 +43,21 @@ def main():
     from services import attention_thread as th
     from services import self_state_engine, decision_engine, initiative_loop
 
+    # الدوال الأصلية اتحفظت عشان ترجع في الآخر. من غير ده الترقيع بيفضل
+    # مركّب على الموديول لباقي العملية: لما السويت اتشغّلت تحت pytest (عملية
+    # واحدة مشتركة) الملف ده ساب `compute_self_state = boom`، فـ9 ملفات
+    # بعده وقعوا وهم سليمين. الحلقة القديمة (عملية لكل ملف) كانت بتخفي ده
+    # تمامًا (2026-08-09).
+    _ORIGINALS = [
+        (self_state_engine, "compute_self_state", self_state_engine.compute_self_state),
+        (decision_engine, "get_tracked_levels", decision_engine.get_tracked_levels),
+        (initiative_loop, "get_initiative_outcomes", initiative_loop.get_initiative_outcomes),
+    ]
+
+    def restore_originals():
+        for mod, name, fn in _ORIGINALS:
+            setattr(mod, name, fn)
+
     def ago(days):
         return (NOW - timedelta(days=days)).isoformat()
 
@@ -277,6 +292,10 @@ def main():
         run_test("تاسك من غير وقت بيبان من غير مدة", a_task_with_no_timestamp_is_shown_without_an_age),
         run_test("الحالة والأطراف في خيط واحد", self_state_and_limbs_share_one_thread),
     ]
+
+    # لازم قبل أي return: الملف ده رقّع موديولات مشتركة، والعملية بتكمّل
+    # بعده لما السويت تتشغّل تحت pytest.
+    restore_originals()
 
     print()
     passed = sum(1 for r in results if r)

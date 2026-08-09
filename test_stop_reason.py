@@ -69,7 +69,26 @@ def main():
     import services.claude_service as cs
     import services.tool_lifecycle_diagnostics as tld
 
-    # تعطيل كل حاجة بتلمس Firestore أو بتحلل الرسالة
+    # تعطيل كل حاجة بتلمس Firestore أو بتحلل الرسالة.
+    #
+    # الترقيعات دي عالمية على مستوى الموديول، ولازم ترجع في `finally`
+    # (2026-08-09). الملف ده كان بيسيبها مركّبة، وده مكانش بيأذي مع
+    # المشغّل القديم لأن كل ملف كان بياخد عملية لوحده. تحت pytest --
+    # عملية واحدة -- كان بيسمّم `tool_lifecycle_diagnostics` لكل ملف
+    # بعده: خمس اختبارات في test_tool_lifecycle_diagnostics.py كانت
+    # بتفشل بـ`payload_included is None` والسبب مالوش أي علاقة بيها.
+    _PATCHED = [
+        (tld, "record_payload_snapshot", tld.record_payload_snapshot),
+        (tld, "record_model_selection", tld.record_model_selection),
+        (tld, "detect_explicit_tool_request", tld.detect_explicit_tool_request),
+        (cs, "build_system_prompt_parts", cs.build_system_prompt_parts),
+        (cs, "_execute_tool", cs._execute_tool),
+    ]
+
+    def _restore_patched():
+        for mod, attr, original in _PATCHED:
+            setattr(mod, attr, original)
+
     tld.record_payload_snapshot = lambda *a, **k: None
     tld.record_model_selection = lambda *a, **k: None
     tld.detect_explicit_tool_request = lambda *a, **k: None
@@ -169,6 +188,8 @@ def main():
         ("حد التوكنز اترفع لـ 4096", max_tokens_budget_was_raised),
     ]:
         results.append(run_test(name, fn))
+
+    _restore_patched()
 
     print()
     passed = sum(1 for r in results if r)
