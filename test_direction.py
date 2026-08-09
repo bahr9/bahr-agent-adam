@@ -294,3 +294,62 @@ class TestSixtyThirtyTen(unittest.TestCase):
         self.assertIn("٦٠ / ٣٠ / ١٠", text)
         self.assertIn("سايد", text)
         self.assertIn("لمسة", text)
+
+
+class TestPaletteRules(unittest.TestCase):
+    """قواعد البالتة بتفحص بالتة الأداة نفسها كمان.
+
+    قاعدة بتفحص كل حاجة إلا اللي كاتبها هي قاعدة نص.
+    """
+
+    def test_shipped_palettes_pass_their_own_rules(self):
+        for name in ds.PALETTES:
+            p = ds.build_palette({"البالتة": name})
+            self.assertEqual(p["issues"], [],
+                             name + " بيكسر قاعدة من قواعد التوقيع")
+
+    def test_pure_white_is_caught(self):
+        issues = ds.check_palette([{"name": "أبيض", "hex": "#FFFFFF", "share": 0.6, "role": "سايد"}])
+        self.assertTrue(issues)
+        self.assertIn("أبيض صافي", issues[0]["text"])
+
+    def test_broken_white_passes(self):
+        issues = ds.check_palette([{"name": "أوف-وايت", "hex": "#F2EEE6", "share": 0.6, "role": "سايد"}])
+        self.assertEqual(issues, [])
+
+    def test_cold_grey_on_large_area_is_caught(self):
+        issues = ds.check_palette([{"name": "رمادي بارد", "hex": "#9AA6B4", "share": 0.6, "role": "سايد"}])
+        self.assertTrue(any("بارد" in i["text"] for i in issues))
+
+    def test_cold_as_small_accent_is_allowed(self):
+        # البارد كلمسة صغيرة مقبول -- القاعدة عن المساحة الكبيرة
+        issues = ds.check_palette([{"name": "كحلي", "hex": "#29384D", "share": 0.04, "role": "لمسة"}])
+        self.assertEqual([i for i in issues if "بارد" in i["text"]], [])
+
+    def test_two_strong_accents_are_caught(self):
+        issues = ds.check_palette([
+            {"name": "أوف-وايت", "hex": "#F2EEE6", "share": 0.6, "role": "سايد"},
+            {"name": "طوبي", "hex": "#C25E40", "share": 0.06, "role": "لمسة"},
+            {"name": "كحلي غامق", "hex": "#29384D", "share": 0.04, "role": "لمسة"},
+        ])
+        self.assertTrue(any("بيتخانقوا" in i["text"] for i in issues))
+
+    def test_one_strong_plus_one_quiet_passes(self):
+        issues = ds.check_palette([
+            {"name": "أوف-وايت", "hex": "#F2EEE6", "share": 0.6, "role": "سايد"},
+            {"name": "أخضر غامق", "hex": "#33413A", "share": 0.06, "role": "لمسة"},
+            {"name": "نحاس مطفي", "hex": "#A8834E", "share": 0.04, "role": "لمسة", "metal": True},
+        ])
+        self.assertEqual([i for i in issues if "بيتخانقوا" in i["text"]], [])
+
+    def test_bad_hex_does_not_crash(self):
+        self.assertEqual(ds.check_palette([{"name": "x", "hex": "مش لون", "share": 0.6, "role": "سايد"}]), [])
+
+    def test_the_four_rules_are_seeded_not_ahmeds(self):
+        # أحمد وافق عليهم، مقالهمش -- الاعتماد مش التأليف
+        for rid in ("no_pure_white", "no_cold_under_egyptian_sun",
+                    "one_strong_accent", "colour_needs_a_source"):
+            r = ds._sig.get(rid)
+            self.assertIsNotNone(r, rid)
+            self.assertEqual(r["origin"], ds._sig.SEEDED, rid)
+            self.assertEqual(r["layer"], ds._sig.METHOD, rid)

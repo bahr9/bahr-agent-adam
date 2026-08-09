@@ -36,25 +36,30 @@ PALETTES = {
     # الأدوار مش قايمة ألوان: 60 السايد، 30 التاني الحقيقي، 10 اللمسة.
     # **الأرضية والخامات جوه النسبة مش بره** -- الباركيه اللي غطى الشقة
     # 30٪ مما العين بتشوفه، ماينفعش يتحسب لمسة.
+    # اللمسة الأخيرة في كل بالتة معدن (`metal`): المعدن بيقرا **خامة مش لون**،
+    # فمش بيتحسب لمسة تانية تخانق الأولى. الاختبار كشف إن البالتات كانت
+    # بتكسر قاعدة "لمسة واحدة" غلط بسببه.
     "ترابي دافي": {
         "dominant": ("أوف-وايت دافي", "#EFE9DE"),
         "secondary": ("بني بلوط", "#9A7248"),
-        "accents": [("أخضر غامق", "#33413A", 0.06), ("نحاس مطفي", "#A8834E", 0.04)],
+        "accents": [("أخضر غامق", "#33413A", 0.06, False), ("نحاس مطفي", "#A8834E", 0.04, True)],
     },
     "فاتح هادي": {
         "dominant": ("أبيض مكسر", "#F2EEE6"),
         "secondary": ("بيج رمادي", "#B5A692"),
-        "accents": [("أخضر مغبر", "#7E8C79", 0.06), ("بني مطفي", "#5C5348", 0.04)],
+        "accents": [("أخضر مغبر", "#7E8C79", 0.06, False), ("بني مطفي", "#5C5348", 0.04, False)],
     },
     "غامق فخم": {
         "dominant": ("بيج فاتح", "#D8CFC0"),
         "secondary": ("بني داكن", "#6B4F3A"),
-        "accents": [("أخضر غامق", "#33413A", 0.07), ("دهبي مطفي", "#A6822E", 0.03)],
+        "accents": [("أخضر غامق", "#33413A", 0.07, False), ("دهبي مطفي", "#A6822E", 0.03, True)],
     },
+    # الكحلي كان لمسة تانية قوية بتخانق الطوبي. مكانه الصح الـ30 --
+    # كحلي 30 مع طوبي 10 تركيب أقوى، والقاعدة هي اللي وصّلتنا له.
     "متباين عصري": {
         "dominant": ("أوف-وايت", "#F5F2EC"),
-        "secondary": ("بيج ذهبي", "#D9C7A7"),
-        "accents": [("طوبي محروق", "#C25E40", 0.06), ("كحلي غامق", "#29384D", 0.04)],
+        "secondary": ("كحلي غامق", "#29384D"),
+        "accents": [("طوبي محروق", "#C25E40", 0.07, False), ("نحاس مطفي", "#A8834E", 0.03, True)],
     },
 }
 
@@ -62,6 +67,70 @@ PALETTES = {
 DOMINANT_SHARE = 0.60
 SECONDARY_SHARE = 0.30
 ACCENT_SHARE = 0.10
+
+
+def _rgb(hex_colour):
+    h = str(hex_colour or "").lstrip("#")
+    if len(h) != 6:
+        return None
+    try:
+        return int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    except ValueError:
+        return None
+
+
+def check_palette(colors):
+    """فحص البالتة على قواعد الطبقة التانية -- بتشتغل مع أي ألوان.
+
+    الفحوصات دي على **بالتة الأداة نفسها** كمان، مش على العميل بس:
+    قاعدة بتفحص كل حاجة إلا اللي كاتبها هي قاعدة نص.
+    """
+    issues = []
+
+    # الأبيض الصافي: فاتح جدًا + فرق ضئيل بين القنوات = مفيش صبغة
+    for c in colors:
+        rgb = _rgb(c.get("hex"))
+        if not rgb:
+            continue
+        r, g, b = rgb
+        if min(rgb) >= 246 and (max(rgb) - min(rgb)) <= 4:
+            rule = _sig.get("no_pure_white")
+            issues.append({"colour": c["name"], "rule": rule["text"] if rule else "",
+                           "text": "أبيض صافي — يتكسر ببيج أو رمادي دافي"})
+
+    # البارد كمساحة كبيرة. **الشرط التشبع مش الميل للأزرق**: القاعدة عن
+    # الرمادي البارد -- اللي مالوش كروما يمسك بيها نفسه تحت شمس مصر فبيروح
+    # متسخ. الكحلي المشبع لون حقيقي وبيفضل كحلي.
+    for c in colors:
+        rgb = _rgb(c.get("hex"))
+        if not rgb or c.get("share", 0) < 0.25:
+            continue
+        r, g, b = rgb
+        greyish = (max(rgb) - min(rgb)) < 32
+        if b > r + 6 and greyish:
+            rule = _sig.get("no_cold_under_egyptian_sun")
+            issues.append({"colour": c["name"], "rule": rule["text"] if rule else "",
+                           "text": "بارد على مساحة " +
+                                   str(int(round(c["share"] * 100))) + "٪ تحت شمس مصر"})
+
+    # لمستين قويين: اللمسة "قوية" لما تبقى غامقة أو مشبعة.
+    # **المعدن مستثنى** -- بيقرا خامة مش لون، ونحاس جنب أخضر مش خناقة.
+    strong = []
+    for c in colors:
+        rgb = _rgb(c.get("hex"))
+        if not rgb or c.get("role") != "لمسة" or c.get("metal"):
+            continue
+        r, g, b = rgb
+        dark = sum(rgb) / 3 < 110
+        saturated = (max(rgb) - min(rgb)) > 60
+        if dark or saturated:
+            strong.append(c["name"])
+    if len(strong) > 1:
+        rule = _sig.get("one_strong_accent")
+        issues.append({"colour": "، ".join(strong), "rule": rule["text"] if rule else "",
+                       "text": "لمستين قويين بيتخانقوا — واحدة تقود والتانية تهدى"})
+
+    return issues
 
 
 def _palette_colors(name):
@@ -73,8 +142,8 @@ def _palette_colors(name):
         {"name": p["secondary"][0], "hex": p["secondary"][1],
          "share": SECONDARY_SHARE, "role": "تاني"},
     ]
-    for n, h, s in p["accents"]:
-        out.append({"name": n, "hex": h, "share": s, "role": "لمسة"})
+    for n, h, s, is_metal in p["accents"]:
+        out.append({"name": n, "hex": h, "share": s, "role": "لمسة", "metal": is_metal})
     return out
 
 # ممنوعات العميل -> أي ألوان تتشال أو تخف
@@ -229,6 +298,7 @@ def build_palette(answers):
     return {
         "name": name, "colors": colors, "source": source, "adjustments": adjustments,
         "accent_total": accent_total, "timid_accent": timid,
+        "issues": check_palette(colors),
         "rule": _sig.get("palette_60_30_10"),
     }
 
@@ -431,6 +501,10 @@ def format_direction(row, direction=None, price_lookup=None):
         out.append(line)
     for a in pal["adjustments"]:
         out.append("⚠️ «" + a["ban"] + "» — " + "، ".join(a["affected"]) + ": " + a["why"])
+    for iss in pal.get("issues", []):
+        out.append("⚠️ " + iss["colour"] + " — " + iss["text"])
+        if iss.get("rule"):
+            out.append("   طريقتك: «" + iss["rule"] + "»")
     if pal.get("timid_accent"):
         out.append("⚠️ اللمسة نزلت لـ " + str(int(round(pal["accent_total"] * 100))) +
                    "٪ بعد الممنوعات — خجولة كده والفراغ هيقرا مسطح. "
