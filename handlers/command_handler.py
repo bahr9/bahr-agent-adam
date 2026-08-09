@@ -167,6 +167,42 @@ def show_client_briefs_command(message):
         logger.error(f"❌ خطأ في /briefs: {e}")
         send_error_message(message, str(e))
 
+@bot.message_handler(commands=['handover'])
+def show_handover_command(message):
+    """محضر التسليم: القواعد اللي اتكسرت ومين وافق. `/handover <اسم>`"""
+    try:
+        from services import supabase_service
+        from services.client_briefs_service import _dedupe_latest
+        from services.handover_service import format_handover
+        set_chat_id(message.chat.id)
+
+        client = supabase_service.supabase_client
+        if client is None:
+            bot.reply_to(message, "⚠️ مش قادر أقرا من Supabase دلوقتي.")
+            return
+
+        arg = message.text.replace('/handover', '', 1).strip().lower()
+        rows = _dedupe_latest((client.table("client_briefs").select("*")
+                               .eq("is_final", True).order("created_at", desc=True)
+                               .limit(200).execute().data) or [])
+        if arg:
+            def hit(b):
+                a = b.get("answers") or {}
+                hay = " ".join(str(x or "") for x in (
+                    b.get("client_name"), a.get("الاسم"),
+                    b.get("unit_location"), a.get("مكان الوحدة"))).lower()
+                return arg in hay
+            rows = [b for b in rows if hit(b)]
+
+        if not rows:
+            bot.reply_to(message, "📭 مفيش بريف" + (" باسم «" + arg + "»." if arg else "."))
+            return
+        bot.reply_to(message, format_handover(rows[0]))
+
+    except Exception as e:
+        logger.error(f"❌ خطأ في /handover: {e}")
+        send_error_message(message, str(e))
+
 @bot.message_handler(commands=['direction'])
 def show_direction_command(message):
     """اتجاه مقترح لبريف: بالتة وخامات مشتقة من إجاباته ومعايرة بالتوقيع.
@@ -247,7 +283,18 @@ def show_direction_command(message):
                     return line.strip().lstrip("- ").split("(آخر تحديث")[0].strip()
             return None
 
-        bot.reply_to(message, format_direction(brief, build_direction(brief, price_lookup)))
+        direction = build_direction(brief, price_lookup)
+        bot.reply_to(message, format_direction(brief, direction))
+
+        # قاعدة أحمد: القاعدة المكسورة تتسجل. التسجيل تلقائي لأن اللي
+        # محتاج خطوة يدوية بينتسي، واللي بينتسي مالوش لازمة.
+        from services.handover_service import record_yields
+        added = record_yields(brief.get("session_id"),
+                              brief.get("waivers"), direction.get("yielded"))
+        if added:
+            bot.send_message(message.chat.id,
+                             "📝 اتسجل في محضر التسليم: " + str(added) +
+                             (" تنازل" if added == 1 else " تنازلات") + " · /handover")
 
     except Exception as e:
         logger.error(f"❌ خطأ في /direction: {e}")

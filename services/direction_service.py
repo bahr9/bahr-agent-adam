@@ -381,6 +381,7 @@ def build_materials(answers, price_lookup=None):
                     rule = _sig.get(m["offered_by"])
                     yielded.append({
                         "material": m["name"],
+                        "rule_id": m["offered_by"],
                         "rule": rule["text"] if rule else m["offered_by"],
                         "ban": ban_reason[sorted(clash)[0]],
                     })
