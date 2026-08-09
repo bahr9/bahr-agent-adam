@@ -33,35 +33,49 @@ from services import signature as _sig
 # (DESIGN.md §3.4). الترتيب من السايد للمسة.
 
 PALETTES = {
-    "ترابي دافي": [
-        ("أوف-وايت دافي", "#EFE9DE", 0.45),
-        ("بيج رملي", "#DCCBB4", 0.25),
-        ("بني بلوط", "#9A7248", 0.18),
-        ("أخضر غامق", "#33413A", 0.08),
-        ("نحاس مطفي", "#A8834E", 0.04),
-    ],
-    "فاتح هادي": [
-        ("أبيض مكسر", "#F2EEE6", 0.48),
-        ("رمادي دافي", "#E3DCD0", 0.24),
-        ("بيج رمادي", "#B5A692", 0.16),
-        ("أخضر مغبر", "#7E8C79", 0.08),
-        ("بني مطفي", "#5C5348", 0.04),
-    ],
-    "غامق فخم": [
-        ("بيج فاتح", "#D8CFC0", 0.38),
-        ("بني داكن", "#6B4F3A", 0.24),
-        ("أخضر غامق", "#33413A", 0.22),
-        ("أسود مخضر", "#1F2422", 0.11),
-        ("دهبي مطفي", "#A6822E", 0.05),
-    ],
-    "متباين عصري": [
-        ("أوف-وايت", "#F5F2EC", 0.44),
-        ("بيج ذهبي", "#D9C7A7", 0.22),
-        ("طوبي محروق", "#C25E40", 0.16),
-        ("كحلي غامق", "#29384D", 0.13),
-        ("فحمي", "#2B2B2B", 0.05),
-    ],
+    # الأدوار مش قايمة ألوان: 60 السايد، 30 التاني الحقيقي، 10 اللمسة.
+    # **الأرضية والخامات جوه النسبة مش بره** -- الباركيه اللي غطى الشقة
+    # 30٪ مما العين بتشوفه، ماينفعش يتحسب لمسة.
+    "ترابي دافي": {
+        "dominant": ("أوف-وايت دافي", "#EFE9DE"),
+        "secondary": ("بني بلوط", "#9A7248"),
+        "accents": [("أخضر غامق", "#33413A", 0.06), ("نحاس مطفي", "#A8834E", 0.04)],
+    },
+    "فاتح هادي": {
+        "dominant": ("أبيض مكسر", "#F2EEE6"),
+        "secondary": ("بيج رمادي", "#B5A692"),
+        "accents": [("أخضر مغبر", "#7E8C79", 0.06), ("بني مطفي", "#5C5348", 0.04)],
+    },
+    "غامق فخم": {
+        "dominant": ("بيج فاتح", "#D8CFC0"),
+        "secondary": ("بني داكن", "#6B4F3A"),
+        "accents": [("أخضر غامق", "#33413A", 0.07), ("دهبي مطفي", "#A6822E", 0.03)],
+    },
+    "متباين عصري": {
+        "dominant": ("أوف-وايت", "#F5F2EC"),
+        "secondary": ("بيج ذهبي", "#D9C7A7"),
+        "accents": [("طوبي محروق", "#C25E40", 0.06), ("كحلي غامق", "#29384D", 0.04)],
+    },
 }
+
+# قاعدة أحمد (2026-08-10): النسبة ٦٠ / ٣٠ / ١٠
+DOMINANT_SHARE = 0.60
+SECONDARY_SHARE = 0.30
+ACCENT_SHARE = 0.10
+
+
+def _palette_colors(name):
+    """الأدوار -> قايمة ألوان بنسبها، على 60/30/10."""
+    p = PALETTES[name]
+    out = [
+        {"name": p["dominant"][0], "hex": p["dominant"][1],
+         "share": DOMINANT_SHARE, "role": "سايد"},
+        {"name": p["secondary"][0], "hex": p["secondary"][1],
+         "share": SECONDARY_SHARE, "role": "تاني"},
+    ]
+    for n, h, s in p["accents"]:
+        out.append({"name": n, "hex": h, "share": s, "role": "لمسة"})
+    return out
 
 # ممنوعات العميل -> أي ألوان تتشال أو تخف
 _BAN_FILTERS = {
@@ -184,7 +198,7 @@ def build_palette(answers):
         name = "فاتح هادي" if (tone and "فاتح" in str(tone)) else "ترابي دافي"
         source = ("فاتح ولا غامق", tone) if tone else None
 
-    colors = [{"name": n, "hex": h, "share": s} for n, h, s in PALETTES[name]]
+    colors = _palette_colors(name)
 
     adjustments = []
     for ban in bans:
@@ -208,7 +222,15 @@ def build_palette(answers):
             "why": "ممنوع عند العميل، فنصيبه اتقلّص والباقي راح للسايد",
         })
 
-    return {"name": name, "colors": colors, "source": source, "adjustments": adjustments}
+    # اللمسة اللي خفّت عن ٥٪ بقت خجولة -- والخجل في اللمسة بيسطّح الفراغ
+    accent_total = round(sum(c["share"] for c in colors if c["role"] == "لمسة"), 3)
+    timid = accent_total < 0.05
+
+    return {
+        "name": name, "colors": colors, "source": source, "adjustments": adjustments,
+        "accent_total": accent_total, "timid_accent": timid,
+        "rule": _sig.get("palette_60_30_10"),
+    }
 
 
 # ============================================================
@@ -398,17 +420,21 @@ def format_direction(row, direction=None, price_lookup=None):
     if direction["tier"]:
         out.append("مستوى: " + direction["tier"])
 
-    out.append("\n🎯 البالتة — " + pal["name"])
+    out.append("\n🎯 البالتة — " + pal["name"] + "  (٦٠ / ٣٠ / ١٠)")
     if pal["source"]:
         out.append("↳ من " + pal["source"][0] + ": " + str(pal["source"][1]))
     for c in pal["colors"]:
         pct = str(int(round(c["share"] * 100))) + "٪"
-        line = "• " + _bar(c["share"]) + " " + c["name"] + " " + pct
+        line = "• " + _bar(c["share"]) + " " + c["name"] + " " + pct + " · " + c["role"]
         if c.get("muted"):
             line += " (اتقلّص)"
         out.append(line)
     for a in pal["adjustments"]:
         out.append("⚠️ «" + a["ban"] + "» — " + "، ".join(a["affected"]) + ": " + a["why"])
+    if pal.get("timid_accent"):
+        out.append("⚠️ اللمسة نزلت لـ " + str(int(round(pal["accent_total"] * 100))) +
+                   "٪ بعد الممنوعات — خجولة كده والفراغ هيقرا مسطح. "
+                   "يا تلتزم بيها يا تشيلها خالص.")
 
     out.append("\n🧱 الخامات:")
     missing = []

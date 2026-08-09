@@ -243,3 +243,54 @@ class TestLayersChangeBehaviour(unittest.TestCase):
     def test_every_rule_has_a_layer(self):
         for r in ds._sig.RULES:
             self.assertIn(r.get("layer"), (ds._sig.FIXED, ds._sig.METHOD, ds._sig.OFFER), r["id"])
+
+
+class TestSixtyThirtyTen(unittest.TestCase):
+    """قاعدة أحمد (2026-08-10). طريقة مش ذوق -- بتشتغل مع أي ألوان."""
+
+    def test_rule_is_his_and_is_method(self):
+        r = ds._sig.get("palette_60_30_10")
+        self.assertIsNotNone(r)
+        self.assertEqual(r["origin"], ds._sig.AHMED)
+        self.assertEqual(r["layer"], ds._sig.METHOD)
+
+    def test_every_palette_follows_the_ratio(self):
+        for name in ds.PALETTES:
+            p = ds.build_palette({"البالتة": name})
+            by_role = {}
+            for c in p["colors"]:
+                by_role[c["role"]] = round(by_role.get(c["role"], 0) + c["share"], 3)
+            self.assertAlmostEqual(by_role["سايد"], 0.60, places=2, msg=name)
+            self.assertAlmostEqual(by_role["تاني"], 0.30, places=2, msg=name)
+            self.assertAlmostEqual(by_role["لمسة"], 0.10, places=2, msg=name)
+
+    def test_secondary_is_a_real_second_colour(self):
+        # الـ30 لو درجة قريبة من الـ60 بتطلع فعليًا 90/10 وبتقرا رخيص
+        for name in ds.PALETTES:
+            p = ds.PALETTES[name]
+            self.assertNotEqual(p["dominant"][1], p["secondary"][1], name)
+
+    def test_floor_material_sits_in_the_thirty(self):
+        # الباركيه اللي غطى الشقة مش لمسة
+        p = ds.PALETTES["ترابي دافي"]
+        self.assertIn("بلوط", p["secondary"][0])
+
+    def test_shares_still_total_one(self):
+        for name in ds.PALETTES:
+            p = ds.build_palette({"البالتة": name})
+            self.assertAlmostEqual(sum(c["share"] for c in p["colors"]), 1.0, places=2)
+
+    def test_timid_accent_is_called_out(self):
+        p = ds.build_palette({"البالتة": "غامق فخم", "ممنوعات": ["ألوان غامقة كتير"]})
+        if p["accent_total"] < 0.05:
+            self.assertTrue(p["timid_accent"])
+            text = ds.format_direction(brief({"البالتة": "غامق فخم",
+                                              "ممنوعات": ["ألوان غامقة كتير"]}),
+                                       price_lookup=no_prices)
+            self.assertIn("خجولة", text)
+
+    def test_ratio_shown_in_output(self):
+        text = ds.format_direction(brief({"البالتة": "ترابي دافي"}), price_lookup=no_prices)
+        self.assertIn("٦٠ / ٣٠ / ١٠", text)
+        self.assertIn("سايد", text)
+        self.assertIn("لمسة", text)

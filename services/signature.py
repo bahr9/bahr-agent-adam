@@ -74,6 +74,19 @@ RULES = [
         "applies_at": "brief",
     },
     {
+        "id": "palette_60_30_10",
+        "layer": METHOD,
+        "category": "البالتة",
+        "status": CONFIRMED,
+        "origin": AHMED,
+        "captured": "2026-08-10",
+        "text": "النسبة ٦٠ / ٣٠ / ١٠",
+        "why": ("نسبة بتشتغل مع أي ألوان العميل يختارها -- عشان كده طريقة مش ذوق. "
+                "و٦٠ سايد و٣٠ تاني حقيقي و١٠ لمسة ملتزمة، والأرضية والخامات "
+                "بتتحسب في النسبة مش بره."),
+        "applies_at": "materials",
+    },
+    {
         "id": "main_corridor_90",
         "layer": FIXED,
         "category": "الفراغ",
