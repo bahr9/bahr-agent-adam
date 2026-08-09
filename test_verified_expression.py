@@ -11,6 +11,12 @@
 كل حاجة في الآخر.
 """
 
+# `request_verified_expression` بينده الموديل فعليًا -- الملف ده بيكلّف
+# فلوس وبياخد ~30 ثانية من الـ88 بتوع السويت. `conftest.py` بيقرا الثابت
+# ده ويحطّ عليه علامة `live`. الافتراضي لسه بيشغّله؛ العلامة عشان تقدر
+# تستبعده **بقرار منك** (`pytest -m "not live"`)، مش عشان يختفي لوحده.
+PYTEST_LIVE = True
+
 from fake_firestore import install_fake_firestore
 from services import (
     loan_service, loan_commands, event_store,

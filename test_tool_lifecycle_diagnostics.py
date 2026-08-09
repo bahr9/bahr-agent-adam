@@ -77,6 +77,7 @@ def test_recording_and_query_for_real_registered_tool():
     print(f"✅ أداة مسجّلة لكن مش في آخر payload/selection ({other_real_tool}): payload_included=False, model_selected=False (دليل حقيقي، مش تخمين)")
 
 
+@pytest.mark.live
 def test_live_model_actually_selects_get_adam_self_state():
     """
     الاختبار الحاسم -- نداء حقيقي لـask_claude_agentic (تكلفة Anthropic حقيقية،
@@ -136,6 +137,7 @@ def test_detect_explicit_tool_request_pure():
     print("✅ detect_explicit_tool_request: طلب صريح يتمسك، سؤال عادي/اسم غلط/ذكر عابر -- صفر فرض في التلاتة")
 
 
+@pytest.mark.live
 def test_live_explicit_forced_tool_no_args():
     """
     القبول الأساسي (بند 8 من طلب المستخدم): "استخدم get_adam_self_state
@@ -154,6 +156,7 @@ def test_live_explicit_forced_tool_no_args():
     print(f"✅ (بند 8) طلب صريح بدون باراميتر -> تنفيذ حقيقي فوري (tool_choice مفروض)، النتيجة الحقيقية ظاهرة في الرد: {reply[:150]!r}")
 
 
+@pytest.mark.live
 def test_live_ordinary_question_not_forced():
     """(بند 9أ) سؤال محادثة عادي عن الحالة -- مايتفرضش عليه tool_choice خالص، لكن لازم لسه يرد بشكل طبيعي."""
     reply = ask_claude_agentic("عامل إيه يا آدم النهاردة؟", TEST_CHAT_ID)
@@ -161,6 +164,7 @@ def test_live_ordinary_question_not_forced():
     print(f"✅ (بند 9أ) سؤال محادثة عادي اتجاوب من غير فرض tool_choice: {reply[:100]!r}")
 
 
+@pytest.mark.live
 def test_live_missing_argument_asks_for_it():
     """
     (بند 9ب) طلب صريح لـrequest_verified_expression من غير dimension --
@@ -213,6 +217,7 @@ def test_guard_against_false_unavailability_claims_pure():
     print("✅ حارس حتمي: ادّعاء عن أداة مش حقيقية أصلًا -- يعدي من غير تصحيح (مفيش تناقض حقيقي هنا)")
 
 
+@pytest.mark.live
 def test_two_turn_paste_back_no_false_retraction():
     """
     (بند E) إعادة إنتاج مباشرة للتسلسل اللي حصل فعليًا على الإنتاج: تنفيذ

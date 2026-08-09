@@ -122,7 +122,38 @@ def test_no_real_database_client_is_installed():
     )
 
 
+def test_the_default_command_excludes_nothing():
+    """`pytest` المجرّد لازم يشغّل كل حاجة -- ممنوع أي استبعاد في الإعداد.
+
+    ده حارس ضد تكرار الحادثة نفسها بشكل تاني. الحادثة الأصلية كانت
+    استبعاد **بالصدفة** (مفيش conftest، فـ49 ملف مكانوش بيتشافوا). الخطر
+    الجديد استبعاد **بالراحة**: حد يحط `-m "not live"` في addopts عشان
+    السويت تخف، فيرجع نفس الوضع -- رقم أخضر بيغطي أقل مما بيوحي.
+
+    استبعاد الاختبارات الحية قرار سليم وقت الشغل، بس يتاخد **في سطر
+    الأوامر** كل مرة، مش يتخبّى في ملف إعداد حد كتبه مرة ونسيه.
+    """
+    import configparser
+    import pathlib
+
+    ini = pathlib.Path(__file__).with_name("pytest.ini")
+    if not ini.exists():
+        return
+
+    cfg = configparser.ConfigParser()
+    cfg.read(ini, encoding="utf-8")
+    addopts = cfg.get("pytest", "addopts", fallback="")
+
+    for flag in (" -m ", " -k ", "--ignore", "--deselect"):
+        assert flag not in f" {addopts} ", (
+            f"addopts فيه '{flag.strip()}' -- ده بيستبعد اختبارات من الأمر "
+            f"الافتراضي في صمت.\naddopts = {addopts}\n"
+            "لو عايز تستبعد الحية وانت بتشتغل: pytest -m \"not live\""
+        )
+
+
 if __name__ == "__main__":
     test_no_service_function_left_patched()
     test_no_real_database_client_is_installed()
+    test_the_default_command_excludes_nothing()
     print("OK  مفيش تلوث")

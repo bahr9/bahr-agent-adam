@@ -96,7 +96,13 @@ def pytest_collect_file(file_path, parent):
 
 class MainStyleFile(pytest.File):
     def collect(self):
-        yield MainStyleItem.from_parent(self, name=self.path.stem)
+        item = MainStyleItem.from_parent(self, name=self.path.stem)
+        # ملف بأسلوب main() اختباراته كلها بند واحد عند pytest، فمينفعش
+        # يتعلّم بديكوريتر على دالة. بيعلن عن نفسه بثابت على مستوى
+        # الموديول: `PYTEST_LIVE = True`.
+        if "\nPYTEST_LIVE = True" in self.path.read_text(encoding="utf-8"):
+            item.add_marker(pytest.mark.live)
+        yield item
 
 
 class MainStyleItem(pytest.Item):
