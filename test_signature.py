@@ -16,7 +16,16 @@ from services import signature as sig
 # اللي أحمد قاله بلسانه، بتاريخه.
 AHMED_SAID = {
     "separate_genders": "2026-08-09",
+    # الدفعة الكاملة اللي كتبها بلسانه 2026-08-10
     "palette_60_30_10": "2026-08-10",
+    "threshold_level_diff": "2026-08-10",
+    "appliance_door_clearance": "2026-08-10",
+    "no_split_facing_bed": "2026-08-10",
+    "accent_echo": "2026-08-10",
+    "one_focal_point": "2026-08-10",
+    "one_colour_temperature": "2026-08-10",
+    "reflective_in_small_areas": "2026-08-10",
+    "broken_rule_on_record": "2026-08-10",
 }
 
 

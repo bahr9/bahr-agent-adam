@@ -133,6 +133,28 @@ def check_palette(colors):
     return issues
 
 
+def check_materials(picks):
+    """فحص الخامات على قواعد الطبقة التانية.
+
+    قاعدة أحمد (2026-08-10): العاكس مساحات صغيرة أو متوسطة -- الأرضية
+    العاكسة تحت السبوت بتبقى مرايا للوحدات وبتوهج العين طول اليوم.
+    """
+    issues = []
+    by_name = {m["name"]: m for m in MATERIALS}
+    for p in picks:
+        m = by_name.get(p.get("name"))
+        if not m or "عاكس" not in m["tags"]:
+            continue
+        if p.get("surface") == "أرضيات":
+            rule = _sig.get("reflective_in_small_areas")
+            issues.append({
+                "material": p["name"],
+                "rule": rule["text"] if rule else "",
+                "text": "خامة عاكسة على الأرضية كلها — تحت السبوت هتبقى مرايا",
+            })
+    return issues
+
+
 def _palette_colors(name):
     """الأدوار -> قايمة ألوان بنسبها، على 60/30/10."""
     p = PALETTES[name]
@@ -165,7 +187,7 @@ MATERIALS = [
     {"name": "باركيه بلوط", "surface": "أرضيات", "price_key": "باركيه",
      "tags": {"خشب", "دافي", "حساس"}, "tiers": {"متوسط", "عالي"}},
     {"name": "بورسلين 60×120", "surface": "أرضيات", "price_key": "بورسلين 60×120",
-     "tags": {"حجري", "سهل التنضيف"}, "tiers": {"متوسط", "عالي"}},
+     "tags": {"حجري", "سهل التنضيف", "عاكس"}, "tiers": {"متوسط", "عالي"}},
     {"name": "بورسلين 60×60", "surface": "أرضيات", "price_key": "بورسلين 60×60",
      "tags": {"حجري", "سهل التنضيف", "اقتصادي"}, "tiers": {"اقتصادي", "متوسط"}},
 
@@ -470,6 +492,7 @@ def build_direction(row, price_lookup=None):
         "materials": materials,
         "yielded": yielded,
         "composition": composition_notes(materials),
+        "material_issues": check_materials(materials),
         "tier": budget_tier(answers),
     }
 
@@ -534,6 +557,10 @@ def format_direction(row, direction=None, price_lookup=None):
         out.append("\n🤝 نزلت عن «" + y["material"] + "»")
         out.append("   اقتراحك: «" + y["rule"] + "»")
         out.append("   العميل منع: " + y["ban"])
+
+    for iss in direction.get("material_issues", []):
+        out.append("\n⚠️ " + iss["material"] + " — " + iss["text"])
+        out.append("   طريقتك: «" + iss["rule"] + "»")
 
     for note in direction.get("composition", []):
         out.append("\n🧩 " + note["text"])
