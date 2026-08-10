@@ -1278,6 +1278,33 @@ def get_project_details(project_id):
                 ),
             }
 
+        # حصر الكميات. اتنسي في أول نسخة (2026-08-10) -- 11 صف اتنقلوا
+        # لـSupabase ومحدش كان بيقراهم، فأحمد سأل عن بند اسمه "أعمال
+        # التعديلات المعمارية" والبند الأقرب ليه ("أعمال التعديلات
+        # الخرسانية") كان في الحصر، خارج كل حاجة آدم بيشوفها. داتا منقولة
+        # ومحبوسة = نفس الفراغ اللي الهجرة اتعملت عشان تقفله.
+        quantity = None
+        qh = (
+            _client().table("project_quantity")
+            .select("id, client_text, project_text, area_text")
+            .eq("project_id", str(project_id)).limit(1).execute()
+        )
+        if qh.data:
+            qrows = (
+                _client().table("project_quantity_items")
+                .select("position, description, unit, length, width, height, "
+                        "count, wastage_pct, phase")
+                .eq("quantity_id", qh.data[0]["id"])
+                .order("position")
+                .execute()
+            ).data or []
+            quantity = {
+                "client_text": qh.data[0].get("client_text") or "",
+                "area_text": qh.data[0].get("area_text") or "",
+                "items": qrows,
+                "items_count": len(qrows),
+            }
+
         return {
             "id": r.get("id"),
             "name": r.get("name") or "",
@@ -1292,6 +1319,7 @@ def get_project_details(project_id):
             "adam_notes": r.get("adam_notes") or "",
             "note": r.get("note") or "",
             "phases": phases,
+            "quantity": quantity,
         }
     except Exception as e:
         logger.error("❌ [Supabase] قراءة تفاصيل المشروع فشلت: " + str(e)[:120])

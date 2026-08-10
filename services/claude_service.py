@@ -1710,11 +1710,61 @@ def _execute_tool(tool_name, tool_input, chat_id):
                 # الفينيش مش ملخص المشروع (ميجريشن 003 بتصحّح الفهم ده).
                 phase_names = {"foundation": "التأسيس", "finish": "الفينيش",
                                "final": "الفينيش والديكور"}
+
+                # البنود بتتعرض كاملة (2026-08-10). أول نسخة كانت بتطبع
+                # العدد والإجمالي بس، والبنود اللي اتجابت من القاعدة كانت
+                # بتترمي -- فأحمد سأل عن قيمة بند بالاسم وآدم رد "ماعنديش
+                # أداة بتدخل لهذا المستوى"، وكان **صادق**: الداتا وصلت
+                # الأداة والمخرج خباها. نفس عيب "القايمة اللي شكلها شامل"
+                # طبقة تحت. حوالي 30 توكن للبند مقابل 30 ألف لسكيما
+                # الأدوات -- التكلفة مش سبب.
+                MAX_SHOWN = 120
                 for phase, data in (details.get("phases") or {}).items():
+                    items = data.get("items") or []
+                    lines.append("")
                     lines.append(
-                        f"مقايسة {phase_names.get(phase, phase)}: "
+                        f"── مقايسة {phase_names.get(phase, phase)}: "
                         f"{data['items_count']} بند | إجمالي: {data['total']:,.0f}"
                     )
+                    for it in items[:MAX_SHOWN]:
+                        qty = float(it.get("qty") or 0)
+                        price = float(it.get("price") or 0)
+                        # البند التابع بيتبع أقرب بند قبله -- العلاقة في
+                        # الترتيب مش في مفتاح، فالتسنين هنا معلومة مش شكل.
+                        mark = "   └ " if it.get("is_sub") else " "
+                        lines.append(
+                            f"{mark}{it.get('description', '')} | "
+                            f"{it.get('unit', '')} | {qty:g} × {price:,.0f} = "
+                            f"{qty * price:,.0f}"
+                        )
+                    if len(items) > MAX_SHOWN:
+                        # قص مُعلَن. القص الصامت بيخلي الرد شكله كامل وهو
+                        # ناقص -- وده العيب اللي الأداة دي اتصلحت عشانه.
+                        lines.append(
+                            f"   ⚠️ معروض {MAX_SHOWN} من {len(items)} -- "
+                            f"{len(items) - MAX_SHOWN} بند مش ظاهرين هنا، "
+                            "فأي إجابة عن بند مش في القايمة دي ناقصة."
+                        )
+
+                # حصر الكميات -- مخزن منفصل عن المقايسات وبنوده بأبعاد خام
+                # مش بسعر. لازم يبان، وإلا سؤال عن بند فيه يترد عليه
+                # بـ"مش موجود" وهو موجود في نفس المشروع.
+                q = details.get("quantity")
+                if q and q.get("items"):
+                    lines.append("")
+                    lines.append(f"── حصر الكميات: {q['items_count']} بند "
+                                 "(أبعاد خام، من غير أسعار)")
+                    for it in q["items"][:MAX_SHOWN]:
+                        dims = " × ".join(
+                            f"{float(it.get(k) or 0):g}"
+                            for k in ("length", "width", "height", "count")
+                        )
+                        w = float(it.get("wastage_pct") or 0)
+                        lines.append(
+                            f" {it.get('description', '')} | {it.get('unit', '')} | "
+                            f"ط×ع×ا×عدد = {dims}"
+                            + (f" | هالك {w:g}%" if w else "")
+                        )
                 result = chr(10).join(lines)
 
         elif tool_name == "create_recurring_reminder":
