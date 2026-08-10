@@ -259,7 +259,25 @@ def moodboard_command(message):
 
         bot.reply_to(message, "🎨 بولّع اللوحة لـ " + name + " — " + style +
                               "\n(دقيقة تقريبًا)")
-        image = generate_mood_board(style, colors, materials)
+        try:
+            image = generate_mood_board(style, colors, materials)
+        except Exception as gen:
+            # فشل المولّد مش كراش في آدم -- ورمي JSON إنجليزي على أحمد
+            # الساعة 3 الفجر مش رسالة خطأ، ده تشويش.
+            text = str(gen)
+            if "insufficient_quota" in text or "credit_balance_exhausted" in text:
+                bot.reply_to(message, "💳 رصيد OpenAI خلص، فاللوحة مطلعتش.\n"
+                                      "اشحن من platform.openai.com/settings/organization/billing "
+                                      "وابعت /moodboard تاني.\n"
+                                      "الاتجاه محفوظ زي ما هو — مفيش حاجة ضاعت.")
+            elif "rate limit" in text.lower() or "429" in text:
+                bot.reply_to(message, "⏳ المولّد زحمة دلوقتي. استنى دقيقتين "
+                                      "وابعت /moodboard تاني.")
+            else:
+                logger.error(f"❌ [moodboard] التوليد فشل: {gen}")
+                bot.reply_to(message, "🎨 اللوحة مطلعتش — المولّد رفض.\n"
+                                      "الاتجاه محفوظ، جرب تاني كمان شوية.")
+            return
 
         session_id = brief.get("session_id") or ""
         path = "moodboard/" + session_id + ".png"
