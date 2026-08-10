@@ -261,6 +261,16 @@ def verify_and_finalize(chat_id, response_text: str) -> str:
     except Exception as e:
         logger.error(f"❌ فشل فحص false-tool-unavailability-claims (مش حرج، الرد الأصلي كمّل زي ما هو): {e}")
 
+    try:
+        # الحارس التاني (2026-08-10): نفي وجود **بيانات** من غير قراءة.
+        # الحارس اللي فوق بيمسك "الأداة مش موجودة"؛ ده بيمسك "الداتا مش
+        # موجودة" -- وهي اللي حصلت فعلًا: آدم نفى 24 بند تأسيس موجودين
+        # في أداة عمره ما نداها.
+        from services.tool_lifecycle_diagnostics import guard_against_unread_no_data_claims
+        final_text = guard_against_unread_no_data_claims(final_text, chat_id)
+    except Exception as e:
+        logger.error(f"❌ فشل فحص unread-no-data-claims (مش حرج، الرد الأصلي كمّل زي ما هو): {e}")
+
     return final_text
 
 
