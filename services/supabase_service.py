@@ -12,6 +12,44 @@ from config import SUPABASE_URL, SUPABASE_KEY, RECURRING_REMINDERS_TABLE
 supabase_client = None
 
 
+def bypasses_rls():
+    """المفتاح المضبوط بيتخطى RLS ولا لأ.
+
+    ده مش تفصيلة أمان -- ده الفرق بين إجابة صحيحة وإجابة كاذبة.
+
+    جداول BAHR OS كلها عليها RLS من ميجريشن 014: `authenticated` بس،
+    والمجهول ممنوع تمامًا. و PostgREST لما RLS بيمنع القراءة **مبيرميش
+    خطأ** -- بيرجّع `[]` بكود نجاح 200. يعني مفتاح ناقص الصلاحية بيدّي
+    نفس شكل "الجدول فاضي" بالظبط.
+
+    النتيجة لو مافرقناش: آدم يقول "مفيش مشاريع" وهو عنده تسعتاشر، والفولباك
+    لـFirestore مايشتغلش أبدًا لأن `[]` شكلها نجاح. الداتا تتحبس ومحدش
+    يعرف -- وده نفس نمط الهجرة الناقصة اللي اتكرر قبل كده.
+
+    آدم بيشتغل بمفتاح سري (بيتخطى RLS) بالتصميم. الدالة دي بتتأكد إن ده
+    لسه صحيح وقت التشغيل، عشان لو المفتاح اتبدّل يومًا لـpublishable
+    القراءة ترجع "مقدرتش أقرا" بدل "مفيش".
+    """
+    key = SUPABASE_KEY or ""
+    if key.startswith("sb_secret_"):
+        return True
+    if key.startswith("sb_publishable_"):
+        return False
+    if key.count(".") == 2:                       # JWT من النمط القديم
+        import base64
+        import json
+        try:
+            payload = key.split(".")[1]
+            payload += "=" * (-len(payload) % 4)
+            role = json.loads(base64.urlsafe_b64decode(payload)).get("role")
+            return role == "service_role"
+        except Exception:
+            return False
+    # مفتاح بشكل مش معروف -- الأمان إننا نفترض إنه محدود، فالقراءة
+    # تقول "مقدرتش" بدل ما تقول "مفيش" وهي مش متأكدة.
+    return False
+
+
 def init_supabase():
     """تهيئة الاتصال بـ Supabase -- soft-optional، مبيرميش لو المفاتيح مش موجودة.
 

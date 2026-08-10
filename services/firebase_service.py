@@ -825,78 +825,27 @@ def update_human_model_bulk(data: dict):
 BAHR_SITES_COLLECTION = "bahrSites"
 DEPA_PROJECTS_COLLECTION = "depaProjects"
 
-def create_bahr_project(client, area, supervisors=None, status="active"):
-    """إنشاء مشروع جديد في Bahr OS"""
-    if firestore_db is None:
-        return None, "Firestore مش متصل"
-    try:
-        import uuid
-        from utils.time_utils import now_cairo
-        project_id = "PRJ-" + str(uuid.uuid4())[:8].upper()
-        data = {
-            "client": client,
-            "area": float(area) if area else 0,
-            "status": status,
-            "allowedSupervisors": supervisors or [],
-            "createdBy": "ADAM",
-            "createdAt": now_cairo().isoformat(),
-            "items": []
-        }
-        firestore_db.collection("projects").document(project_id).set(data)
-        logger.info(f"✅ مشروع جديد: {project_id} — {client}")
-        return project_id, "تم"
-    except Exception as e:
-        logger.error(f"❌ خطأ في إنشاء المشروع: {e}")
-        return None, str(e)
-
 def update_bahr_project(project_id, **kwargs):
-    """تعديل بيانات مشروع موجود"""
-    if firestore_db is None:
-        return False, "Firestore مش متصل"
-    try:
-        from utils.time_utils import now_cairo
-        update_data = {"updatedAt": now_cairo().isoformat()}
-        if "client"      in kwargs: update_data["client"]             = kwargs["client"]
-        if "area"        in kwargs: update_data["area"]               = float(kwargs["area"])
-        if "supervisors" in kwargs: update_data["allowedSupervisors"] = kwargs["supervisors"]
-        if "status"      in kwargs: update_data["status"]             = kwargs["status"]
+    """يكتب أعمدة آدم في مشروع موجود -- Supabase (هجرة 2026-08-10).
 
-        # حارس الوجود (أوديت 2026-08-04): set(merge=True) بينشئ المستند لو
-        # مش موجود -- فمعرّف غلط من الموديل كان بيولّد مشروع وهمي بصمت
-        from services.update_guard import (
-            document_exists, list_document_ids, missing_document_message,
-        )
-        if not document_exists("projects", project_id):
-            return False, missing_document_message(
-                "مشروع", project_id, list_document_ids("projects")
-            )
+    **الملكية بالعمود مش بالجدول.** ميجريشن 003 موثّقة الفرق:
 
-        firestore_db.collection("projects").document(project_id).set(update_data, merge=True)
-        return True, "تم التعديل"
-    except Exception as e:
-        return False, str(e)
+      BAHR OS بيكتب   name · client · area · level · note · allowed_supervisors
+      آدم بيكتب       status · deadline · completion · last_report · adam_notes
 
-def delete_bahr_project(project_id):
-    """حذف مشروع"""
-    if firestore_db is None:
-        return False, "Firestore مش متصل"
-    try:
-        # حارس الوجود (أوديت 2026-08-05): Firestore delete() على مستند مش
-        # موجود بينجح بصمت، فمعرّف غلط من الموديل كان بيرجع "تم الحذف" وهو
-        # مالمسش حاجة. update_bahr_project خد الحارس ده في أوديت 2026-08-04
-        # والحذف -- اللي مالهوش رجعة -- فضل من غيره.
-        from services.update_guard import (
-            document_exists, list_document_ids, missing_document_message,
-        )
-        if not document_exists("projects", project_id):
-            return False, missing_document_message(
-                "مشروع", project_id, list_document_ids("projects")
-            )
+    الدالة دي كانت بتكتب `client` و`area` و`supervisors` -- كلهم أعمدة
+    BAHR OS. دلوقتي بترفضهم برسالة بتقول من فين يتعدّلوا، بدل ما آدم
+    يدوس على شغل الشاشة اللي أحمد بيفتحها.
 
-        firestore_db.collection("projects").document(project_id).delete()
-        return True, "تم الحذف"
-    except Exception as e:
-        return False, str(e)
+    والاتجاه التاني محفوظ برضه: الخمسة بتوع آدم مالهمش شاشة في BAHR OS
+    خالص، فلو الدالة دي اتشالت كان "المشروع اتأخر" هيضيع من غير أي بديل.
+
+    الكتابة بقت في Supabase بس -- مفيش dual-write. BAHR OS بينتقل لنفس
+    القاعدة، ولو آدم فضل يكتب في Firestore يبقى فيه دماغين مش شايفين بعض،
+    وده بالظبط السبب اللي الهجرة دي اتعملت عشانه.
+    """
+    from services import supabase_store
+    return supabase_store.update_project_adam_fields(project_id, kwargs)
 
 def add_bahr_site(project_id, site_name, supervisors=None):
     """إضافة موقع جديد في Bahr Sites"""
@@ -920,9 +869,30 @@ def add_bahr_site(project_id, site_name, supervisors=None):
         return None, str(e)
 
 def get_bahr_projects(limit=20):
-    """جلب مشاريع Bahr OS من Firestore (read-only)"""
+    """مشاريع BAHR OS -- Supabase الأول، وFirestore فولباك (هجرة 2026-08-10).
+
+    بترجع قايمة، أو **None لو مقدرناش نقرا من أي مصدر**.
+
+    التلات حالات مقصودة ولازم تفضل متفرّقة:
+      [...]  فيه مشاريع
+      []     قرينا فعلاً ومفيش ولا واحد
+      None   مقدرناش نقرا -- ممنوع تتقال لأحمد على إنها "مفيش"
+
+    الحالة التالتة دي كانت غايبة، والغياب ده هو الفخ: Supabase بيرجّع `[]`
+    بكود نجاح لما RLS بيمنع القراءة، فمفتاح ناقص الصلاحية شكله زي جدول
+    فاضي بالظبط. من غير التفرقة دي كان آدم هيقول "مفيش مشاريع" وعنده
+    تسعتاشر، والفولباك عمره ما هيشتغل لأن `[]` شكلها نجاح.
+    `supabase_store._can_read_projects` بيتأكد من المفتاح قبل ما يصدّق أي
+    رد فاضي.
+    """
+    from services import supabase_store
+    rows = supabase_store.get_projects(limit)
+    if rows is not None:
+        return rows
+
+    # Supabase مقدرش يجاوب -- نجرّب المسار القديم
     if firestore_db is None:
-        return []
+        return None                     # مفيش مصدر خالص، مش "مفيش مشاريع"
     try:
         docs = firestore_db.collection("projects").limit(limit).stream()
         projects = []
@@ -942,7 +912,7 @@ def get_bahr_projects(limit=20):
         return projects
     except Exception as e:
         logger.error(f"❌ خطأ في جلب مشاريع Bahr OS: {e}")
-        return []
+        return None                     # فشل قراءة، مش قايمة فاضية
 
 def get_bahr_sites(limit=20):
     """جلب مواقع Bahr Sites من Firestore (read-only)"""
@@ -969,9 +939,20 @@ def get_bahr_sites(limit=20):
         return []
 
 def get_project_details(project_id):
-    """جلب تفاصيل مشروع معين — items كـ array في الـ document"""
+    """تفاصيل مشروع -- Supabase الأول، وFirestore فولباك (هجرة 2026-08-10).
+
+    نفس تلات الحالات بتاعة `get_bahr_projects`:
+      {...}  المشروع موجود
+      {}     قرينا فعلاً والمعرّف ده مش موجود
+      None   مقدرناش نقرا
+    """
+    from services import supabase_store
+    details = supabase_store.get_project_details(project_id)
+    if details is not None:
+        return details
+
     if firestore_db is None:
-        return {}
+        return None
     try:
         doc = firestore_db.collection("projects").document(project_id).get()
         if doc.exists:
@@ -996,7 +977,7 @@ def get_project_details(project_id):
         return {}
     except Exception as e:
         logger.error(f"❌ خطأ في جلب تفاصيل المشروع: {e}")
-        return {}
+        return None                     # فشل قراءة، مش "مش موجود"
 
 # ============================================================
 # 🔄 Recurring Reminders — التذكيرات المتكررة

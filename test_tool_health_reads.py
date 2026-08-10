@@ -128,21 +128,26 @@ def main():
             assert ev["status"] == "DEGRADED", ev
 
     def real_use_failures_are_read_too():
-        """مجموعة الفشل الحقيقي بتتقرا بنفس منطق النافذة."""
+        """مجموعة الفشل الحقيقي بتتقرا بنفس منطق النافذة.
+
+        اسم الأداة هنا عيّنة بس -- المفحوص هو النافذة الزمنية. كان
+        `create_project`، واتشالت في هجرة المشاريع لـSupabase
+        (2026-08-10) فبقى `evaluate_all_tools` مبيرجعهاش والاختبار
+        بيقع بـKeyError قبل ما يوصل للفحص أصلاً."""
         seed = {TOOL_HEALTH_CHECKS_COLLECTION: {}, TOOL_FAILURES_LOG_COLLECTION: {}}
         for i in range(3):
             seed[TOOL_FAILURES_LOG_COLLECTION][f"rf_{i}"] = {
-                "tool_name": "create_project", "error_type": "PermissionDenied",
+                "tool_name": "update_project_status", "error_type": "PermissionDenied",
                 "failed_at": (now - timedelta(hours=3)).isoformat(),
                 "evidence_event_id": f"ev_rf_{i}",
             }
         seed[TOOL_FAILURES_LOG_COLLECTION]["ancient"] = {
-            "tool_name": "create_project", "error_type": "PermissionDenied",
+            "tool_name": "update_project_status", "error_type": "PermissionDenied",
             "failed_at": (now - timedelta(days=40)).isoformat(),
             "evidence_event_id": "ev_ancient",
         }
         with use_fake_firestore(seed=seed):
-            ev = eng.evaluate_all_tools()["create_project"]
+            ev = eng.evaluate_all_tools()["update_project_status"]
             assert ev["status"] == "DEGRADED", ev
             assert ev["detail"]["failures_total"] == 3, (
                 "السجل القديم اتحسب: " + str(ev["detail"])

@@ -84,8 +84,12 @@ class AdamMind:
         "delete_expense":     ["امسح المصروف", "احذف المصروف"],
         "get_weather":        ["الطقس", "الجو", "weather"],
         "get_projects":       ["المشاريع", "مشاريعي", "projects", "bahr os"],
+        # "حدث المشروع" لسه هنا -- آدم بيكتب حالة المشروع فعلاً
+        # (status/deadline/completion) عن طريق update_project_status.
         "update_project":     ["حدث المشروع", "وضع المشروع", "update project"],
-        "create_project":     ["مشروع جديد", "انشئ مشروع", "create project"],
+        # "مشروع جديد" اتشال في هجرة 2026-08-10: المشروع بيتفتح من BAHR OS
+        # بس، فمفيش نية توجّه لأداة مش موجودة. الطلب بيروح للمسار العادي،
+        # وقاعدة ملكية المشاريع في البرومبت بتوجّه أحمد لـBAHR OS.
         "get_loans":          ["الاقساط", "القسط", "ديوني", "loans"],
         "get_graph":          ["الجراف", "خريطة المعرفة", "graph"],
         "add_graph_node":     ["اضف للجراف", "سجل في الجراف", "add to graph"],

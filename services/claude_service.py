@@ -117,6 +117,8 @@ def build_system_prompt_parts(pending_tasks=None, memory_summary=None):
 
 قاعدة المقايسة: أول ما أحمد يطلب تكلفة أو تقدير أو مقايسة لمشروع، استخدم estimate_project_cost -- **ممنوع تحسب بإيدك في الرد**. الأداة بتجيب المساحات المحسوبة حتميًا من الأبعاد المكتوبة في البلان وتضربها في أسعاره المسجّلة، وأي حساب منك في النص بيتخطى الحمايتين دول. ابعت المصنعية والخامة **بندين منفصلين** (قرار أحمد -- بيفصلهم في شغله فعلًا)، وأي بند بالمحيط أو المتر الطولي أو بالقطعة ابعته basis=manual بكميته لأن الارتفاعات والمحيطات مش مكتوبة في البلان. ولو رجعت قايمة "مش محسوب"، اعرضها على أحمد كما هي -- دي أهم جزء في الرد لأنها بتقوله بالظبط إيه اللي ناقص عشان المقايسة تكمل.
 
+قاعدة ملكية المشاريع (خط أحمر): مشاريع BAHR OS ملكيتها مقسومة بالعمود مش بالجدول. **الهوية** (اسم المشروع، العميل، المساحة، المستوى، المشرفين) بتتفتح وبتتعدل وبتتمسح من BAHR OS بس -- مالكش أي أداة تعملها، ولو أحمد طلب واحدة منهم قوله يعملها من BAHR OS في جملة واحدة. **ممنوع منعًا باتًا** تقول "تم إنشاء المشروع" أو "تم الحذف" أو "عدّلت المساحة" -- انت مش قادر تعمل أي واحدة فيهم، والادعاء ده بيخلي أحمد يفتكر حاجة اتعملت وهي ما اتعملتش. اللي انت بتكتبه هو **الحالة** بس: status وdeadline وcompletion وlast_report وnotes، عن طريق update_project_status -- ودي أعمدة مفيش ليها شاشة في BAHR OS أصلًا، فانت المصدر الوحيد ليها.
+
 قاعدة ملفات المشاريع (مهمة جدًا): أول ما اسم مشروع أو عميل تصميم يتقال -- حتى عابرًا -- استخدم get_project_file فورًا عشان ترد وأنت فاكر تفاصيله المتسجلة، وأي معلومة مشروع جديدة تتقال سجلها فورًا بـ save_project_fact في فئتها الصح من غير ما تستنى طلب. معلومات المشاريع بتتسجل هناك مش في save_memory_note.
 
 قاعدة المساحات (خط أحمر): المساحات المحسوبة في الملف (المكتوب جنبها "محسوبة من الأبعاد المكتوبة") محسوبة حسابيًا بالكود -- استخدمها زي ما هي ومتعيدش حسابها بنفسك. وأي فراغ ملوش أبعاد مكتوبة في البلان أو من أحمد يتقال عنه صراحة "غير محسوب" -- ممنوع منعًا باتًا تقدّر مساحته من شكل الرسم أو بالمقارنة بفراغ تاني، رقم غلط أسوأ من رقم ناقص.
@@ -149,10 +151,8 @@ def build_system_prompt_parts(pending_tasks=None, memory_summary=None):
 - get_human_model: اجلب كل المعلومات المحفوظة عن أحمد (عيلته، شغله، تفضيلاته)
 - update_human_model: حدّث أو صحح معلومة عن أحمد في نموذجه الشخصي
 - get_weather: اجلب الطقس الحالي للمواقع (البيت/6 أكتوبر/التجمع/الكل) — استخدمها تلقائياً في الـ Morning Brief
-- get_bahr_projects: اجلب كل مشاريع Bahr OS (العميل، المساحة، الحالة، المشرفين)
-- create_project: انشئ مشروع جديد في Bahr OS
-- update_project_details: عدّل بيانات مشروع (عميل/مساحة/مشرفين/حالة)
-- delete_project: احذف مشروع (بعد تأكيد من أحمد فقط)
+- get_bahr_projects: اجلب كل مشاريع BAHR OS (الاسم، العميل، المساحة، الحالة، الإنجاز، التسليم)
+- update_project_status: حدّث **حالة** مشروع بس (status/deadline/completion/last_report/notes)
 - add_site: اضف موقع جديد في Bahr Sites مرتبط بمشروع
 - get_bahr_sites: اجلب مواقع Bahr Sites
 - get_project_details: اجلب تفاصيل مشروع معين بالـ ID
@@ -937,46 +937,18 @@ TOOLS = [
             "required": []
         }
     },
-    {
-        "name": "create_project",
-        "description": "ينشئ مشروع جديد في Bahr OS. استخدمها لما أحمد يقول اضف مشروع جديد.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "client":      {"type": "string", "description": "اسم العميل"},
-                "area":        {"type": "number", "description": "المساحة بالمتر المربع"},
-                "supervisors": {"type": "array",  "items": {"type": "string"}, "description": "إيميلات المشرفين"},
-                "status":      {"type": "string", "description": "حالة المشروع (افتراضي: active)"}
-            },
-            "required": ["client"]
-        }
-    },
-    {
-        "name": "update_project_details",
-        "description": "يعدل بيانات مشروع موجود — العميل، المساحة، المشرفين، الحالة.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "project_id":  {"type": "string", "description": "ID المشروع"},
-                "client":      {"type": "string", "description": "اسم العميل الجديد"},
-                "area":        {"type": "number", "description": "المساحة الجديدة"},
-                "supervisors": {"type": "array",  "items": {"type": "string"}, "description": "إيميلات المشرفين الجدد"},
-                "status":      {"type": "string", "description": "الحالة الجديدة"}
-            },
-            "required": ["project_id"]
-        }
-    },
-    {
-        "name": "delete_project",
-        "description": "يحذف مشروع من Bahr OS. استخدمها بعد تأكيد من أحمد فقط.",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "project_id": {"type": "string", "description": "ID المشروع"}
-            },
-            "required": ["project_id"]
-        }
-    },
+    # ------------------------------------------------------------------
+    # تلات أدوات مشاريع اتشالوا في هجرة 2026-08-10:
+    #
+    #   create_project / delete_project -- المشروع بيتولد ويتمسح من
+    #       BAHR OS بس. مفيش أداة مقفولة برسالة مكانهم **عن قصد**: أداة
+    #       موجودة الموديل هيناديها ويحرق جولة API كاملة قبل ما يعرف إنها
+    #       مرفوضة. التوجيه بقى قاعدة في البرومبت، فالرد في جولة واحدة.
+    #
+    #   update_project_details -- بعد ما اتقيّد على أعمدة آدم بقى نسخة
+    #       طبق الأصل من update_project_status تحت. أداتين بنفس المجال
+    #       بالظبط بتخلي اختيار الموديل عشوائي ومحدش يكسب.
+    # ------------------------------------------------------------------
     {
         "name": "add_site",
         "description": "يضيف موقع جديد في Bahr Sites مرتبط بمشروع.",
@@ -1003,16 +975,21 @@ TOOLS = [
     },
     {
         "name": "update_project_status",
-        "description": "يحدّث بيانات مشروع في Bahr OS — status, deadline, completion, last_updated, notes. استخدمها بعد ما أحمد يوافق على التحديث.",
+        "description": (
+            "يحدّث **حالة** مشروع في BAHR OS: status, deadline, completion, "
+            "last_report, notes. استخدمها بعد ما أحمد يوافق على التحديث. "
+            "اسم المشروع والعميل والمساحة والمشرفين مش من هنا -- دول بيتعدلوا "
+            "من BAHR OS نفسه."
+        ),
         "input_schema": {
             "type": "object",
             "properties": {
                 "project_id":  {"type": "string",  "description": "ID المشروع مثل PRJ-MRE9OHLK"},
                 "status":      {"type": "string",  "description": "حالة المشروع: active / delayed / suspended / completed"},
                 "deadline":    {"type": "string",  "description": "تاريخ التسليم YYYY-MM-DD"},
-                "completion":  {"type": "integer", "description": "نسبة الإنجاز 0-100"},
+                "completion":  {"type": "string",  "description": "نسبة الإنجاز -- عمود نصي في Supabase"},
                 "last_report": {"type": "string",  "description": "تاريخ آخر تقرير YYYY-MM-DD"},
-                "notes":       {"type": "string",  "description": "ملاحظات إضافية"}
+                "notes":       {"type": "string",  "description": "ملاحظات آدم على المشروع (بتتكتب في adam_notes)"}
             },
             "required": ["project_id"]
         }
@@ -1640,16 +1617,27 @@ def _execute_tool(tool_name, tool_input, chat_id):
         elif tool_name == "get_bahr_projects":
             from services.firebase_service import get_bahr_projects
             projects = get_bahr_projects()
-            if not projects:
-                result = "مفيش مشاريع مسجلة في Bahr OS"
+            # None = مقدرتش أقرا. `if not projects` لوحدها كانت بتخلط
+            # الحالة دي بـ"مفيش مشاريع" -- وهي الخلطة اللي بتحبس الداتا.
+            if projects is None:
+                result = ("⚠️ مش قادر أقرا المشاريع دلوقتي (Supabase وFirestore "
+                          "الاتنين مردوش). ده مش معناه إن مفيش مشاريع.")
+            elif not projects:
+                result = "مفيش مشاريع مسجلة في BAHR OS"
             else:
                 lines = []
                 for p in projects:
                     supervisors = ", ".join(p.get("supervisors", []))
-                    lines.append(
-                        f"- {p['id']} | عميل: {p['client']} | مساحة: {p['area']} | مشرفين: {supervisors}"
-                    )
-                result = "مشاريع Bahr OS:" + chr(10) + chr(10).join(lines)
+                    bits = [f"- {p['id']}"]
+                    if p.get("name"):       bits.append(f"اسم: {p['name']}")
+                    bits.append(f"عميل: {p['client']}")
+                    bits.append(f"مساحة: {p['area']}")
+                    if p.get("status"):     bits.append(f"حالة: {p['status']}")
+                    if p.get("completion"): bits.append(f"إنجاز: {p['completion']}")
+                    if p.get("deadline"):   bits.append(f"تسليم: {p['deadline']}")
+                    if supervisors:         bits.append(f"مشرفين: {supervisors}")
+                    lines.append(" | ".join(bits))
+                result = "مشاريع BAHR OS:" + chr(10) + chr(10).join(lines)
 
         elif tool_name == "get_bahr_sites":
             from services.firebase_service import get_bahr_sites
@@ -1664,16 +1652,35 @@ def _execute_tool(tool_name, tool_input, chat_id):
             from services.firebase_service import get_project_details
             project_id = tool_input.get("project_id", "")
             details = get_project_details(project_id)
-            if not details:
+            if details is None:
+                result = ("⚠️ مش قادر أقرا تفاصيل المشروع دلوقتي. "
+                          "ده مش معناه إن المشروع مش موجود.")
+            elif not details:
                 result = f"مش لاقي مشروع بالـ ID: {project_id}"
             else:
-                result = (
-                    f"تفاصيل {project_id}:" + chr(10) +
-                    f"عميل: {details['client']}" + chr(10) +
-                    f"مساحة: {details['area']}" + chr(10) +
-                    f"مشرفين: {', '.join(details['supervisors'])}" + chr(10) +
-                    f"بنود: {len(details['items'])} بند"
-                )
+                lines = [f"تفاصيل {project_id}:"]
+                if details.get("name"):
+                    lines.append(f"اسم: {details['name']}")
+                lines.append(f"عميل: {details.get('client', '')}")
+                lines.append(f"مساحة: {details.get('area', '')}")
+                for label, key in (("حالة", "status"), ("إنجاز", "completion"),
+                                   ("تسليم", "deadline"), ("آخر تقرير", "last_report"),
+                                   ("ملاحظاتي", "adam_notes")):
+                    if details.get(key):
+                        lines.append(f"{label}: {details[key]}")
+                if details.get("supervisors"):
+                    lines.append("مشرفين: " + ", ".join(details["supervisors"]))
+
+                # المراحل التلاتة متساوية في الشكل -- `final` تقدير مرحلة
+                # الفينيش مش ملخص المشروع (ميجريشن 003 بتصحّح الفهم ده).
+                phase_names = {"foundation": "التأسيس", "finish": "الفينيش",
+                               "final": "الفينيش والديكور"}
+                for phase, data in (details.get("phases") or {}).items():
+                    lines.append(
+                        f"مقايسة {phase_names.get(phase, phase)}: "
+                        f"{data['items_count']} بند | إجمالي: {data['total']:,.0f}"
+                    )
+                result = chr(10).join(lines)
 
         elif tool_name == "create_recurring_reminder":
             from services.recurring_reminders_service import save_recurring_reminder
@@ -1896,30 +1903,8 @@ def _execute_tool(tool_name, tool_input, chat_id):
             except Exception as ex:
                 result = f"❌ خطأ: {ex}"
 
-        elif tool_name == "create_project":
-            from services.firebase_service import create_bahr_project
-            client      = tool_input.get("client", "")
-            area        = tool_input.get("area", 0)
-            supervisors = tool_input.get("supervisors", [])
-            status      = tool_input.get("status", "active")
-            project_id, msg = create_bahr_project(client, area, supervisors, status)
-            if project_id:
-                result = "تم انشاء المشروع: " + project_id + " — العميل: " + client
-            else:
-                result = "فشل انشاء المشروع: " + msg
-
-        elif tool_name == "update_project_details":
-            from services.firebase_service import update_bahr_project
-            project_id = tool_input.get("project_id", "")
-            kwargs = {k: v for k, v in tool_input.items() if k != "project_id"}
-            ok, msg = update_bahr_project(project_id, **kwargs)
-            result = "تم تعديل المشروع " + project_id if ok else "فشل: " + msg
-
-        elif tool_name == "delete_project":
-            from services.firebase_service import delete_bahr_project
-            project_id = tool_input.get("project_id", "")
-            ok, msg = delete_bahr_project(project_id)
-            result = "تم حذف المشروع " + project_id if ok else "فشل: " + msg
+        # create_project / update_project_details / delete_project اتشالوا
+        # في هجرة 2026-08-10. الشرح عند تعريفات TOOLS فوق.
 
         elif tool_name == "add_site":
             from services.firebase_service import add_bahr_site
@@ -1984,40 +1969,27 @@ def _execute_tool(tool_name, tool_input, chat_id):
                 result = "القرارات المسجلة:\n" + "\n".join(lines)
 
         elif tool_name == "update_project_status":
-            from services.firebase_service import firestore_db
+            # اتنقلت لـSupabase في هجرة 2026-08-10، وبقت المسار الوحيد
+            # اللي آدم بيكتب بيه على المشاريع. الكتابة بتعدي على
+            # `update_bahr_project` اللي بيرفض أي عمود من أعمدة BAHR OS.
+            from services.firebase_service import update_bahr_project
 
             project_id = tool_input.get("project_id", "").strip()
             if not project_id:
                 result = "❌ محتاج project_id"
             else:
-                try:
-                    update_data = {"last_updated": now_cairo().isoformat()}
+                fields = {}
+                for key in ("status", "deadline", "completion", "last_report"):
+                    if key in tool_input:
+                        fields[key] = tool_input[key]
+                # `notes` في الأداة = `adam_notes` في القاعدة. العمودين
+                # منفصلين بالقصد: `note` (مفرد) بتاع الفرونت، و`adam_notes`
+                # بتاع آدم -- ولا واحد شايف التاني (ميجريشن 003).
+                if "notes" in tool_input:
+                    fields["adam_notes"] = tool_input["notes"]
 
-                    if "status"      in tool_input: update_data["status"]      = tool_input["status"]
-                    if "deadline"    in tool_input: update_data["deadline"]    = tool_input["deadline"]
-                    if "completion"  in tool_input: update_data["completion"]  = tool_input["completion"]
-                    if "last_report" in tool_input: update_data["last_report"] = tool_input["last_report"]
-                    if "notes"       in tool_input: update_data["notes"]       = tool_input["notes"]
-
-                    from services.update_guard import (
-                        document_exists, list_document_ids, missing_document_message,
-                    )
-
-                    if not document_exists("projects", project_id):
-                        # حارس الوجود: merge=True بينشئ المستند لو مش موجود --
-                        # معرّف غلط كان بيولّد مشروع وهمي بصمت
-                        result = missing_document_message(
-                            "مشروع", project_id, list_document_ids("projects")
-                        )
-                    else:
-                        firestore_db.collection("projects").document(project_id).set(
-                            update_data, merge=True
-                        )
-
-                        lines = [f"  • {k}: {v}" for k, v in update_data.items()]
-                        result = f"✅ تم تحديث {project_id}:\n" + "\n".join(lines)
-                except Exception as ex:
-                    result = f"❌ خطأ في التحديث: {ex}"
+                ok, msg = update_bahr_project(project_id, **fields)
+                result = ("✅ " + msg) if ok else ("❌ " + msg)
 
         elif tool_name == "get_eye_expert_prompt":
             from services.firebase_service import firestore_db

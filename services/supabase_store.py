@@ -1158,3 +1158,213 @@ def graph_get_node(node_id):
     except Exception as e:
         logger.warning(f"⚠️ [Supabase] قراءة عقدة فشلت: {str(e)[:80]}")
         return None
+
+
+# ============================================================
+# 🏗️ مشاريع BAHR OS (هجرة 2026-08-10)
+# ============================================================
+# ملكية الأعمدة موثّقة في ميجريشن 003 وهي أساس التقسيم هنا:
+#   BAHR OS بيكتب: name, client, area, level, note, allowed_supervisors
+#   آدم بيكتب:     status, deadline, completion, last_report, adam_notes
+# المشروع بيتولد ويتمسح من BAHR OS. آدم بيكتب حالته بس.
+
+# الأعمدة اللي آدم مسموح له يكتبها -- أي حاجة برة الخمسة دول بتترفض
+# برسالة واضحة بدل ما تتكتب بصمت فوق شغل BAHR OS.
+ADAM_OWNED_PROJECT_COLUMNS = (
+    "status", "deadline", "completion", "last_report", "adam_notes",
+)
+
+
+def _can_read_projects():
+    """قادرين نجاوب عن المشاريع بثقة؟ (متصل + المفتاح بيتخطى RLS)"""
+    if _client() is None:
+        return False
+    from services import supabase_service
+    if not supabase_service.bypasses_rls():
+        logger.error(
+            "❌ [Supabase] المفتاح المضبوط مش بيتخطى RLS -- قراءة المشاريع "
+            "هترجّع [] كذبًا بدل ما ترمي خطأ. بنقول 'مقدرتش أقرا' بدل "
+            "'مفيش مشاريع'."
+        )
+        return False
+    return True
+
+
+def get_projects(limit=20):
+    """قايمة المشاريع، أو None لو مقدرناش نقرا.
+
+    None هنا معناها **"مش قادر أجاوب"** مش "فاضي". المنادي بيرجع لـFirestore
+    عند None، وبيعرض "مفيش مشاريع" عند [] بس.
+    """
+    if not _can_read_projects():
+        return None
+    try:
+        resp = (
+            _client().table("projects")
+            .select("id, name, client, area, status, allowed_supervisors, "
+                    "created_by, deadline, completion, last_report, adam_notes")
+            .order("updated_at", desc=True)
+            .limit(limit)
+            .execute()
+        )
+        return [
+            {
+                "id": r.get("id"),
+                "name": r.get("name") or "",
+                "client": r.get("client") or "",
+                "area": r.get("area") if r.get("area") is not None else "",
+                "status": r.get("status") or "",
+                "supervisors": r.get("allowed_supervisors") or [],
+                "created_by": r.get("created_by") or "",
+                "deadline": r.get("deadline") or "",
+                "completion": r.get("completion") or "",
+                "last_report": r.get("last_report") or "",
+                "adam_notes": r.get("adam_notes") or "",
+            }
+            for r in (resp.data or [])
+        ]
+    except Exception as e:
+        logger.error("❌ [Supabase] قراءة المشاريع فشلت: " + str(e)[:120])
+        return None
+
+
+def get_project_details(project_id):
+    """تفاصيل مشروع واحد + تقديرات مراحله، أو None لو مقدرناش نقرا.
+
+    {} معناها "المعرّف ده مش موجود" -- وده مختلف عن None.
+
+    الفرق عن نسخة Firestore مقصود: هناك كان بيقرا `items` (عمود وهمي آدم
+    بيكتبه [] وعمره ما بيملاه) وبيعرض `finaldata` كأنها ملخص المشروع.
+    ميجريشن 003 بتصحّح ده صراحةً: `finaldata` **تقدير مرحلة الفينيش**،
+    مطابقة في الشكل لـfoundation وfinish -- مش ملخص. البنود الحقيقية في
+    `project_phase_items`، والتبعية بينها بالترتيب (`position`) مش بمفتاح،
+    فالترتيب لازم يتحفظ زي ما هو.
+    """
+    if not _can_read_projects():
+        return None
+    try:
+        resp = (
+            _client().table("projects").select("*")
+            .eq("id", str(project_id)).limit(1).execute()
+        )
+        if not resp.data:
+            return {}
+        r = resp.data[0]
+
+        phases = {}
+        est = (
+            _client().table("project_phase_estimates")
+            .select("id, phase, client_text, project_text, area_text")
+            .eq("project_id", str(project_id)).execute()
+        )
+        for e in (est.data or []):
+            items = (
+                _client().table("project_phase_items")
+                .select("position, description, unit, qty, price, is_sub")
+                .eq("estimate_id", e["id"])
+                .order("position")          # الترتيب حامل معنى التبعية
+                .execute()
+            )
+            rows = items.data or []
+            phases[e["phase"]] = {
+                "client_text": e.get("client_text") or "",
+                "project_text": e.get("project_text") or "",
+                "area_text": e.get("area_text") or "",
+                "items": rows,
+                "items_count": len(rows),
+                "total": sum(
+                    float(i.get("qty") or 0) * float(i.get("price") or 0)
+                    for i in rows
+                ),
+            }
+
+        return {
+            "id": r.get("id"),
+            "name": r.get("name") or "",
+            "client": r.get("client") or "",
+            "area": r.get("area") if r.get("area") is not None else "",
+            "level": r.get("level") or "",
+            "status": r.get("status") or "",
+            "supervisors": r.get("allowed_supervisors") or [],
+            "deadline": r.get("deadline") or "",
+            "completion": r.get("completion") or "",
+            "last_report": r.get("last_report") or "",
+            "adam_notes": r.get("adam_notes") or "",
+            "note": r.get("note") or "",
+            "phases": phases,
+        }
+    except Exception as e:
+        logger.error("❌ [Supabase] قراءة تفاصيل المشروع فشلت: " + str(e)[:120])
+        return None
+
+
+def project_exists(project_id):
+    """True / False / None (مقدرناش نتأكد).
+
+    الحالة التالتة مهمة: حارس الوجود مايقدرش يقول "المشروع مش موجود" وهو
+    أصلاً مش قادر يقرا -- ده بيولّد رسالة كذب عن مشروع موجود فعلاً.
+    """
+    if not _can_read_projects():
+        return None
+    try:
+        resp = (
+            _client().table("projects").select("id")
+            .eq("id", str(project_id)).limit(1).execute()
+        )
+        return bool(resp.data)
+    except Exception as e:
+        logger.error("❌ [Supabase] فحص وجود المشروع فشل: " + str(e)[:120])
+        return None
+
+
+def list_project_ids(limit=30):
+    """معرّفات المشاريع لرسالة «قصدك أنهي واحد؟» -- [] لو مقدرناش نقرا."""
+    if not _can_read_projects():
+        return []
+    try:
+        resp = _client().table("projects").select("id").limit(limit).execute()
+        return [r["id"] for r in (resp.data or []) if r.get("id")]
+    except Exception:
+        return []
+
+
+def update_project_adam_fields(project_id, fields):
+    """يكتب أعمدة آدم بس. بيرجع (ok, رسالة).
+
+    الرفض صريح بالقصد: لو الموديل حاول يعدّل الاسم أو المساحة، الرد بيقول
+    ليه ومن فين تتعمل، بدل ما الحقل يتجاهَل في صمت وأحمد يفتكرها اتنفذت.
+    """
+    if _client() is None:
+        return False, "Supabase مش متصل"
+
+    rejected = [k for k in fields if k not in ADAM_OWNED_PROJECT_COLUMNS]
+    if rejected:
+        return False, (
+            "الحقول دي بتتعدّل من BAHR OS مش من هنا: "
+            + "، ".join(rejected)
+            + ". اللي ينفع من آدم: "
+            + "، ".join(ADAM_OWNED_PROJECT_COLUMNS)
+        )
+
+    payload = {k: v for k, v in fields.items() if v is not None}
+    if not payload:
+        return False, "مفيش حاجة تتحدّث"
+
+    exists = project_exists(project_id)
+    if exists is None:
+        return False, "مش قادر أتأكد إن المشروع موجود دلوقتي -- مكتبتش حاجة."
+    if not exists:
+        ids = list_project_ids()
+        listing = "، ".join(ids) if ids else "مفيش مشاريع مقروءة"
+        return False, "مفيش مشروع بالمعرّف " + str(project_id) + ". الموجود: " + listing
+
+    changed = "، ".join(payload)
+    payload["updated_at"] = _now_iso()
+    try:
+        _client().table("projects").update(payload).eq(
+            "id", str(project_id)
+        ).execute()
+        return True, "تم التعديل: " + changed
+    except Exception as e:
+        logger.error("❌ [Supabase] تعديل المشروع فشل: " + str(e)[:120])
+        return False, str(e)[:150]
