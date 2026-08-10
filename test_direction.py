@@ -373,8 +373,24 @@ class TestObjectionConflicts(unittest.TestCase):
         self.assertEqual(len(out), 1)
         self.assertEqual(out[0]["hits"], ["أخضر غويط"])
 
-    def test_unrelated_objection_is_silent(self):
-        self.assertEqual(self._check("الميزانية عالية شوية"), [])
+    def test_unmatched_objection_is_spoken_not_dropped(self):
+        # كان بيرجع [] -- والصمت ده هو اللي خلّى اعتراض حقيقي يعدي يوم
+        # ١٠ أغسطس. الاعتراض اللي المطابقة مامسكتهوش لازم يتقال.
+        out = self._check("الميزانية عالية شوية")
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]["hits"], [])
+        self.assertFalse(out[0]["matched"])
+        self.assertIn("مقدرتش أربط الاعتراض", out[0]["text"])
+
+    def test_the_real_case_that_passed_in_silence(self):
+        # اسم مش موجود في البالتة + رد مسجّل إنه اتنفّذ = أخطر حالة،
+        # وكانت بتخرج فاضية تمامًا.
+        out = self._check("العميل عاوز يبدل المينت جرين لاصفر مانجو",
+                          "تم تغيير الكالور باليت")
+        self.assertEqual(len(out), 1)
+        self.assertEqual(out[0]["hits"], [])
+        self.assertIn("تم تغيير الكالور باليت", out[0]["text"])
+        self.assertIn("مقدرتش أربط الاعتراض", out[0]["text"])
 
     def test_answered_but_unchanged_is_the_loudest_case(self):
         out = self._check("الأخضر تقيل", "نزّلناه لزيتوني فاتح")
@@ -399,9 +415,11 @@ class TestObjectionConflicts(unittest.TestCase):
                                              [{"said": "   ", "did": "x"}]), [])
 
     def test_short_words_do_not_match(self):
-        # كلمات أقل من 3 حروف بتلقط أي حاجة -- متستخدمش للمطابقة
+        # كلمات أقل من 3 حروف بتلقط أي حاجة -- متستخدمش للمطابقة.
+        # الاعتراض بيتقال، بس **من غير** تطابق كاذب.
         pal = {"colors": [{"name": "بن", "hex": "#111", "share": 0.6, "role": "سايد"}]}
-        self.assertEqual(ds.check_objections(pal, [], [{"said": "المطبخ ضيق"}]), [])
+        out = ds.check_objections(pal, [], [{"said": "المطبخ ضيق"}])
+        self.assertEqual(out[0]["hits"], [])
 
     def test_no_objections_no_output(self):
         self.assertEqual(ds.check_objections(self.PAL, self.MATS, []), [])
@@ -409,3 +427,56 @@ class TestObjectionConflicts(unittest.TestCase):
     def test_build_direction_carries_the_conflicts(self):
         row = {"answers": {}, "objections": [{"said": "مفيش حاجة", "did": ""}]}
         self.assertIn("objection_conflicts", ds.build_direction(row))
+
+
+class TestObjectionNotMoved(unittest.TestCase):
+    """«قلت إنك غيّرت» -- والتصحيح هو القناة الوحيدة اللي بتحرّك البالتة."""
+
+    PAL = {"colors": [{"name": "أخضر غويط", "hex": "#2E5A50",
+                       "share": 0.1, "role": "لمسة"}]}
+    OBJ_AT = "2026-08-10T07:37:38.031Z"
+
+    def _check(self, corrections, did="غيّرناه", at=None):
+        return ds.check_objections(
+            self.PAL, [],
+            [{"said": "المينت جرين تقيل", "did": did,
+              "at": at if at is not None else self.OBJ_AT}],
+            corrections)
+
+    def test_no_corrections_at_all_means_nothing_moved(self):
+        out = self._check({})
+        self.assertTrue(out[0]["unmoved"])
+        self.assertIn("مفيش ولا تصحيح", out[0]["text"])
+
+    def test_correction_after_the_reply_stays_quiet(self):
+        # حصل تصحيح بعد الرد -> يمكن يكون نفّذه، فمنقولش إنه ما اتحركش
+        out = self._check({"البالتة": {"to": "فاتح هادي",
+                                       "at": "2026-08-10T09:00:00Z"}})
+        self.assertFalse(out[0]["unmoved"])
+        self.assertNotIn("مفيش ولا تصحيح", out[0]["text"])
+
+    def test_correction_before_the_reply_still_flags(self):
+        out = self._check({"البالتة": {"to": "فاتح هادي",
+                                       "at": "2026-08-09T10:00:00Z"}})
+        self.assertTrue(out[0]["unmoved"])
+
+    def test_no_reply_recorded_no_claim(self):
+        # مفيش «قلت إنك غيّرت» -> مفيش وعد يتقاس عليه
+        self.assertFalse(self._check({}, did="")[0]["unmoved"])
+
+    def test_unparsable_time_says_nothing(self):
+        # الوقت المجهول مابيتحوّلش لادعاء
+        self.assertFalse(self._check({}, at="امبارح")[0]["unmoved"])
+
+    def test_missing_time_says_nothing(self):
+        self.assertFalse(self._check({}, at="")[0]["unmoved"])
+
+    def test_direction_at_is_not_used_as_the_anchor(self):
+        # direction_at بيتكتب مع كل نداء على /direction -- تاريخ زيارة مش
+        # تاريخ تغيير. لو اتبنى عليه، التحذير بيختفي أول ما الشاشة تتفتح.
+        row = {"answers": {}, "corrections": {},
+               "direction_at": "2026-08-11T00:00:00Z",
+               "objections": [{"said": "المينت جرين تقيل",
+                               "did": "غيّرناه", "at": self.OBJ_AT}]}
+        out = ds.build_direction(row)["objection_conflicts"]
+        self.assertTrue(out[0]["unmoved"])

@@ -22,6 +22,8 @@
 قبل ما يعرض رقم.
 """
 
+from datetime import datetime, timezone
+
 from utils.logger import logger
 from services import signature as _sig
 
@@ -507,7 +509,49 @@ def _name_words(name):
     return words
 
 
-def check_objections(palette, materials, objections):
+def _parse_at(value):
+    """وقت من نص ISO -- و`None` لو مش مفهوم.
+
+    المجهول مابيتحوّلش لادعاء: اللي فوق بيسكت لما ده يرجع None بدل
+    ما يخمّن.
+    """
+    if not value:
+        return None
+    text = str(value).strip()
+    if text.endswith("Z"):
+        text = text[:-1] + "+00:00"
+    try:
+        out = datetime.fromisoformat(text)
+    except ValueError:
+        return None
+    return out if out.tzinfo else out.replace(tzinfo=timezone.utc)
+
+
+def _nothing_could_have_moved(objection_at, corrections):
+    """هل حصل أي حاجة تقدر تحرّك البالتة من بعد الوقت ده؟
+
+    البالتة بتتحسب من `effective_answers` -- يعني `answers` زائد
+    `corrections`. و`answers` دليل ثابت مابيتعدلش (ميجريشن ٠٠٩)، فالتصحيح
+    هو **القناة الوحيدة** اللي بتقدر تحرّك لون.
+
+    ⚠️ ومقصود إننا مانقارنش بـ`direction_at`: ده بيتكتب مع **كل** نداء
+       على /direction، يعني بيتحدّث لمجرد إن حد بصّ على الاتجاه. تاريخ
+       زيارة مش تاريخ تغيير -- ولو الإشارة اتبنت عليه، التحذير بيختفي
+       أول ما الشاشة تتفتح والبالتة حرف بحرف زي ما هي.
+    """
+    at = _parse_at(objection_at)
+    if at is None:
+        return False           # مش عارفين الوقت -> مانقولش حاجة
+    for fix in (corrections or {}).values():
+        if not isinstance(fix, dict):
+            continue
+        fixed_at = _parse_at(fix.get("at"))
+        if fixed_at and fixed_at > at:
+            return False       # حصل تصحيح بعد الرد -> يمكن يكون نفّذه
+    return True
+
+
+def check_objections(palette, materials, objections, corrections=None):
     """اعتراض العميل على حاجة لسه موجودة في الاتجاه.
 
     الماكينة **مش بتفهم** الاعتراض ومش بتغيّر البالتة. «الأخضر تقيل»
@@ -519,31 +563,58 @@ def check_objections(palette, materials, objections):
 
     ولو أحمد كتب إنه غيّره والبالتة لسه زي ما هي، ده أخطر -- الوعد
     اتقال والتصميم ما اتحركش.
+
+    ## والاعتراض اللي مااتطابقش بيتقال برضه
+
+    المطابقة بالاسم **أضعف من إنها تحكم**: «مينت جرين» و«أخضر مغبر» نفس
+    اللون بأسمين، وأي قاموس مرادفات هيفشل مع الاسم اللي بعده. ده مش ضبط،
+    ده آلية غلط لو اتحمّلت وحدها.
+
+    فاللي مااتطابقش مابيتسقطش في صمت. الصمت بيتقرا «اتنفّذ» وهو في
+    الحقيقة «مافهمتش» -- وده اللي خلّى اعتراض حقيقي يعدي يوم ١٠ أغسطس
+    من غير ولا سطر: العميل طلب يبدل لون باسم مش موجود في البالتة،
+    والماكينة سكتت، والرد اتسجّل إنه اتنفّذ.
     """
     conflicts = []
     parts = ([("البالتة", c.get("name", "")) for c in (palette or {}).get("colors", [])] +
              [("الخامات", m.get("name", "")) for m in materials or []])
 
     for o in objections or []:
-        said = _norm((o or {}).get("said") or "")
+        said_raw = (o or {}).get("said") or ""
+        said = _norm(said_raw)
         if not said.strip():
             continue
         hits = sorted({name for where, name in parts
                        if name and any(w in said for w in _name_words(name))})
-        if not hits:
-            continue
         did = ((o or {}).get("did") or "").strip()
-        joined = "، ".join(hits)
-        if did:
-            text = ("قلت «" + did + "» — بس " + joined +
-                    " لسه في الاتجاه زي ما هو.")
+        unmoved = bool(did) and _nothing_could_have_moved(
+            (o or {}).get("at"), corrections)
+
+        if hits:
+            joined = "، ".join(hits)
+            if did:
+                text = ("قلت «" + did + "» — بس " + joined +
+                        " لسه في الاتجاه زي ما هو.")
+            else:
+                text = joined + " لسه في الاتجاه، ومفيش رد متسجل على الاعتراض."
+        elif did:
+            text = ("قلت «" + did + "» — ومقدرتش أربط الاعتراض بأي حاجة "
+                    "في الاتجاه. راجعه بنفسك.")
         else:
-            text = joined + " لسه في الاتجاه، ومفيش رد متسجل على الاعتراض."
+            text = "مقدرتش أربط الاعتراض بأي حاجة في الاتجاه. راجعه بنفسك."
+
+        # إشارة مستقلة عن الأسامي تمامًا: حقيقة عن الآلية مش تخمين في الكلام
+        if unmoved:
+            text += (" ومفيش ولا تصحيح على البريف من بعد ردك — "
+                     "يعني مفيش حاجة قدرت تحرّك البالتة.")
+
         conflicts.append({
-            "said": (o or {}).get("said") or "",
+            "said": said_raw,
             "did": did,
             "hits": hits,
+            "matched": bool(hits),
             "answered": bool(did),
+            "unmoved": unmoved,
             "text": text,
         })
     return conflicts
@@ -564,7 +635,8 @@ def build_direction(row, price_lookup=None):
         "composition": composition_notes(materials),
         "material_issues": check_materials(materials),
         "objection_conflicts": check_objections(
-            palette, materials, (row or {}).get("objections") or []),
+            palette, materials, (row or {}).get("objections") or [],
+            (row or {}).get("corrections") or {}),
         "tier": budget_tier(answers),
     }
 
