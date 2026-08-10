@@ -203,6 +203,90 @@ def show_handover_command(message):
         logger.error(f"❌ خطأ في /handover: {e}")
         send_error_message(message, str(e))
 
+def _fetch_brief(client, arg):
+    """بريفات مكتملة من Supabase، وواحد منهم بالاسم. بترجع (بريف، رسالة)."""
+    from services.client_briefs_service import _dedupe_latest, find_brief
+    resp = (client.table("client_briefs").select("*")
+            .eq("is_final", True)
+            .order("created_at", desc=True).limit(200).execute())
+    return find_brief(arg, _dedupe_latest(resp.data or []))
+
+
+@bot.message_handler(commands=['moodboard'])
+def moodboard_command(message):
+    """لوحة من الاتجاه المخزّن -- نفس البالتة ونفس الخامات، صورة.
+
+    اللوحة مش بتتولد من الهوا: بتاخد أسامي الألوان والخامات اللي
+    `/direction` حسبها بقواعد التوقيع. يعني الصورة والكلام بيقولوا نفس
+    الحاجة -- ودي كانت الفجوة: مولّد لوحات شغال من 4 أغسطس ومربوطش
+    بالاتجاه.
+    """
+    try:
+        from datetime import datetime, timezone
+        from services import supabase_service
+        from services.brief_reader import effective_answers
+        from services.direction_service import build_direction
+        from services.moodboard_service import generate_mood_board
+        set_chat_id(message.chat.id)
+
+        arg = message.text.replace('/moodboard', '', 1).strip()
+        client = supabase_service.supabase_client
+        if client is None:
+            bot.reply_to(message, "⚠️ مش قادر أقرا من Supabase دلوقتي.")
+            return
+
+        brief, err = _fetch_brief(client, arg)
+        if err:
+            bot.reply_to(message, err)
+            return
+
+        answers = effective_answers(brief)
+        name = brief.get("client_name") or answers.get("الاسم") or "من غير اسم"
+
+        # الاتجاه المخزّن هو المصدر. لو متعملش، مفيش لوحة -- الصورة
+        # اللي بتسبق القرار بتبقى ديكور، والقرار بيتاخد عشان الصورة حلوة.
+        direction = brief.get("direction")
+        if not isinstance(direction, dict) or not direction.get("palette"):
+            bot.reply_to(message, "🎨 الاتجاه لسه متعملش لـ " + name +
+                                  ".\nابعت /direction " + str(arg or name).split(" ")[0] +
+                                  " الأول، وبعدين اللوحة هتطلع منه.")
+            return
+
+        pal = direction.get("palette") or {}
+        colors = [c.get("name", "") for c in pal.get("colors", []) if c.get("name")]
+        materials = [m.get("name", "") for m in direction.get("materials", []) if m.get("name")]
+        style = pal.get("name") or "معاصر دافي"
+
+        bot.reply_to(message, "🎨 بولّع اللوحة لـ " + name + " — " + style +
+                              "\n(دقيقة تقريبًا)")
+        image = generate_mood_board(style, colors, materials)
+
+        session_id = brief.get("session_id") or ""
+        path = "moodboard/" + session_id + ".png"
+        try:
+            client.storage.from_("site-visits").upload(
+                path, image,
+                {"content-type": "image/png", "upsert": "true"})
+        except Exception as up:
+            logger.error(f"❌ [moodboard] الرفع فشل: {up}")
+            bot.send_photo(message.chat.id, image,
+                           caption="⚠️ اللوحة طلعت بس مرفعتش — مش هتبان في العرض.")
+            return
+
+        (client.table("client_briefs")
+         .update({"moodboard_path": path,
+                  "moodboard_at": datetime.now(timezone.utc).isoformat()})
+         .eq("session_id", session_id).execute())
+
+        bot.send_photo(message.chat.id, image,
+                       caption="🎨 " + name + " — " + style +
+                               "\nاتحطت في العرض. افتح 📄 العرض من صفحة الاستبيانات.")
+
+    except Exception as e:
+        logger.error(f"❌ خطأ في /moodboard: {e}")
+        send_error_message(message, str(e))
+
+
 @bot.message_handler(commands=['direction'])
 def show_direction_command(message):
     """اتجاه مقترح لبريف: بالتة وخامات مشتقة من إجاباته ومعايرة بالتوقيع.
@@ -210,7 +294,6 @@ def show_direction_command(message):
     `/direction` = آخر بريف مكتمل · `/direction <أول 8 حروف>` = بريف بعينه.
     """
     try:
-        from services.client_briefs_service import list_unlinked_briefs, list_new_briefs
         from services.brief_reader import effective_answers
         from services.direction_service import build_direction, format_direction
         from services.price_base_service import get_prices
@@ -224,51 +307,10 @@ def show_direction_command(message):
         if client is None:
             bot.reply_to(message, "⚠️ مش قادر أقرا من Supabase دلوقتي.")
             return
-        resp = (client.table("client_briefs").select("*")
-                .eq("is_final", True)
-                .order("created_at", desc=True).limit(200).execute())
-        from services.client_briefs_service import _dedupe_latest
-        all_briefs = _dedupe_latest(resp.data or [])
-        briefs = [b for b in all_briefs if b.get("status") != "archived"]
-
-        if arg:
-            # بالاسم أو المكان -- المعرّف اسم للماكينة مش لأحمد
-            needle = arg.strip().lower()
-
-            def hit(b):
-                a = b.get("answers") or {}
-                hay = " ".join(str(x or "") for x in (
-                    b.get("client_name"), a.get("الاسم"),
-                    b.get("unit_location"), a.get("مكان الوحدة"),
-                    b.get("phone"), b.get("session_id"))).lower()
-                return needle in hay
-
-            archived_hits = [b for b in all_briefs
-                             if b.get("status") == "archived" and hit(b)]
-            briefs = [b for b in briefs if hit(b)]
-
-            # "مفيش" مربكة لو الاسم موجود بس مؤرشف -- السبب أنفع من النفي
-            if not briefs and archived_hits:
-                bot.reply_to(message, "📦 «" + arg + "» موجود بس مؤرشف. "
-                                      "رجّعه من صفحة الاستبيانات وجرب تاني.")
-                return
-
-        if not briefs:
-            bot.reply_to(message, "📭 مفيش بريف" + (" باسم «" + arg + "»." if arg else " مكتمل."))
+        brief, err = _fetch_brief(client, arg)
+        if err:
+            bot.reply_to(message, err)
             return
-
-        if arg and len(briefs) > 1:
-            names = []
-            for b in briefs[:8]:
-                a = b.get("answers") or {}
-                nm = b.get("client_name") or a.get("الاسم") or "من غير اسم"
-                where = b.get("unit_location") or a.get("مكان الوحدة") or ""
-                names.append("• " + nm + (" · " + where if where else ""))
-            bot.reply_to(message, "فيه " + str(len(briefs)) + " بريف بالاسم ده:\n" +
-                                  "\n".join(names) + "\n\nزود حروف عشان أعرف مين.")
-            return
-
-        brief = briefs[0]
         # التصحيحات بتدخل الحساب زي أي قراءة تانية
         brief = dict(brief, answers=effective_answers(brief))
 

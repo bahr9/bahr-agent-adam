@@ -140,5 +140,37 @@ class TestObjections(unittest.TestCase):
         self.assertIn("الأرضية غامقة", text)
 
 
+
+class TestApprovals(unittest.TestCase):
+    """قاعدة أحمد (2026-08-10): كل مرحلة بمستند أبروفد."""
+
+    OK = {"stage": "proposal", "how": "واتساب", "at": "2026-08-10T10:00:00Z"}
+
+    def test_all_four_stages_are_listed(self):
+        text = hs.format_handover({"client_name": "منى"})
+        for _, label in hs.STAGES:
+            self.assertIn(label, text)
+
+    def test_missing_approvals_are_named_not_just_counted(self):
+        text = hs.format_handover({"client_name": "منى"})
+        self.assertIn("مفيش اعتماد متسجل", text)
+        self.assertIn("عدّت من غير توقيع", text)
+
+    def test_recorded_approval_shows_how_and_when(self):
+        text = hs.format_handover({"client_name": "منى", "approvals": [self.OK]})
+        self.assertIn("✅ العرض الأول — واتساب", text)
+        self.assertIn("2026-08-10", text)
+
+    def test_full_approval_drops_the_warning(self):
+        rows = [dict(self.OK, stage=k) for k, _ in hs.STAGES]
+        text = hs.format_handover({"client_name": "منى", "approvals": rows})
+        self.assertNotIn("عدّت من غير توقيع", text)
+
+    def test_approval_without_how_does_not_crash(self):
+        text = hs.format_handover({"client_name": "منى",
+                                   "approvals": [{"stage": "brief"}]})
+        self.assertIn("✅ الاستبيان", text)
+
+
 if __name__ == "__main__":
     unittest.main()

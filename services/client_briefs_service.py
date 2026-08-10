@@ -212,3 +212,57 @@ def format_brief(row):
         lines.extend(rest)
 
     return "\n".join(lines)
+
+
+# ============================================================
+# البحث عن بريف بالاسم
+# ============================================================
+
+def find_brief(arg, rows):
+    """بريف واحد من الاسم أو المكان أو التليفون.
+
+    بترجع (بريف، رسالة) -- واحد بس بيبقى مليان.
+
+    ليه هنا مش في المعالج: `/direction` و`/moodboard` بيدوروا بنفس
+    الطريقة بالظبط. لما الكود اتكرر مرة اتنين، القاعدة اللي بتقول
+    "المؤرشف يتقال إنه مؤرشف مش إنه مش موجود" كانت هتعيش في مكان
+    وتنسى في التاني.
+    """
+    rows = rows or []
+    live = [b for b in rows if b.get("status") != "archived"]
+
+    if not str(arg or "").strip():
+        if not live:
+            return None, "📭 مفيش بريف مكتمل."
+        return live[0], None
+
+    needle = str(arg).strip().lower()
+
+    def hit(b):
+        a = b.get("answers") or {}
+        hay = " ".join(str(x or "") for x in (
+            b.get("client_name"), a.get("الاسم"),
+            b.get("unit_location"), a.get("مكان الوحدة"),
+            b.get("phone"), b.get("session_id"))).lower()
+        return needle in hay
+
+    hits = [b for b in live if hit(b)]
+    if not hits:
+        # "مفيش" مربكة لو الاسم موجود بس مؤرشف -- السبب أنفع من النفي
+        archived = [b for b in rows if b.get("status") == "archived" and hit(b)]
+        if archived:
+            return None, ("📦 «" + str(arg) + "» موجود بس مؤرشف. "
+                          "رجّعه من صفحة الاستبيانات وجرب تاني.")
+        return None, "📭 مفيش بريف باسم «" + str(arg) + "»."
+
+    if len(hits) > 1:
+        names = []
+        for b in hits[:8]:
+            a = b.get("answers") or {}
+            nm = b.get("client_name") or a.get("الاسم") or "من غير اسم"
+            where = b.get("unit_location") or a.get("مكان الوحدة") or ""
+            names.append("• " + nm + (" · " + where if where else ""))
+        return None, ("فيه " + str(len(hits)) + " بريف بالاسم ده:\n" +
+                      "\n".join(names) + "\n\nزود حروف عشان أعرف مين.")
+
+    return hits[0], None

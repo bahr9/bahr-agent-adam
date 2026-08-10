@@ -153,3 +153,48 @@ class TestFormatBrief(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestFindBrief(unittest.TestCase):
+    """البحث المشترك بين /direction و/moodboard."""
+
+    A = {"session_id": "a1", "client_name": "إسراء محمد", "status": "new",
+         "unit_location": "مدينتي", "answers": {}}
+    B = {"session_id": "b2", "client_name": "كريم فؤاد", "status": "seen",
+         "unit_location": "التجمع", "answers": {}}
+    ARCH = {"session_id": "c3", "client_name": "هند سامي", "status": "archived",
+            "unit_location": "الشيخ زايد", "answers": {}}
+
+    def test_no_arg_takes_the_first_live_one(self):
+        b, err = svc.find_brief("", [self.A, self.B])
+        self.assertIsNone(err)
+        self.assertEqual(b["session_id"], "a1")
+
+    def test_archived_is_never_the_answer(self):
+        b, err = svc.find_brief("", [self.ARCH])
+        self.assertIsNone(b)
+        self.assertIn("مفيش بريف", err)
+
+    def test_finds_by_name(self):
+        b, err = svc.find_brief("كريم", [self.A, self.B])
+        self.assertEqual(b["session_id"], "b2")
+
+    def test_finds_by_location(self):
+        b, err = svc.find_brief("التجمع", [self.A, self.B])
+        self.assertEqual(b["session_id"], "b2")
+
+    def test_archived_hit_says_archived_not_missing(self):
+        b, err = svc.find_brief("هند", [self.A, self.ARCH])
+        self.assertIsNone(b)
+        self.assertIn("مؤرشف", err)
+
+    def test_ambiguous_asks_for_more_letters(self):
+        two = [self.A, dict(self.B, client_name="إسراء علي", session_id="d4")]
+        b, err = svc.find_brief("إسراء", two)
+        self.assertIsNone(b)
+        self.assertIn("زود حروف", err)
+
+    def test_unknown_name_says_so(self):
+        b, err = svc.find_brief("زيزو", [self.A])
+        self.assertIsNone(b)
+        self.assertIn("زيزو", err)

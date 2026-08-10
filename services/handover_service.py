@@ -83,6 +83,50 @@ def record_yields(session_id, existing, yields):
         return 0
 
 
+STAGES = (
+    ("brief", "الاستبيان"),
+    ("direction", "الاتجاه"),
+    ("proposal", "العرض الأول"),
+    ("handover", "التسليم"),
+)
+
+
+def _approvals_section(approvals):
+    """كل مرحلة بمستند معتمد (أحمد 2026-08-10).
+
+    ده تسجيل مش قفل: البوابة بتسعّر الاختصار مبتقفلوش (تصور §2.4).
+    المرحلة اللي عدّت من غير اعتماد بتتقال بالاسم -- عشان الاختصار
+    يبقى قرار مكتوب، مش حاجة اكتشفناها بعد سنة.
+    """
+    done = {}
+    for a in approvals or []:
+        st = (a or {}).get("stage")
+        if st:
+            done[st] = a
+
+    out = ["\n🖊 الاعتمادات:"]
+    missing = []
+    for key, label in STAGES:
+        a = done.get(key)
+        if a:
+            how = (a.get("how") or "").strip()
+            line = "✅ " + label
+            if how:
+                line += " — " + how
+            at = a.get("at")
+            if at:
+                line += " · " + str(at)[:10]
+            out.append(line)
+        else:
+            out.append("○ " + label + " — مفيش اعتماد متسجل")
+            missing.append(label)
+
+    if missing:
+        out.append("\n⚠️ " + "، ".join(missing) +
+                   ": عدّت من غير توقيع. لو الخلاف قام، مفيش سطر يحسمه.")
+    return out
+
+
 def _objections_section(objections):
     """رد العميل على العرض -- اللي اعترض عليه واللي عملناه.
 
@@ -135,6 +179,7 @@ def format_handover(row):
                 out.append("   بتاريخ: " + str(at)[:10])
 
     out.extend(_objections_section(objections))
+    out.extend(_approvals_section((row or {}).get("approvals") or []))
 
     if waivers or objections:
         out.append("\nالسطور دي بتحمي الطرفين — مش اتهام لحد.")
