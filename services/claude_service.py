@@ -2351,6 +2351,7 @@ def ask_claude_agentic(user_message, chat_id, conversation_history=None, memory_
         from services.tool_lifecycle_diagnostics import (
             record_payload_snapshot, record_model_selection, detect_explicit_tool_request,
             detect_website_review_intent, begin_turn, note_turn_selection,
+            detect_project_cost_question,
         )
 
         # سياق الدورة الواحدة: السؤال + الأدوات اللي اتنادت **في الرد ده**.
@@ -2379,6 +2380,33 @@ def ask_claude_agentic(user_message, chat_id, conversation_history=None, memory_
 
         forced_tool_choice = None
         extra_instruction = ""
+
+        # سؤال تكلفة عن مشروع -- فرض حتمي (2026-08-15).
+        #
+        # الحادثة: أحمد سأل «قيمة تاسيس الكهرباء عند عصام فرج كام» والرد
+        # كان `selected_tools: []` -- ولا أداة اتنادت. الموديل رد من ذاكرة
+        # المحادثة وقال بنفسه "لسه نفس الإجابة"، يعني نسخ نفيه القديم
+        # الكاذب من التاريخ. والرقم (18,000) كان في المقايسة طول الوقت.
+        #
+        # قاعدة البرومبت مكانتش كافية لأنها اقتراح، والاقتراح بيتجاهل لما
+        # التاريخ فيه إجابة جاهزة. الفرض هنا بيضمن إن الداتا **تدخل
+        # السياق** قبل ما الموديل يقرر أي حاجة.
+        #
+        # get_bahr_projects هي المفروضة مش get_project_details، لأن التانية
+        # محتاجة project_id والموديل لازم يجيبه من القايمة الأول -- ومخرج
+        # القايمة نفسه فيه سطر صريح بيوجّه للتفاصيل.
+        cost_question = detect_project_cost_question(user_message)
+        if cost_question and not explicit_tool_request:
+            forced_tool_choice = {"type": "tool", "name": "get_bahr_projects"}
+            extra_instruction = (
+                "\n\n[نظام]: ده سؤال عن تكلفة في مشروع. **ممنوع** ترد بأي رقم "
+                "أو بأي نفي قبل ما تقرا المقايسة: هات القايمة، وبعدها نده "
+                "get_project_details بالمعرّف واقرا البنود. أي إجابة من ذاكرة "
+                "المحادثة أو من رد سابق ليك مرفوضة -- الأرقام دي بتتغير "
+                "والردود القديمة ممكن تكون غلط."
+            )
+            logger.info("🔒 Forced tool_choice -> get_bahr_projects (سؤال تكلفة عن مشروع)")
+
         if explicit_tool_request:
             logger.info(f"🎯 Explicit tool request detected: {explicit_tool_request}")
             tool_def = next(t for t in TOOLS if t["name"] == explicit_tool_request)
