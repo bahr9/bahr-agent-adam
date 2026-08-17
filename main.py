@@ -435,6 +435,23 @@ def self_state_active_check_job():
         logger.error("Self-State active check error: " + str(e))
 
 
+def credit_check_job():
+    """تنبيه رصيد Anthropic -- كل 6 ساعات، وبيبعت مرة واحدة لكل نسبة.
+
+    مربوط بجدول `api_usage` الموجود، فمفيش نداء موديل ولا تكلفة إضافية.
+    ساكت تمامًا لو مفيش شحنة مسجّلة (`/credit <المبلغ>`) -- التقدير
+    مستحيل من غير قيمة الشحن، ومفيش API عند Anthropic بيقول الرصيد.
+    """
+    try:
+        from services import credit_watch
+        chat_id = get_chat_id()
+        if not chat_id:
+            return
+        credit_watch.check_and_alert(lambda text: bot.send_message(chat_id, text))
+    except Exception as e:
+        logger.warning("Credit check error: " + str(e))
+
+
 def tool_health_check_job():
     """
     فحص صحة الأدوات (Runtime Capabilities & Tool Health V1) -- كل 6 ساعات
@@ -929,6 +946,8 @@ if __name__ == "__main__":
         scheduler.add_job(tool_health_check_job, 'interval', hours=6,
                          id='tool_health_check', timezone='Africa/Cairo', misfire_grace_time=300,
                          next_run_time=now_cairo() + _td(minutes=3))
+        scheduler.add_job(credit_check_job, 'interval', hours=6,
+                          id='credit_check', timezone='Africa/Cairo', misfire_grace_time=300)
         scheduler.add_job(project_status_check_job, 'interval', hours=1,
                          id='project_status_check', timezone='Africa/Cairo', misfire_grace_time=300)
         scheduler.add_job(urgent_deadlines_check_job, 'interval', hours=1,

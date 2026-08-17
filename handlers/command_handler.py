@@ -128,6 +128,50 @@ def show_ideas_command(message):
         send_error_message(message, str(e))
 
 # ============================================================
+# 💳 رصيد Anthropic
+# ============================================================
+
+@bot.message_handler(commands=['credit'])
+def credit_command(message):
+    """`/credit` يعرض الحالة، و`/credit 25` يسجّل شحنة جديدة.
+
+    التسجيل ضروري لأن **مفيش API عند Anthropic بيقول الرصيد المتبقي** --
+    التقدير بيتحسب: اللي أحمد شحنه ناقص المصروف المقيس من `api_usage`.
+    """
+    try:
+        from services import credit_watch
+        parts = (message.text or "").split()
+        arg = parts[1] if len(parts) > 1 else ""
+
+        if arg:
+            ok, msg = credit_watch.record_topup(arg)
+            bot.reply_to(message, ("✅ " if ok else "❌ ") + msg)
+            return
+
+        st = credit_watch.status()
+        if not st.get("ok"):
+            bot.reply_to(
+                message,
+                "💳 " + st.get("reason", "مش متاح") +
+                "\n\nلو شحنت دلوقتي: `/credit 25` (بالدولار)."
+            )
+            return
+
+        bar = "🟢" if st["pct"] < 0.8 else ("🟡" if st["pct"] < 0.95 else "🔴")
+        bot.reply_to(message, (
+            f"{bar} صرفت **${st['spent']:.2f}** من **${st['amount']:.2f}** "
+            f"({st['pct']*100:.0f}%)\n"
+            f"فاضل تقديريًا **${st['remaining']:.2f}**\n"
+            f"من {str(st['at'])[:16]}\n\n"
+            "الرقم تقديري -- محسوب من توكنات النداءات المسجّلة، مش من "
+            "Anthropic (مفيش API بيقول الرصيد)."
+        ))
+    except Exception as e:
+        logger.error(f"❌ خطأ في /credit: {e}")
+        send_error_message(message, str(e))
+
+
+# ============================================================
 # 📋 أوامر استبيانات العملاء (brief.html → Supabase)
 # ============================================================
 

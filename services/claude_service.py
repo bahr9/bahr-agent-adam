@@ -2546,6 +2546,12 @@ def ask_claude_agentic(user_message, chat_id, conversation_history=None, memory_
         
     except Exception as e:
         logger.error(f"❌ خطأ في ask_claude_agentic: {e}")
+        # نفاد الرصيد له رسالة خاصة (2026-08-17): "❌ حصلت مشكلة" مبتقولش
+        # السبب ولا الحل، فأحمد بيفضل يجرب ويجرب. الرصيد خلص مرتين في
+        # عشر أيام واكتشفه في المرتين من رد فاشل.
+        from services.credit_watch import is_credit_exhausted, EXHAUSTED_MESSAGE
+        if is_credit_exhausted(e):
+            return EXHAUSTED_MESSAGE
         return f"❌ حصلت مشكلة: {str(e)}"
 
 # ============================================================
@@ -2733,6 +2739,9 @@ def ask_claude(user_message, conversation_history=None, memory_summary=None, pen
         
     except Exception as e:
         logger.error(f"❌ خطأ في Claude: {e}")
+        from services.credit_watch import is_credit_exhausted, EXHAUSTED_MESSAGE
+        if is_credit_exhausted(e):
+            return EXHAUSTED_MESSAGE
         return f"❌ حصلت مشكلة: {str(e)}"
 
 def format_history_for_claude(stored_messages, limit=None):
