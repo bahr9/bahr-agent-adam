@@ -2887,59 +2887,12 @@ def summarize_memory(old_summary, user_message, assistant_reply):
         return None
 
 
-    """
-    تحليل الصور باستخدام Claude Vision
-    
-    Args:
-        image_base64: الصورة بـ base64
-        caption: النص المرافق للصورة
-        media_type: نوع الصورة (image/jpeg, image/png, إلخ)
-    
-    Returns:
-        التحليل من Claude
-    """
-    try:
-        response = _tracked_create(
-            model=CLAUDE_MODEL,
-            max_tokens=400,
-            thinking={"type": "disabled"},
-            system=f"""أنت ADAM — مرافق أحمد الشخصي. اتكلم بالعامية المصرية الدافئة.
-الوقت الحالي: {now_cairo().strftime('%Y-%m-%d %H:%M')}""",
-            messages=[{
-                "role": "user",
-                "content": [
-                    {
-                        "type": "image",
-                        "source": {
-                            "type": "base64",
-                            "media_type": media_type,
-                            "data": image_base64
-                        }
-                    },
-                    {
-                        "type": "text",
-                        "text": caption
-                    }
-                ]
-            }]
-        )
-        
-        # استخراج الـ text فقط
-        reply = ""
-        for content in response.content:
-            if content.type == "text":
-                reply += content.text
-            elif content.type == "thinking":
-                continue
-        
-        if not reply:
-            reply = "عذراً، حصلت مشكلة في معالجة الصورة."
-        
-        return reply
-        
-    except Exception as e:
-        logger.error(f"❌ خطأ في تحليل الصورة: {e}")
-        return f"❌ {str(e)}"
+    # ملحوظة (2026-08-17): كان تحت السطر ده 53 سطر **غير قابلة للوصول**
+    # -- نسخة مكررة من `analyze_with_vision` اتشال منها سطر الـdef،
+    # فبقى جسمها قاعد جوه الدالة دي بعد الـreturn. الدالة الحقيقية
+    # موجودة وشغالة فوق. الخطر مكانش انهيار، كان فخ: أي تعديل هناك
+    # مكانش هيوصل لمسار الصور الحي. اتحذفت بعد إثبات عدم الوصول
+    # بالـAST (كل فروع الـtry بترجّع، ومفيش finally).
 
 def extract_reminder_intent(user_message, conversation_history=None):
     """
