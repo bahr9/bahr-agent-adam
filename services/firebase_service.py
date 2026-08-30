@@ -19,6 +19,7 @@ from config import (
     OFFICE_TASKS_COLLECTION,
     SITE_PROJECTS_COLLECTION,
     AIN_AL_KHABEER_COLLECTION,
+    EYE_EXPERT_CLIENTS_COLLECTION,
     MEMORY_COLLECTION,
     EXPENSES_COLLECTION,
     LOANS_COLLECTION,
@@ -489,6 +490,86 @@ def get_ain_al_khabeer_logs(limit=50):
     except Exception as e:
         logger.error(f"❌ خطأ في جلب السجلات: {e}")
         return []
+
+# ⚠️ Firestore بيرفض أي doc id على شكل __x__ -- محجوز عنده.
+#    الاسم ده اتغير بعد ما رفض "__meta__" بـ400 يوم 2026-08-30.
+EYE_EXPERT_META_DOC = "_gate_counter"
+
+
+def check_eye_expert_access(client, free_limit=50):
+    """بوابة «مجاني لأول N رقم» -- بترجع القرار وبتسجّل الرقم في نفس النداء.
+
+    القاعدة (قرار أحمد 2026-08-30): أول `free_limit` رقم واتساب مختلف
+    بياخدوا الفحص مجاني، **وبيفضلوا مجانيين للأبد**. اللي بعدهم بيتحوّل
+    لبني آدم.
+
+    بترجع dict:
+        allowed   -- ياخد فحص ولا لأ
+        seq       -- ترتيبه في الـ50 (None لو مرفوض)
+        count     -- عدد اللي اتسجلوا لحد دلوقتي
+        first_hit -- أول مرة الرقم ده يتقابل في الحالة دي
+                     (بتستخدم عشان التنبيه مايتكررش)
+
+    ⚠️ fail-open عن قصد: لو Firestore مش متاح بنسمح بالفحص. حجب عميل
+    حقيقي بسبب عطل بنية تحتية أغلى من فحص مجاني زيادة.
+    """
+    if firestore_db is None:
+        logger.warning("⚠️ بوابة عين الخبير: Firestore مش متاح -- سمحنا (fail-open)")
+        return {"allowed": True, "seq": None, "count": None,
+                "first_hit": False, "degraded": True}
+
+    client = (client or "").strip()
+    if not client:
+        return {"allowed": True, "seq": None, "count": None,
+                "first_hit": False, "degraded": True}
+
+    try:
+        col = firestore_db.collection(EYE_EXPERT_CLIENTS_COLLECTION)
+        client_ref = col.document(client)
+        meta_ref = col.document(EYE_EXPERT_META_DOC)
+        now_ms = int(time.time() * 1000)
+
+        @firestore.transactional
+        def _decide(transaction):
+            # كل القرايات قبل أي كتابة -- شرط معاملات Firestore
+            snap = client_ref.get(transaction=transaction)
+            meta = meta_ref.get(transaction=transaction)
+            count = (meta.to_dict() or {}).get("count", 0) if meta.exists else 0
+
+            if snap.exists:
+                data = snap.to_dict() or {}
+                # الدفع بيفتح الباب مهما كان -- الحقل ده بيتكتب من
+                # ويبهوك الدفع لما يتبني (المرحلة 3)
+                if data.get("paid"):
+                    return {"allowed": True, "seq": data.get("seq"),
+                            "count": count, "first_hit": False, "paid": True}
+                if data.get("blocked"):
+                    return {"allowed": False, "seq": None, "count": count,
+                            "first_hit": False}
+                return {"allowed": True, "seq": data.get("seq"), "count": count,
+                        "first_hit": False}
+
+            if count >= free_limit:
+                # بيتسجل من غير seq -- مش بياخد مكان من الـ50
+                transaction.set(client_ref, {"blocked": True,
+                                             "first_seen": now_ms})
+                return {"allowed": False, "seq": None, "count": count,
+                        "first_hit": True}
+
+            seq = count + 1
+            transaction.set(client_ref, {"seq": seq, "first_seen": now_ms})
+            transaction.set(meta_ref, {"count": seq}, merge=True)
+            return {"allowed": True, "seq": seq, "count": seq, "first_hit": True}
+
+        result = _decide(firestore_db.transaction())
+        result["degraded"] = False
+        return result
+
+    except Exception as e:
+        logger.error("❌ بوابة عين الخبير فشلت: " + str(e))
+        return {"allowed": True, "seq": None, "count": None,
+                "first_hit": False, "degraded": True}
+
 
 # ============================================================
 # 🧠 عمليات الذاكرة الدائمة (Persistent Memory)

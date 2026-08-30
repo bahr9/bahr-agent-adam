@@ -40,6 +40,7 @@ CLIENTS_COLLECTION = "clients"
 OFFICE_TASKS_COLLECTION = "office_tasks"
 SITE_PROJECTS_COLLECTION = "site_projects"
 AIN_AL_KHABEER_COLLECTION = "ain_al_khabeer_logs"
+EYE_EXPERT_CLIENTS_COLLECTION = "ain_al_khabeer_clients"  # بوابة «مجاني لأول 50 رقم» -- كل رقم مرة واحدة، والعدّاد في __meta__
 PROJECT_FILES_COLLECTION = "project_files"
 PRICE_BASE_COLLECTION = "price_base"  # ملفات مشاريع التصميم (الفجوة 1، 2026-08-04)
 MEMORY_COLLECTION = "user_memory"  # الذاكرة الدائمة (ملخص متراكم لكل مستخدم)

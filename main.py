@@ -762,6 +762,68 @@ def _check_secret(env_var):
         return jsonify({"status": "unauthorized"}), 401
     return None
 
+@flask_app.route("/eye-expert-access", methods=["POST"])
+def eye_expert_access():
+    """بوابة «مجاني لأول 50 رقم» -- Make بينادي عليها قبل ما كلود يشتغل.
+
+    قرار أحمد 2026-08-30: أول 50 رقم واتساب مختلف بياخدوا الفحص مجاني
+    **ويفضلوا مجانيين للأبد**. اللي بعدهم بيتحوّل لبني آدم، ومداد بيبلّغ
+    أحمد على تيليجرام أول مرة بس.
+
+    الرد: {"status":"ok","allowed":true,"seq":7,"count":7,"limit":50}
+    """
+    try:
+        denied = _check_secret("EYE_EXPERT_SECRET")
+        if denied:
+            return denied
+
+        data = request.get_json(force=True, silent=True) or {}
+        client = str(data.get("client", "")).strip()
+        if not client:
+            return jsonify({"status": "error", "message": "client مطلوب"}), 400
+
+        free_limit = int(os.getenv("EYE_EXPERT_FREE_LIMIT", "50"))
+
+        from services.firebase_service import check_eye_expert_access
+        verdict = check_eye_expert_access(client, free_limit=free_limit)
+
+        # التنبيه أول مرة بس -- عشان العميل المرفوض مايفضلش يرن كل رسالة
+        if not verdict.get("allowed") and verdict.get("first_hit"):
+            try:
+                chat_id = get_chat_id()
+                if chat_id:
+                    lines = [
+                        "🚧 *عين الخبير — عميل ورا البوابة*",
+                        "",
+                        "رقم جديد كلّم عين الخبير بعد ما الـ"
+                        + str(free_limit) + " خلصوا:",
+                        "`" + client + "`",
+                        "",
+                        "البوت قال له إن حد من الفريق هيرد. *الرد عليك.*",
+                    ]
+                    safe_send_message(chat_id, chr(10).join(lines),
+                                      parse_mode="Markdown")
+            except Exception as notify_error:
+                logger.error("تنبيه بوابة عين الخبير فشل: " + str(notify_error))
+
+        if verdict.get("degraded"):
+            logger.warning("⚠️ بوابة عين الخبير اشتغلت fail-open للرقم: " + client)
+
+        return jsonify({
+            "status":  "ok",
+            "allowed": bool(verdict.get("allowed")),
+            "seq":     verdict.get("seq"),
+            "count":   verdict.get("count"),
+            "limit":   free_limit,
+        }), 200
+
+    except Exception as e:
+        logger.error("Eye Expert access error: " + str(e))
+        # fail-open -- عطل عندنا مايحجبش عميل
+        return jsonify({"status": "error", "allowed": True,
+                        "message": str(e)}), 200
+
+
 @flask_app.route("/log-eye-expert", methods=["POST"])
 def log_eye_expert():
     """استقبال logs من Make.com وحفظها في Firestore"""
